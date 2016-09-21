@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ instrument }} Configuration {% endblock %}
+
+{% block banner %}{{ instrument }} Configuration {% endblock %}
+
+{% block header %}
+<script>
+  function remove_entry(remove_id, layer_number_id, name_id, thickness_id, sld_id, roughness_id) {
+      $(remove_id).prop('checked', !$(remove_id).prop('checked')); 
+      $(remove_id).hide();
+      $(remove_id+'_icon').hide();
+      $(layer_number_id).hide();
+      $(name_id).hide();
+      $(thickness_id).hide();
+      $(sld_id).hide();
+      $(roughness_id).hide();
+  }
+
+  function set_fixed(fix_id) {
+    if ($(fix_id).prop('checked')) {
+      $(fix_id+'_range').show();
+    } else {
+      $(fix_id+'_range').hide();
+    }
+  }
+</script>
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+{% endblock %}
+
+
+{% block content %}
+
+  <div id="graph">{{ html_data|safe }}</div>
+<p>
+Model parameters. Checked parameters will be kept fixed during the fitting procedure.
+<p>
+<form action="" method="POST">{% csrf_token %}
+  <table class="property_table  fixed_table" >
+    <tr><th>Data path</th> <td {% if data_form.data_path.errors %}class='error_row' title='{{ data_form.data_path.errors|first }}'{% endif %}>{{ data_form.data_path }}</td></tr>
+    <tr><th>Scale</th> <td {% if data_form.scale.errors %}class='error_row' title='{{ data_form.scale.errors|first }}'{% endif %}>{{ data_form.scale }}</td><td onclick="set_fixed('#{{ data_form.scale_is_fixed.id_for_label }}')">{{ data_form.scale_is_fixed }}</td></tr>
+    <tr><th>Background</th> <td {% if data_form.background.errors %}class='error_row' title='{{ data_form.background.errors|first }}'{% endif %}>{{ data_form.background }}</td><td onclick="set_fixed('#{{ data_form.background_is_fixed.id_for_label }}')">{{ data_form.background_is_fixed }}</td></tr>
+  </table>
+
+  {{ layers_form.management_form }}
+  <table class="property_table">
+    <thead>
+      <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th> <th></th>
+      <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th></th> <th>Roughness (&#8491;)</th> <th></th>
+      <td class='icon_input'><a href="?extra=1"><span title='Click to add an entry' class="ui-icon ui-icon-circle-plus"></span></a></td></tr>
+    </thead>
+    <tbody>
+    {% for form in layers_form %}
+      <tr class="short_input">
+        {{ form.id }}<span style='display:none;'>{{ form.remove }}</span>
+        <td {% if form.layer_number.errors %}class='error_row' title='{{ form.layer_number.errors|first }}'{% endif %}>{{ form.layer_number}}</td>
+        <td {% if form.name.errors %}class='error_row' title='{{ form.name.errors|first }}'{% endif %}>{{ form.name }}</td>
+        <td {% if form.thickness.errors %}class='error_row' title='{{ form.thickness.errors|first }}'{% endif %}>{{ form.thickness }}</td><td onclick="set_fixed('#{{ form.thickness_is_fixed.id_for_label }}')">{{ form.thickness_is_fixed }}</td>
+        <td {% if form.sld.errors %}class='error_row' title='{{ form.sld.errors|first }}'{% endif %}>{{ form.sld }}</td><td onclick="set_fixed('#{{ form.sld_is_fixed.id_for_label }}')">{{ form.sld_is_fixed }}</td>
+        <td {% if form.roughness.errors %}class='error_row' title='{{ form.roughness.errors|first }}'{% endif %}>{{ form.roughness }}</td><td onclick="set_fixed('#{{ form.roughness_is_fixed.id_for_label }}')">{{ form.roughness_is_fixed }}</td>
+        <td class='icon_input'> <span id='{{ form.remove.id_for_label }}_icon' title='Click to remove this entry' class="ui-icon ui-icon-trash" onclick="remove_entry('#{{ form.remove.id_for_label }}', '#{{ form.layer_number.id_for_label }}', '#{{ form.name.id_for_label }}', '#{{ form.thickness.id_for_label }}', '#{{ form.sld.id_for_label }}', '#{{ form.roughness.id_for_label }}')"></span></td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+
+  <span style="float: right; margin-left:15px;" >
+  <input id="submit_button" title="Click to fit your data" type="submit" name="button_choice" value="fit"/>
+  <input id="evaluate_button" title="Click to evaluate the current model" type="submit" name="button_choice" value="evaluate"/>
+  <input id="choose_file_button" title="Click to set your data and get the latest fit" type="submit" name="button_choice" value="set_data"/>
+  </span>
+  <p>
+  <hr>
+  <p>
+  Fitting parameter:
+  <p>
+  <table class="property_table">
+    <thead><tr><th>Parameter</th> <th>Minimum</th> <th>Maximum</th></tr></thead>
+    <tbody>
+      <tr id='{{ data_form.scale_is_fixed.id_for_label}}_range'><td>scale</td>
+        <td {% if data_form.scale_min.errors %}class='error_row' title='{{ data_form.scale_min.errors|first }}'{% endif %}>{{ data_form.scale_min }}</td>
+        <td {% if data_form.scale_max.errors %}class='error_row' title='{{ data_form.scale_max.errors|first }}'{% endif %}>{{ data_form.scale_max }}</td>
+      </tr>
+      <tr id='{{ data_form.background_is_fixed.id_for_label}}_range'><td>background</td>
+        <td {% if data_form.background_min.errors %}class='error_row' title='{{ data_form.background_min.errors|first }}'{% endif %}>{{ data_form.background_min }}</td>
+        <td {% if data_form.background_max.errors %}class='error_row' title='{{ data_form.background_max.errors|first }}'{% endif %}>{{ data_form.background_max }}</td>
+      </tr>
+    {% for form in layers_form %}
+      <tr><td><hr></td></tr>
+      <tr id='{{ form.thickness_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} thickness</td>
+        <td {% if form.thickness_min.errors %}class='error_row' title='{{ form.thickness_min.errors|first }}'{% endif %}>{{ form.thickness_min }}</td>
+        <td {% if form.thickness_max.errors %}class='error_row' title='{{ form.thickness_max.errors|first }}'{% endif %}>{{ form.thickness_max }}</td>
+      </tr>
+      <tr id='{{ form.sld_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} SLD</td>
+        <td {% if form.sld_min.errors %}class='error_row' title='{{ form.sld_min.errors|first }}'{% endif %}>{{ form.sld_min }}</td>
+        <td {% if form.sld_max.errors %}class='error_row' title='{{ form.sld_max.errors|first }}'{% endif %}>{{ form.sld_max }}</td>
+      </tr>
+      <tr id='{{ form.roughness_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} roughness</td>
+        <td {% if form.roughness_min.errors %}class='error_row' title='{{ form.roughness_min.errors|first }}'{% endif %}>{{ form.roughness_min }}</td>
+        <td {% if form.roughness_max.errors %}class='error_row' title='{{ form.roughness_max.errors|first }}'{% endif %}>{{ form.roughness_max }}</td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+
+
+</form>
+
+
+<script>
+function compute_size(id) { 
+    if($(id).val().length > 30) {
+        var len = ($(id).val().length-30)/15;
+        size = 11-Math.round(len); 
+        if(size >= 8) $(id).css("font-size",size + "px")
+    } else $(id).css("font-size","11px");
+}
+compute_size('#id_data_path');
+$('.font_resize').keyup(function(ev) {
+  compute_size(this);
+});
+</script>
+{% endblock %}

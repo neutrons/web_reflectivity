@@ -1,0 +1,66 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Language" content="en">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if title %}{{ title }}{% else %}SNS Analysis Service{% endif %}</title>
+
+<link rel="stylesheet" href="/static/css/reporting_layout.css" type="text/css" title="no title" charset="utf-8">
+<link rel="stylesheet" href="/static/css/reporting_layout_print.css" type="text/css" media="print" title="no title" charset="utf-8">
+<link rel="stylesheet" href="/static/thirdparty/jquery-ui-1.11.2.custom/jquery-ui.css" type="text/css" title="no title" charset="utf-8">
+{% if is_mobile %}
+<link rel="stylesheet" href="{% static 'mobile.css' %}" type="text/css" title="no title" charset="utf-8">
+{% endif %}
+<link rel="icon" type="image/png" href="{% static 'favicon.ico' %}" />
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-72x72-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-76x76-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-114x114-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-120x120-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-144x144-precomposed.png' %}">
+<link rel="apple-touch-icon-precomposed" href="{% static 'apple-touch-icon-152x152-precomposed.png' %}">
+
+<script language="javascript" type="text/javascript" src="/static/thirdparty/jquery-1.11.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="/static/thirdparty/jquery-ui-1.11.2.custom/jquery-ui.min.js"></script>
+<script language="javascript" type="text/javascript" src="/static/thirdparty/plotly-1.14.2.min.js"></script>
+{% block header %}
+{% endblock %}
+</head>
+<body>
+{% if user_alert %}
+<script id="source" language="javascript" type="text/javascript">
+    $(document).ready(show_alert);
+</script>
+{% endif %}
+
+<div class="user_info">
+  {% if gravatar_url %}<img src="{{ gravatar_url|safe }}&s=16" height="16" width="16" alt="{{ user.username }}">{% endif %} {% if profile_url %}<a href="{{ profile_url }}">{{ user.username }}</a> {% else %}{{ user.username }}{% endif %} |{% if user.is_staff %} <a href="{% url 'report:processing_admin' %}"><b>admin</b></a> |{% endif %}{% if user.is_authenticated %} <a href="{{ logout_url }}">logout</a>{% else %} <a href="{{ login_url }}">login</a>{% endif %}
+</div>
+
+<a class="banner_logo" href="http://neutrons.ornl.gov/" target="_blank"><img title="ORNL" src="{% static 'images/ornl_logo_200_50.png' %}" width="200px" alt="ORNL" /></a>
+<div class="banner_title">{% if title %}{{ title }}{% else %}SNS Analysis Service{% endif %}</div>
+
+<div class='user_alert'>
+  {% if user_alert %}
+  <div id="alert_message">
+  {% for item in user_alert %}
+    {{ item|safe }} {% if not forloop.last %}<br><br>{% endif %}
+  {% endfor %}
+  </div>
+  {% else %}<div id="alert_message"></div>{% endif %}
+</div>
+
+<div class="breadcrumbs">
+  {% block breadcrumb %}
+  {% if breadcrumbs %}{{ breadcrumbs|safe }}{% else %}<a href="/">home</a>{% endif %}
+  {% block right_side_links %}{% endblock %}
+  {% endblock %}
+</div>
+
+{% block content %}
+{% endblock %}
+
+</body>
+</html>

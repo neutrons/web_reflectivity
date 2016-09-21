@@ -1,0 +1,153 @@
+@charset "UTF-8";
+/* CSS Document */
+.tooltip{display:inline;position:relative}
+.tooltip:hover{text-decoration:none}
+.tooltip:hover:after{
+   background:#e6e6e6;
+   border-radius:5px;
+   bottom:18px;
+   content:attr(tooltip);
+   display:block;
+   left:50%;
+   padding:5px 15px;
+   position:absolute;
+   white-space:nowrap;
+   z-index:98;
+}
+.tooltip:hover:before{
+    border:solid;
+    border-color:#e6e6e6 transparent;
+    border-width:6px 6px 0 6px;
+    bottom:12px;
+    content:"";
+    display:block;
+    left:75%;
+    position:absolute;
+    z-index:99;
+}
+
+.green {color: #54AA59;}
+.red {color: #9d301d;}
+
+.breadcrumbs
+{
+    padding-left: 5px;
+    padding-bottom: 12px;
+    padding-top:2px;
+    margin-top: 5px;
+    border-top: 1px solid #CDC0B0;
+    font-size:12px;
+    color: #5e5e5e;
+}
+
+html {
+    background-color:#fff;
+}
+
+header {
+    display:block;
+    margin-left:0px;
+    margin-right:auto;
+    margin-top:5px;
+}
+
+.banner_logo {
+    float:left;
+}
+
+.banner_title {
+    text-align:left;
+    padding-left:250px;
+    margin-top:10px;
+    margin-bottom:30px;
+    font-size:24px;
+    font-weight: bold;
+}
+
+body {
+    margin: 0 30px 0 30px;
+    padding: 10px 10px 10px 10px;
+    text-align:left;
+    font-family: "Lucida Grande", Verdana, Arial, sans-serif;
+    font-size:12px;
+    width:auto;
+    min-width:850px;
+    max-width:1130px;
+    color:#555555;
+}
+
+p {text-align:left;}
+
+a:link {color:#0077cc; text-decoration:none;}      /* unvisited link */
+a:visited {color:#0077cc; text-decoration:none;}  /* visited link */
+a:hover {color:#0077cc; text-decoration:underline;}  /* mouse over link */
+a:active {color:#0077cc; text-decoration:none;}  /* selected link */
+a.external {
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVElEQVR42n3PgQkAIAhEUXdqJ3dqJ3e6IoTPUSQcgj4EQ5IlUiLE0Jil3PECXhcHGBhZ8kg4hwxAu3MZeCGeyFnAXp4hqNQPnt7QL0nADpD6wHccLvnAKksq8iiaAAAAAElFTkSuQmCC');
+    padding-right: 13px;
+}
+a.gear {
+    background: transparent url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAgCAMAAAAVMLmlAAAAA3NCSVQICAjb4U/gAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAALpQTFRF////W1tbgICAWVlZgICAUVFRgICAWVlZhYWFUlJShYWFVFRUgYGBVVVVgYGBVVVVgICAVFRUVVVVVlZWgYGBgICAVFRUgYGBVFRUgICAgYGBVVVVVVVVgYGBVlZWgYGBVFRUgICAVFRUgICAVVVVgICAVlZWgICAVFRUgICAVVVVgICAVFRUgICAVlZWgICAVVVVgICAVVVVgICAVVVVgICAVVVVgICAVVVVgICAVVVVgICAVVVVgICA9Fa9bgAAADx0Uk5TAA4OFBQWFhcXGRlJSUtLWlpbXV9fYGFhZGRlZmlpa2twcIiIioqPj5GRn5+goKGh6+vv7/Dw+fn8/P7+YuRUVgAAAOlJREFUGBmNwcdWAgEURMFLFCUaAcWAEhQYHBRmCN3//1u+BYcVC6s4p2U3OLrrVxN7Xn7uELoH5w65Dx1g6JNnoLazfz++VnZehkZir4pQ3NjzBg5TwtgBhzFh6kDr294UobiykxZc7ezVdLyx8yrw6pM+8GjnDjsf7gj3/WpiJ7Vhl6OW3eC/mlKdo5teZSHNSoM24XqvTCHTvg0MdDIASpn08/6ZSlkJ6jMpLUBhLc3qKEwIIwUURoSJAs2ltC5AIZUWTbjcSulktJayCvCikx7wJG0VttrfEp5eLpfS4uLtgaOmVOeMP8BAM9RClMO9AAAAAElFTkSuQmCC') no-repeat right top;
+    padding-right: 15px;
+}
+
+img {border: 0;}
+
+#content {
+    margin-left:0 auto;
+    margin-right:0 auto;
+}
+
+.disclamer {
+    font-size:10px;
+    max-width:600px;
+    min-width:400px;
+    margin-left:auto;
+    margin-right:auto;
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+.user_info {
+    float:right;
+    margin-top:5px; 
+}
+
+.user_alert {
+    cursor: pointer;
+    display:none;
+    background: #FFEA7D;color: black;
+    padding: 0px;
+    margin-top:5px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #96740B;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px; /* future proofing */
+}
+.user_alert #alert_message {
+    padding: 5px;
+    text-align: center;
+}
+
+.user_alert #click_me {
+    font-size: 8px;
+}
+
+.error_row { background: #f8bdb7; }
+.highlight_row { background: #f8e7b3; }
+.short_label { display: inline-block; text-align:right; min-width:60px; width:60px; }
+.tiny_input input { min-width:80px; width:80px; }
+.short_input input { min-width:50px; width:100px; margin-right:10px}
+.short_input input[type='checkbox'] { min-width:30px; width:30px; padding-rgiht:0px; margin-left:-10px; margin-right:10px}
+
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
