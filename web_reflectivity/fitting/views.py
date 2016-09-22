@@ -11,6 +11,7 @@ from django.conf import settings
 
 from .forms import ReflectivityFittingForm, LayerForm
 from . import view_util
+from . import job_handling
 
 def modeling(request):
 
@@ -39,6 +40,8 @@ def modeling(request):
                 # Process the form and evaluate the model (no fit)
                 view_util.evaluate_model()
             elif task == "fit":
+                m=job_handling.create_model_file(data_form, layers_form)
+                logging.error(m)
                 # Process the form and fit data
                 view_util.perform_fit()
             # Set the session data. This is the only thing we need

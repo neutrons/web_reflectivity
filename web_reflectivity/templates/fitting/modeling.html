@@ -19,9 +19,9 @@
 
   function set_fixed(fix_id) {
     if ($(fix_id).prop('checked')) {
-      $(fix_id+'_range').show();
-    } else {
       $(fix_id+'_range').hide();
+    } else {
+      $(fix_id+'_range').show();
     }
   }
 </script>
@@ -52,6 +52,12 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
       <td class='icon_input'><a href="?extra=1"><span title='Click to add an entry' class="ui-icon ui-icon-circle-plus"></span></a></td></tr>
     </thead>
     <tbody>
+      <tr class="short_input">
+        <td></td>
+        <td {% if data_form.front_name.errors %}class='error_row' title='{{ data_form.front_name.errors|first }}'{% endif %}>{{ data_form.front_name }}</td><td></td><td></td>
+        <td {% if data_form.front_sld.errors %}class='error_row' title='{{ data_form.front_sld.errors|first }}'{% endif %}>{{ data_form.front_sld }}</td><td onclick="set_fixed('#{{ data_form.front_sld_is_fixed.id_for_label }}')">{{ data_form.front_sld_is_fixed }}</td>
+        <td></td><td></td><td></td>
+      </tr>
     {% for form in layers_form %}
       <tr class="short_input">
         {{ form.id }}<span style='display:none;'>{{ form.remove }}</span>
@@ -62,6 +68,13 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
         <td {% if form.roughness.errors %}class='error_row' title='{{ form.roughness.errors|first }}'{% endif %}>{{ form.roughness }}</td><td onclick="set_fixed('#{{ form.roughness_is_fixed.id_for_label }}')">{{ form.roughness_is_fixed }}</td>
         <td class='icon_input'> <span id='{{ form.remove.id_for_label }}_icon' title='Click to remove this entry' class="ui-icon ui-icon-trash" onclick="remove_entry('#{{ form.remove.id_for_label }}', '#{{ form.layer_number.id_for_label }}', '#{{ form.name.id_for_label }}', '#{{ form.thickness.id_for_label }}', '#{{ form.sld.id_for_label }}', '#{{ form.roughness.id_for_label }}')"></span></td>
       </tr>{% endfor %}
+      <tr class="short_input">
+        <td></td>
+        <td {% if data_form.back_name.errors %}class='error_row' title='{{ data_form.back_name.errors|first }}'{% endif %}>{{ data_form.back_name }}</td><td></td><td></td>
+        <td {% if data_form.back_sld.errors %}class='error_row' title='{{ data_form.back_sld.errors|first }}'{% endif %}>{{ data_form.back_sld }}</td><td onclick="set_fixed('#{{ data_form.back_sld_is_fixed.id_for_label }}')">{{ data_form.back_sld_is_fixed }}</td>
+        <td {% if data_form.back_roughness.errors %}class='error_row' title='{{ data_form.back_roughness.errors|first }}'{% endif %}>{{ data_form.back_roughness }}</td><td onclick="set_fixed('#{{ data_form.back_roughness_is_fixed.id_for_label }}')">{{ data_form.back_roughness_is_fixed }}</td>
+        <td></td><td></td>
+      </tr>
     </tbody>
   </table>
 
@@ -73,7 +86,7 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
   <p>
   <hr>
   <p>
-  Fitting parameter:
+  Fitting parameters:
   <p>
   <table class="property_table">
     <thead><tr><th>Parameter</th> <th>Minimum</th> <th>Maximum</th></tr></thead>
@@ -86,8 +99,12 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
         <td {% if data_form.background_min.errors %}class='error_row' title='{{ data_form.background_min.errors|first }}'{% endif %}>{{ data_form.background_min }}</td>
         <td {% if data_form.background_max.errors %}class='error_row' title='{{ data_form.background_max.errors|first }}'{% endif %}>{{ data_form.background_max }}</td>
       </tr>
+      <tr id='{{ data_form.front_sld_is_fixed.id_for_label}}_range'><td>{{ data_form.front_name.value }} SLD</td>
+        <td {% if data_form.front_sld_min.errors %}class='error_row' title='{{ data_form.front_sld_min.errors|first }}'{% endif %}>{{ data_form.front_sld_min }}</td>
+        <td {% if data_form.front_sld_max.errors %}class='error_row' title='{{ data_form.front_sld_max.errors|first }}'{% endif %}>{{ data_form.front_sld_max }}</td>
+      </tr>
     {% for form in layers_form %}
-      <tr><td><hr></td></tr>
+      <tr><td><hr></td><td>Layer: {{ form.name.value }}</td><td><hr></td></tr>
       <tr id='{{ form.thickness_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} thickness</td>
         <td {% if form.thickness_min.errors %}class='error_row' title='{{ form.thickness_min.errors|first }}'{% endif %}>{{ form.thickness_min }}</td>
         <td {% if form.thickness_max.errors %}class='error_row' title='{{ form.thickness_max.errors|first }}'{% endif %}>{{ form.thickness_max }}</td>
@@ -100,10 +117,17 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
         <td {% if form.roughness_min.errors %}class='error_row' title='{{ form.roughness_min.errors|first }}'{% endif %}>{{ form.roughness_min }}</td>
         <td {% if form.roughness_max.errors %}class='error_row' title='{{ form.roughness_max.errors|first }}'{% endif %}>{{ form.roughness_max }}</td>
       </tr>{% endfor %}
+      <tr><td><hr></td><td>Back material: {{ data_form.back_name.value }}</td><td><hr></td></tr>
+      <tr id='{{ data_form.back_sld_is_fixed.id_for_label}}_range'><td>{{ data_form.back_name.value }} SLD</td>
+        <td {% if data_form.back_sld_min.errors %}class='error_row' title='{{ data_form.back_sld_min.errors|first }}'{% endif %}>{{ data_form.back_sld_min }}</td>
+        <td {% if data_form.back_sld_max.errors %}class='error_row' title='{{ data_form.back_sld_max.errors|first }}'{% endif %}>{{ data_form.back_sld_max }}</td>
+      </tr>
+      <tr id='{{ data_form.back_roughness_is_fixed.id_for_label}}_range'><td>{{ data_form.back_name.value }} roughness</td>
+        <td {% if data_form.back_roughness_min.errors %}class='error_row' title='{{ data_form.back_roughness_min.errors|first }}'{% endif %}>{{ data_form.back_roughness_min }}</td>
+        <td {% if data_form.back_roughness_max.errors %}class='error_row' title='{{ data_form.back_roughness_max.errors|first }}'{% endif %}>{{ data_form.back_roughness_max }}</td>
+      </tr>
     </tbody>
   </table>
-
-
 </form>
 
 
@@ -119,5 +143,14 @@ compute_size('#id_data_path');
 $('.font_resize').keyup(function(ev) {
   compute_size(this);
 });
+set_fixed('#{{ data_form.scale_is_fixed.id_for_label }}');
+set_fixed('#{{ data_form.background_is_fixed.id_for_label }}');
+set_fixed('#{{ data_form.front_sld_is_fixed.id_for_label }}');
+set_fixed('#{{ data_form.back_sld_is_fixed.id_for_label }}');
+set_fixed('#{{ data_form.back_roughness_is_fixed.id_for_label }}');
+{% for form in layers_form %}
+set_fixed('#{{ form.thickness_is_fixed.id_for_label }}');
+set_fixed('#{{ form.sld_is_fixed.id_for_label }}');
+set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 </script>
 {% endblock %}

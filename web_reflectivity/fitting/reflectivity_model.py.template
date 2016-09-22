@@ -1,0 +1,31 @@
+import numpy
+from refl1d import probe, resolution
+from refl1d.probe import make_probe
+from refl1d.names import *
+
+# Maximum Q-value ##############################################################
+q_max = ${Q_MAX}
+
+reduced_file = ${REDUCED_FILE}
+
+Q,R,dR = numpy.loadtxt(reduced_file).T
+i_max = len([x for x in Q if x<q_max])-1
+
+# SNS data is FWHM
+dQ_std = Q/2.35
+probe = QProbe(Q[:i_max], dQ_std[:i_max], data=(R[:i_max], dR[:i_max]))
+
+# Materials ####################################################################
+${MATERIALS}
+
+# Film definition ##############################################################
+${SAMPLE}
+
+${RANGES}
+
+${SAMPLE_RANGES}
+################################################################################
+
+
+expt = Experiment(probe=probe, sample=sample)
+problem = FitProblem(expt)
