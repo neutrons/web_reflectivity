@@ -27,8 +27,13 @@ def modeling(request):
     except:
         extra = default_extra
 
+    html_data = ''
     if request.method == 'POST':
         data_path = request.POST.get('data_path', '')
+        try:
+            html_data = view_util.get_plot_data_from_server(settings.DEFAULT_INSTRUMENT, data_path)
+        except:
+            logging.error("Could not get data from live data server: %s", sys.exc_value)
         data_form = ReflectivityFittingForm(request.POST)
         LayerFormSet = formset_factory(LayerForm, extra=extra)
         layers_form = LayerFormSet(request.POST)
@@ -38,7 +43,7 @@ def modeling(request):
             # Check for form submission option
             if task == "evaluate":
                 # Process the form and evaluate the model (no fit)
-                view_util.evaluate_model()
+                view_util.evaluate_model(data_form, layers_form, html_data)
             elif task == "fit":
                 m=job_handling.create_model_file(data_form, layers_form)
                 logging.error(m)
@@ -59,12 +64,11 @@ def modeling(request):
         LayerFormSet = formset_factory(LayerForm, extra=extra)
         layers_form = LayerFormSet(initial=initial_layers)
 
-    html_data = ''
-    try:
-        html_data = view_util.get_plot_data_from_server(settings.DEFAULT_INSTRUMENT, data_path)
-    except:
-        logging.error("Could not get data from live data server: %s", sys.exc_value)
-
+    if len(html_data) == 0:
+        try:
+            html_data = view_util.get_plot_data_from_server(settings.DEFAULT_INSTRUMENT, data_path)
+        except:
+            logging.error("Could not get data from live data server: %s", sys.exc_value)
 
     template_values = {'data_form': data_form,
                        'html_data': html_data,

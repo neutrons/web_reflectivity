@@ -6,7 +6,7 @@ from refl1d.names import *
 # Maximum Q-value ##############################################################
 q_max = ${Q_MAX}
 
-reduced_file = ${REDUCED_FILE}
+reduced_file = "${REDUCED_FILE}"
 
 Q,R,dR = numpy.loadtxt(reduced_file).T
 i_max = len([x for x in Q if x<q_max])-1

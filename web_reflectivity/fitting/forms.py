@@ -50,30 +50,30 @@ class ReflectivityFittingForm(forms.Form):
     data_path = forms.CharField(required=False, initial='/plots/ref_l/144761/update/html/', widget=forms.TextInput(attrs={'class' : 'font_resize'}))
     scale = ValueErrorField(required=True, initial=1.0)
     scale_is_fixed = forms.BooleanField(required=False, initial=True)
-    scale_min = forms.FloatField(required=False)
-    scale_max = forms.FloatField(required=False)
+    scale_min = forms.FloatField(required=False, initial=0.9)
+    scale_max = forms.FloatField(required=False, initial=1.1)
 
     background = forms.FloatField(required=True, initial=0.0)
     background_is_fixed = forms.BooleanField(required=False, initial=True)
-    background_min = forms.FloatField(required=False)
-    background_max = forms.FloatField(required=False)
+    background_min = forms.FloatField(required=False, initial=0)
+    background_max = forms.FloatField(required=False, initial=1e-6)
 
     front_name = forms.CharField(required=False, initial='air')
     front_sld = forms.FloatField(required=True, initial=0.0)
     front_sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    front_sld_min = forms.FloatField(required=False)
-    front_sld_max = forms.FloatField(required=False)
+    front_sld_min = forms.FloatField(required=False, initial=0)
+    front_sld_max = forms.FloatField(required=False, initial=1)
 
     back_name = forms.CharField(required=False, initial='Si')
     back_sld = forms.FloatField(required=True, initial=2.07)
     back_sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    back_sld_min = forms.FloatField(required=False)
-    back_sld_max = forms.FloatField(required=False)
+    back_sld_min = forms.FloatField(required=False, initial=2.0)
+    back_sld_max = forms.FloatField(required=False, initial=2.1)
 
     back_roughness = forms.FloatField(required=True, initial=5.0)
     back_roughness_is_fixed = forms.BooleanField(required=False, initial=True)
-    back_roughness_min = forms.FloatField(required=False)
-    back_roughness_max = forms.FloatField(required=False)
+    back_roughness_min = forms.FloatField(required=False, initial=1)
+    back_roughness_max = forms.FloatField(required=False, initial=5)
 
     def get_ranges(self, probe_name='probe'):
         """
@@ -97,6 +97,13 @@ class ReflectivityFittingForm(forms.Form):
 
         return ranges
 
+    def get_sample_template(self):
+        """
+            Return a template for the sample description
+        """
+        back_layer = " %s(0, %s)" % (self.cleaned_data['back_name'], self.cleaned_data['back_roughness'])
+        return "( " + back_layer + " | %s | " + str(self.cleaned_data['front_name']) + " )"
+
 class LayerForm(forms.Form):
     """
         Simple form for a layer
@@ -110,16 +117,16 @@ class LayerForm(forms.Form):
 
     # Fitting information
     thickness_is_fixed = forms.BooleanField(required=False, initial=True)
-    thickness_min = forms.FloatField(required=False)
-    thickness_max = forms.FloatField(required=False)
+    thickness_min = forms.FloatField(required=False, initial=10.0)
+    thickness_max = forms.FloatField(required=False, initial=100.0)
 
     sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    sld_min = forms.FloatField(required=False)
-    sld_max = forms.FloatField(required=False)
+    sld_min = forms.FloatField(required=False, initial=1.0)
+    sld_max = forms.FloatField(required=False, initial=4.0)
 
     roughness_is_fixed = forms.BooleanField(required=False, initial=True)
-    roughness_min = forms.FloatField(required=False)
-    roughness_max = forms.FloatField(required=False)
+    roughness_min = forms.FloatField(required=False, initial=1.0)
+    roughness_max = forms.FloatField(required=False, initial=10.0)
 
     def get_material(self):
         """

@@ -3,11 +3,15 @@
     Utilities for modeling application
 """
 import sys
+import os
+import re
+import json
 import logging
 import hashlib
 import httplib
 import string
 from django.conf import settings
+from . import job_handling
 
 def generate_key(instrument, run_id):
     """
@@ -64,6 +68,38 @@ def get_plot_data_from_server(instrument, run_id, data_type='html'):
         logging.error("Could not pull data from live data server:\n%s", sys.exc_value)
     return json_data
 
+def extract_ascii_from_div(html_data):
+    """
+        Extract data from an plot <div>.
+        Only returns the first one it finds.
+        @param html_data: <div> string
+    """
+    try:
+        result = re.search(r"newPlot\((.*)\)</script>", html_data)
+        jsondata_str = "[%s]" % result.group(1)
+        data_list = json.loads(jsondata_str)
+        ascii_data = ""
+        for d in data_list:
+            if isinstance(d, list):
+                for trace in d:
+                    if 'type' in trace and trace['type'] == 'scatter':
+                        x = trace['x']
+                        y = trace['y']
+                        dx = [0]*len(x)
+                        dy = [0]*len(y)
+                        if 'error_x' in trace and 'array' in trace['error_x']:
+                            dx = trace['error_x']['array']
+                        if 'error_y' in trace and 'array' in trace['error_y']:
+                            dy = trace['error_y']['array']
+                        break
+                for i in range(len(x)):
+                    ascii_data += "%g %g %g %g\n" % (x[i], y[i], dy[i], dx[i])
+                return ascii_data
+    except:
+        # Unable to extract data from <div>
+        logging.debug("Unable to extract data from <div>: %s", sys.exc_value)
+    return None
+
 def update_session(request, data_form, layers_form):
     """
     """
@@ -91,5 +127,16 @@ def update_session(request, data_form, layers_form):
 def perform_fit():
     return None
 
-def evaluate_model():
+def evaluate_model(data_form, layers_form, html_data):
+    ascii_data = extract_ascii_from_div(html_data)
+    data_file = '/tmp/__data.txt'
+    with open(data_file, 'w') as fd:
+        fd.write(ascii_data)
+    model_file = job_handling.create_model_file(data_form, layers_form, data_file)
+    output_dir = '/tmp/fit'
+
+    cmd = "/Library/Frameworks/Python.framework/Versions/2.7/bin/refl1d_gui.py --fit=dream --steps=100 --burn=15 --store=%s %s --batch --parallel &> %s/__fit.log" % (output_dir, model_file, output_dir)
+    os.system(cmd)
+    #report_fit(output_dir)
+
     return None

@@ -5,7 +5,7 @@
 import string
 import os
 
-def create_model_file(data_form, layer_forms, q_max=0.2):
+def create_model_file(data_form, layer_forms, data_file, q_max=0.2):
     """
     """
     materials = ""
@@ -16,8 +16,10 @@ def create_model_file(data_form, layer_forms, q_max=0.2):
         layer_list.append(form.get_layer())
         ranges += form.get_ranges(sample_name='sample')
 
+    layer_list.reverse()
     _layers = ' | '.join(layer_list)
-    sample = "sample = ( %s )" % _layers
+    sample_template = data_form.get_sample_template()
+    sample = "sample = " + sample_template % _layers
     sample_ranges = data_form.get_ranges(probe_name='probe')
 
     template_dir, _ = os.path.split(os.path.abspath(__file__))
@@ -25,7 +27,7 @@ def create_model_file(data_form, layer_forms, q_max=0.2):
         template = fd.read()
 
         model_template = string.Template(template)
-        script = model_template.substitute(REDUCED_FILE=data_form.cleaned_data['data_path'],
+        script = model_template.substitute(REDUCED_FILE=data_file,
                                            Q_MAX=q_max,
                                            MATERIALS=materials,
                                            SAMPLE=sample,
@@ -34,5 +36,6 @@ def create_model_file(data_form, layer_forms, q_max=0.2):
 
     with open('/tmp/__model.py', 'w') as fd:
         fd.write(script)
+        return '/tmp/__model.py'
 
-    return script
+    return None

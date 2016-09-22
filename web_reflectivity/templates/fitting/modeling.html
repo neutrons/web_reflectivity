@@ -44,6 +44,9 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
     <tr><th>Background</th> <td {% if data_form.background.errors %}class='error_row' title='{{ data_form.background.errors|first }}'{% endif %}>{{ data_form.background }}</td><td onclick="set_fixed('#{{ data_form.background_is_fixed.id_for_label }}')">{{ data_form.background_is_fixed }}</td></tr>
   </table>
 
+  <p>
+  Film description. Neutrons scatter off the first layer on top of the following list:
+
   {{ layers_form.management_form }}
   <table class="property_table">
     <thead>
