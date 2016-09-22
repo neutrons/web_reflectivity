@@ -8,11 +8,11 @@ import os
 def create_model_file(data_form, layer_forms, data_file, q_max=0.2):
     """
     """
-    materials = ""
+    materials = data_form.get_materials()
     layer_list = []
     ranges = ''
     for form in layer_forms:
-        materials += "%s\n" % form.get_material()
+        materials += "%s\n" % form.get_materials()
         layer_list.append(form.get_layer())
         ranges += form.get_ranges(sample_name='sample')
 
@@ -20,7 +20,7 @@ def create_model_file(data_form, layer_forms, data_file, q_max=0.2):
     _layers = ' | '.join(layer_list)
     sample_template = data_form.get_sample_template()
     sample = "sample = " + sample_template % _layers
-    sample_ranges = data_form.get_ranges(probe_name='probe')
+    sample_ranges = data_form.get_ranges(sample_name='sample', probe_name='probe')
 
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     with open(os.path.join(template_dir, 'reflectivity_model.py.template'), 'r') as fd:

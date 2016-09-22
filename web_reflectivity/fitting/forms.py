@@ -75,7 +75,19 @@ class ReflectivityFittingForm(forms.Form):
     back_roughness_min = forms.FloatField(required=False, initial=1)
     back_roughness_max = forms.FloatField(required=False, initial=5)
 
-    def get_ranges(self, probe_name='probe'):
+    def get_materials(self):
+        """
+            C60 = SLD(name='C60',  rho=1.3, irho=0.0)
+        """
+        materials = "%s = SLD(name='%s', rho=%s, irho=0.0)\n" % (self.cleaned_data['front_name'],
+                                                                 self.cleaned_data['front_name'],
+                                                                 self.cleaned_data['front_sld'])
+        materials += "%s = SLD(name='%s', rho=%s, irho=0.0)\n" % (self.cleaned_data['back_name'],
+                                                                  self.cleaned_data['back_name'],
+                                                                  self.cleaned_data['back_sld'])
+        return materials
+
+    def get_ranges(self, sample_name='sample', probe_name='probe'):
         """
             probe.intensity=Parameter(value=1.0,name="unity")
             probe.background.range(1e-8,1e-5)
@@ -94,6 +106,21 @@ class ReflectivityFittingForm(forms.Form):
         else:
             ranges += "%s.background=Parameter(value=%s,name='background')\n" % (probe_name,
                                                                                  self.cleaned_data['background'])
+
+        if self.cleaned_data['front_sld_is_fixed'] is False:
+            ranges += "%s['%s'].material.rho.range(%s, %s)\n" % (sample_name, self.cleaned_data['front_name'],
+                                                                 self.cleaned_data['front_sld_min'],
+                                                                 self.cleaned_data['front_sld_max'])
+
+        if self.cleaned_data['back_sld_is_fixed'] is False:
+            ranges += "%s['%s'].material.rho.range(%s, %s)\n" % (sample_name, self.cleaned_data['back_name'],
+                                                                 self.cleaned_data['back_sld_min'],
+                                                                 self.cleaned_data['back_sld_max'])
+
+        if self.cleaned_data['back_roughness_is_fixed'] is False:
+            ranges += "%s['%s'].interface.range(%s, %s)\n" % (sample_name, self.cleaned_data['back_name'],
+                                                              self.cleaned_data['back_roughness_min'],
+                                                              self.cleaned_data['back_roughness_max'])
 
         return ranges
 
@@ -128,7 +155,7 @@ class LayerForm(forms.Form):
     roughness_min = forms.FloatField(required=False, initial=1.0)
     roughness_max = forms.FloatField(required=False, initial=10.0)
 
-    def get_material(self):
+    def get_materials(self):
         """
             C60 = SLD(name='C60',  rho=1.3, irho=0.0)
         """
@@ -168,5 +195,3 @@ class LayerForm(forms.Form):
                                                               self.cleaned_data['roughness_max'])
         return ranges
 
-            
-            
