@@ -113,16 +113,18 @@ def update_session(request, data_form, layers_form):
         if 'remove' in item and item['remove'] is False:
             layers.append(item)
 
-    if 'layer_number' in layers[0]:
-        sorted_layers = sorted(layers, key=lambda l: l['layer_number'])
+    if len(layers) == 0:
+        request.session['layers_form_values'] = []
     else:
-        sorted_layers = layers
+        if 'layer_number' in layers[0]:
+            sorted_layers = sorted(layers, key=lambda l: l['layer_number'])
+        else:
+            sorted_layers = layers
 
-    for i in range(len(sorted_layers)):
-        sorted_layers[i]['layer_number'] = i+1
+        for i in range(len(sorted_layers)):
+            sorted_layers[i]['layer_number'] = i+1
 
-    request.session['layers_form_values'] = sorted_layers
-
+        request.session['layers_form_values'] = sorted_layers
 
 def perform_fit():
     return None

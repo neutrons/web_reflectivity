@@ -135,7 +135,7 @@ class LayerForm(forms.Form):
     """
         Simple form for a layer
     """
-    name = forms.CharField(required=False, initial='new layer')
+    name = forms.CharField(required=False, initial='')
     thickness = forms.FloatField(required=True, initial=0.0)
     sld = forms.FloatField(required=True, initial=0.0)
     roughness = forms.FloatField(required=True, initial=0.0)
@@ -155,10 +155,16 @@ class LayerForm(forms.Form):
     roughness_min = forms.FloatField(required=False, initial=1.0)
     roughness_max = forms.FloatField(required=False, initial=10.0)
 
+    def info_complete(self):
+        return len(self.cleaned_data) > 0
+
     def get_materials(self):
         """
             C60 = SLD(name='C60',  rho=1.3, irho=0.0)
         """
+        if 'name' not in self.cleaned_data or 'sld' not in self.cleaned_data:
+            logging.error("Incomplete layer information: %s", str(self.cleaned_data))
+            return ''
         return "%s = SLD(name='%s', rho=%s, irho=0.0)" % (self.cleaned_data['name'],
                                                           self.cleaned_data['name'],
                                                           self.cleaned_data['sld'])

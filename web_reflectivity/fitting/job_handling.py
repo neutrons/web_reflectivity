@@ -5,16 +5,19 @@
 import string
 import os
 
-def create_model_file(data_form, layer_forms, data_file, q_max=0.2):
+def create_model_file(data_form, layer_forms, data_file=None, q_max=0.2):
     """
     """
+    if data_file is None:
+        data_file = data_form['data_path']
     materials = data_form.get_materials()
     layer_list = []
     ranges = ''
     for form in layer_forms:
-        materials += "%s\n" % form.get_materials()
-        layer_list.append(form.get_layer())
-        ranges += form.get_ranges(sample_name='sample')
+        if form.info_complete():
+            materials += "%s\n" % form.get_materials()
+            layer_list.append(form.get_layer())
+            ranges += form.get_ranges(sample_name='sample')
 
     layer_list.reverse()
     _layers = ' | '.join(layer_list)
