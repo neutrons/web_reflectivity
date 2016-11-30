@@ -3,6 +3,10 @@ app_dir := web_reflectivity
 DJANGO_COMPATIBLE:=$(shell python -c "import django;t=0 if django.VERSION[1]<9 else 1; print t")
 DJANGO_VERSION:=$(shell python -c "import django;print django.__version__")
 
+ifndef PYTHON
+PYTHON := python
+endif
+
 all:
 	@echo "Run make install to install the live data server"
 
@@ -10,7 +14,10 @@ check:
 	# Check dependencies
 	@python -c "import django" || echo "\nERROR: Django is not installed: www.djangoproject.com\n"
 	@python -c "import psycopg2" || echo "\nWARNING: psycopg2 is not installed: http://initd.org/psycopg\n"
-	@python -c "import corsheaders" || echo "\nWARNING: django-cors-headers is not installed: https://github.com/ottoyiu/django-cors-headers\n"
+	@python -c "import cython" || echo "\nWARNING: cython is not installed\n"
+	@python -c "import pandas" || echo "\nWARNING: pandas is not installed\n"
+	@python -c "import plotly" || echo "\nWARNING: plotly is not installed\n"
+	@python -c "import plotly.offline" || echo "\nWARNING: plotly.offline is not installed\n"
 
 ifeq ($(DJANGO_COMPATIBLE),1)
 	@echo "Detected Django $(DJANGO_VERSION)"
@@ -18,6 +25,8 @@ else
 	$(error Detected Django $(DJANGO_VERSION) < 1.9. The web monitor requires at least Django 1.9)
 endif
 
+deps:
+	$(PYTHON) -m pip install -r requirements.txt
 
 install: webapp
 
@@ -32,6 +41,7 @@ webapp/core:
 	cp -R $(app_dir)/web_reflectivity $(prefix)/app
 	cp -R $(app_dir)/templates $(prefix)/app
 	cp -R $(app_dir)/fitting $(prefix)/app
+	cp -R $(app_dir)/users $(prefix)/app
 	cp -R $(app_dir)/static $(prefix)/app
 
 	# The following should be done with the proper apache user

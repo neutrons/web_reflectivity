@@ -4,13 +4,18 @@
 """
 import sys
 import os
+import time
 import re
+import traceback
 import json
 import logging
 import hashlib
 import httplib
 import string
 from django.conf import settings
+from django_remote_submission.models import Server, Job, Log
+from django_remote_submission.tasks import submit_job_to_server, LogPolicy
+from . import refl1d
 from . import job_handling
 
 def generate_key(instrument, run_id):
@@ -70,7 +75,7 @@ def get_plot_data_from_server(instrument, run_id, data_type='html'):
 
 def extract_ascii_from_div(html_data):
     """
-        Extract data from an plot <div>.
+        Extract data from a plot <div>.
         Only returns the first one it finds.
         @param html_data: <div> string
     """
@@ -126,19 +131,58 @@ def update_session(request, data_form, layers_form):
 
         request.session['layers_form_values'] = sorted_layers
 
+def get_latest_results(data_path, initial_values, initial_layers):
+    """
+        Look for the latest results for this data set.
+    """
+    latest = Log.objects.all().latest('time')
+    return refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+
+def assemble_plot(html_data, fit_data):
+    ascii_data = extract_ascii_from_div(html_data)
+
+
 def perform_fit():
     return None
 
-def evaluate_model(data_form, layers_form, html_data):
+def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+    try:
+        return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user)
+    except:
+        traceback.print_exc()
+        logging.error("Problem evaluating model: %s", sys.exc_value)
+        return {'error': "Problem evaluating model: %s" % sys.exc_value}
+
+
+def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     ascii_data = extract_ascii_from_div(html_data)
-    data_file = '/tmp/__data.txt'
-    with open(data_file, 'w') as fd:
-        fd.write(ascii_data)
-    model_file = job_handling.create_model_file(data_form, layers_form, data_file)
     output_dir = '/tmp/fit'
 
-    cmd = "/Library/Frameworks/Python.framework/Versions/2.7/bin/refl1d_gui.py --fit=dream --steps=100 --burn=15 --store=%s %s --batch --parallel &> %s/__fit.log" % (output_dir, model_file, output_dir)
-    os.system(cmd)
-    #report_fit(output_dir)
+    script = job_handling.create_model_file(data_form, layers_form, 
+                                            data_file='/tmp/__data.txt', ascii_data=ascii_data, output_dir=output_dir)
 
-    return None
+    server = Server.objects.get_or_create(title='Analysis', hostname='lrac.sns.gov',  port=22)[0]
+
+    job = Job.objects.get_or_create(title='Reflectivity fit %s' % time.time(),
+                                    program=script,
+                                    remote_directory='/tmp/',
+                                    remote_filename='fit_job.py',
+                                    owner=user,
+                                    server=server)[0]
+    modified_files = submit_job_to_server.delay(
+        job_pk=job.pk,
+        password='',
+        username=user.username,
+        log_policy=LogPolicy.LOG_TOTAL
+    )
+    logging.error(modified_files)
+
+
+    # The output consists of a dictionary of parameters and plots
+    output = {}
+    # Parse __model.err file.
+    #from refl1d import parse_params
+    #parse_params('%s/__model.err' % output_dir)
+
+    return output
+

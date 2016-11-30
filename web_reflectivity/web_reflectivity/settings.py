@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
+import logging
+logging.getLogger().setLevel(logging.INFO)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,7 +49,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_auth_ldap',
+    'django_remote_submission',
+    'django_celery_results',
     'fitting',
+    'users',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -135,6 +140,12 @@ STATICFILES_DIRS = [
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/web_reflectivity/static/'
 
+# Celery configuration
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+
+LOGIN_URL ='/users/login'
+LANDING_VIEW = 'fitting:modeling'
 
 # Import local settings if available
 try:

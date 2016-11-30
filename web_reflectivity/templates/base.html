@@ -27,6 +27,18 @@
 <script language="javascript" type="text/javascript" src="/static/thirdparty/plotly-1.14.2.min.js"></script>
 {% block header %}
 {% endblock %}
+<script type="text/javascript">
+    $(function() {
+        $( document ).tooltip();
+    });
+    function show_alert() {
+        $(".user_alert").show("slide", {direction:'right'}, 50 );
+        $(".user_alert").click(function(){$(this).fadeOut("fast");});
+    };
+    function new_alert(msg) {
+        document.getElementById('alert_message').innerHTML = msg;
+    }
+</script>
 </head>
 <body>
 {% if user_alert %}
@@ -36,7 +48,7 @@
 {% endif %}
 
 <div class="user_info">
-  {% if gravatar_url %}<img src="{{ gravatar_url|safe }}&s=16" height="16" width="16" alt="{{ user.username }}">{% endif %} {% if profile_url %}<a href="{{ profile_url }}">{{ user.username }}</a> {% else %}{{ user.username }}{% endif %} |{% if user.is_staff %} <a href="{% url 'report:processing_admin' %}"><b>admin</b></a> |{% endif %}{% if user.is_authenticated %} <a href="{{ logout_url }}">logout</a>{% else %} <a href="{{ login_url }}">login</a>{% endif %}
+  {% if gravatar_url %}<img src="{{ gravatar_url|safe }}&s=16" height="16" width="16" alt="{{ user.username }}">{% endif %} {% if profile_url %}<a href="{{ profile_url }}">{{ user.username }}</a> {% else %}{{ user.username }}{% endif %} | {% if user.is_authenticated %} <a href="{{ logout_url }}">logout</a>{% else %} <a href="{{ login_url }}">login</a>{% endif %}
 </div>
 
 <a class="banner_logo" href="http://neutrons.ornl.gov/" target="_blank"><img title="ORNL" src="{% static 'images/ornl_logo_200_50.png' %}" width="200px" alt="ORNL" /></a>

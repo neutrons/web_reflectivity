@@ -1,4 +1,18 @@
+import os
+import sys
+import time
+import subprocess
+
+def submit():
+    output_dir = "${OUTPUT_DIR}"
+    ascii_data = """${ASCII_DATA}"""
+    data_file = "${REDUCED_FILE}"
+    with open(data_file, 'w') as fd:
+        fd.write(ascii_data)
+
+    model_file = """
 import numpy
+import os
 from refl1d.names import *
 
 # Maximum Q-value ##############################################################
@@ -24,6 +38,44 @@ ${RANGES}
 ${SAMPLE_RANGES}
 ################################################################################
 
-
 expt = Experiment(probe=probe, sample=sample)
 problem = FitProblem(expt)
+"""
+    data_dir = os.path.split(data_file)[0]
+    model_path = os.path.join(data_dir, '__model.py')
+    with open(model_path, 'w') as fd:
+        fd.write(model_file)
+
+
+    cmd = "rm %s/*; PATH='/SNS/users/m2d/anaconda/bin:$$PATH'; refl1d_cli.py --fit=dream --steps=100 --burn=15 --store=%s %s --batch --parallel" % (output_dir, output_dir, model_path)
+    output_log = os.path.join(data_dir, 'fit.log')
+    fd = open(output_log, 'w')
+    fd.write("Starting fit: %s\n" % time.ctime())
+    output_code = subprocess.call(cmd, stdout=fd, stderr=fd, shell=True)
+    fd.write("Fit complete: %s\n" % time.ctime())
+
+    try:
+        with open(os.path.join(output_dir, '__model-refl.dat'), 'r') as out_refl:
+            print("REFL_START")
+            print(out_refl.read())
+            print("REFL_END")
+    except:
+        fd.write("Error: could not read reflectivity output\n")
+        print(sys.exc_value)
+    try:
+        with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
+            model_params = out_params.read()
+            fd.write(model_params)
+            print("MODEL_PARAMS_START")
+            print(model_params)
+    except:
+        fd.write("Error: could not process fit results\n")
+        print(sys.exc_value)
+
+    fd.close()
+
+if __name__ == '__main__':
+    t_0 = time.time()
+    submit()
+    delta_time = time.time() - t_0
+    print("Done: %g sec" % delta_time)

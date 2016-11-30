@@ -137,6 +137,7 @@ img {border: 0;}
     font-size: 8px;
 }
 
+.layer { color: #1f77b4; font-weight: bold;}
 .error_row { background: #f8bdb7; }
 .highlight_row { background: #f8e7b3; }
 .short_label { display: inline-block; text-align:right; min-width:60px; width:60px; }

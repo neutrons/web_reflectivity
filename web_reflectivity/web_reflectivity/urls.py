@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', RedirectView.as_view(url='/fit/')),
     url(r'^fit/', include('fitting.urls', namespace="fitting")),
+    url(r'^users/', include('users.urls', namespace='users')),
 ]
