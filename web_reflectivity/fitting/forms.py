@@ -47,7 +47,10 @@ class ReflectivityFittingForm(forms.Form):
     """
         Main reflectivity parameters
     """
-    data_path = forms.CharField(required=False, initial='/plots/ref_l/144761/update/html/', widget=forms.TextInput(attrs={'class' : 'font_resize'}))
+    data_path = forms.CharField(required=False, initial='144761', widget=forms.TextInput(attrs={'class' : 'font_resize'}))
+    q_min = forms.FloatField(required=False, initial=0)
+    q_max = forms.FloatField(required=False, initial=1)
+
     scale = ValueErrorField(required=True, initial=1.0)
     scale_is_fixed = forms.BooleanField(required=False, initial=True)
     scale_min = forms.FloatField(required=False, initial=0.9)
@@ -91,6 +94,19 @@ class ReflectivityFittingForm(forms.Form):
                                                                   self.cleaned_data['back_name'],
                                                                   self.cleaned_data['back_sld'])
         return materials
+
+    def get_predefined_intensity_range(self, delta=0.001, probe_name='probe'):
+        """
+            Since refl1d only fits, evaluating a model has to mean fitting in a
+            tiny range.
+        """
+        current_scale = self.cleaned_data['scale']
+        scale_min = current_scale * (1.0-delta)
+        scale_max = current_scale * (1.0+delta)
+        ranges = "%s.intensity.range(%s, %s)\n" % (probe_name, scale_min, scale_max)
+        ranges += "%s.background=Parameter(value=%s,name='background')\n" % (probe_name,
+                                                                             self.cleaned_data['background'])
+        return ranges
 
     def get_ranges(self, sample_name='sample', probe_name='probe'):
         """

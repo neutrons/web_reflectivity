@@ -16,12 +16,13 @@ import os
 from refl1d.names import *
 
 # Maximum Q-value ##############################################################
+q_min = ${Q_MIN}
 q_max = ${Q_MAX}
 
 reduced_file = "${REDUCED_FILE}"
 
 Q, R, dR, dQ = numpy.loadtxt(reduced_file).T
-i_max = len([x for x in Q if x<q_max])-1
+i_max = len([x for x in Q if x>q_min and x<q_max])-1
 
 # SNS data is FWHM
 dQ_std = dQ/2.35
@@ -47,7 +48,7 @@ problem = FitProblem(expt)
         fd.write(model_file)
 
 
-    cmd = "rm %s/*; PATH='/SNS/users/m2d/anaconda/bin:$$PATH'; refl1d_cli.py --fit=dream --steps=100 --burn=15 --store=%s %s --batch --parallel" % (output_dir, output_dir, model_path)
+    cmd = "rm %s/*; PATH='${REFL1D_PATH}:$$PATH'; refl1d_cli.py --fit=dream --steps=${REFL1D_STEPS} --burn=${REFL1D_BURN} --store=%s %s --batch --parallel" % (output_dir, output_dir, model_path)
     output_log = os.path.join(data_dir, 'fit.log')
     fd = open(output_log, 'w')
     fd.write("Starting fit: %s\n" % time.ctime())

@@ -159,18 +159,14 @@ def assemble_plot(html_data, log_object):
 
     # Extract data from log object
     if log_object is not None:
-        data_str = io.StringIO(refl1d.extract_data_from_log(log_object.content))
-        raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
-
-        #data_list.append([raw_data['q'], raw_data['r'], raw_data['dr']])
-        data_list.append([raw_data['q'], raw_data['theory']])
-        #data_names.append("Data")
-        data_names.append("Fit")
+        data_log = refl1d.extract_data_from_log(log_object.content)
+        if data_log is not None:
+            data_str = io.StringIO(data_log)
+            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
+            data_list.append([raw_data['q'], raw_data['theory']])
+            data_names.append("Fit")
 
     return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
-
-def perform_fit():
-    return None
 
 def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     try:
@@ -180,39 +176,29 @@ def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         logging.error("Problem evaluating model: %s", sys.exc_value)
         return {'error': "Problem evaluating model: %s" % sys.exc_value}
 
-
 def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     ascii_data = extract_ascii_from_div(html_data)
-    output_dir = '/tmp/fit'
-
-    script = job_handling.create_model_file(data_form, layers_form, 
-                                            data_file='/tmp/__data.txt', ascii_data=ascii_data, output_dir=output_dir)
+    work_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username)
+    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, 'fit')
+    script = job_handling.create_model_file(data_form, layers_form,
+                                            data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
+                                            output_dir=output_dir, fit=fit)
 
     server = Server.objects.get_or_create(title='Analysis', hostname='lrac.sns.gov',  port=22)[0]
 
     job = Job.objects.get_or_create(title='Reflectivity fit %s' % time.time(),
                                     program=script,
-                                    remote_directory='/tmp/',
+                                    remote_directory=work_dir,
                                     remote_filename='fit_job.py',
                                     owner=user,
                                     server=server)[0]
-    modified_files = submit_job_to_server.delay(
+    submit_job_to_server.delay(
         job_pk=job.pk,
         password='',
         username=user.username,
         log_policy=LogPolicy.LOG_TOTAL
     )
-    logging.error(modified_files)
-
-
-    # The output consists of a dictionary of parameters and plots
-    output = {}
-    # Parse __model.err file.
-    #from refl1d import parse_params
-    #parse_params('%s/__model.err' % output_dir)
-
-    return output
-
+    return {}
 
 def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):
@@ -221,7 +207,6 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
         @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
         @param data_names: name for each trace, for the legend
     """
-    color_list = []
     # Create traces
     if not isinstance(data_list, list):
         raise RuntimeError("plot1d: data_list parameter is expected to be a list")

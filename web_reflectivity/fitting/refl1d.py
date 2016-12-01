@@ -1,74 +1,8 @@
-import warnings
-from scipy.stats.distributions import chi2
-warnings.filterwarnings("ignore", module="matplotlib")
-import numpy as np
-import pandas
+"""
+    Interface to refl1d
+"""
 import logging
 import re
-
-import plotly.offline as py
-import plotly.graph_objs as go
-
-
-def plot_r(data, log_type='log'):
-    traces = []
-    err_y = dict(type='data', array=data['dr'], visible=True, thickness=1, width=2)
-    traces.append(go.Scatter(name="Data", x=data['q'], y=data['r'], error_y=err_y,
-                             mode="markers", marker=dict(size=4)))
-    traces.append(go.Scatter(name="Fit", x=data['q'], y=data['theory'],
-                             line=dict(color="rgb(102, 102, 102)",width=1)))
-
-    x_layout = dict(title=u"Q (1/\u212b)", zeroline=False, exponentformat="power",
-                    showexponent="all", showgrid=True, type='log',
-                    showline=True, mirror="all", ticks="inside")
-
-    y_layout = dict(title="Reflectivity", zeroline=False, exponentformat="power",
-                    showexponent="all", showgrid=True, type=log_type,
-                    showline=True, mirror="all", ticks="inside")
-
-    layout = go.Layout(
-        showlegend=False,
-        autosize=True,
-        width=800,
-        height=500,
-        margin=dict(t=40, b=40, l=80, r=40),
-        hovermode='closest',
-        bargap=0,
-        xaxis=x_layout,
-        yaxis=y_layout
-    )
-
-    fig = go.Figure(data=traces, layout=layout)
-    py.iplot(fig, show_link=False)
-
-def plot_sld(data):
-    # Plot the SLD profile
-    sld_trace = go.Scatter(name="Fit", x=data['z'], y=data['rho'],
-                           line=dict(color="rgb(102, 102, 102)",width=1))
-    
-
-    x_layout = dict(title=u"Depth (\u212b)", zeroline=False, exponentformat="power",
-                    showexponent="all", showgrid=True, type='linear',
-                    showline=True, mirror="all", ticks="inside")
-
-    y_layout = dict(title=u"SLD (10<sup>-6</sup> \u212b<sup>-2</sup>)", zeroline=False, exponentformat="power",
-                    showexponent="all", showgrid=True, type='linear',
-                    showline=True, mirror="all", ticks="inside")
-    layout = go.Layout(
-        showlegend=False,
-        autosize=True,
-        width=800,
-        height=500,
-        margin=dict(t=40, b=40, l=80, r=40),
-        hovermode='closest',
-        bargap=0,
-        xaxis=x_layout,
-        yaxis=y_layout
-    )
-    layout["xaxis"] = x_layout
-    layout["yaxis"] = y_layout
-    fig = go.Figure(data=[sld_trace], layout=layout)
-    py.iplot(fig, show_link=False)
 
 def parse_params(model_err_content):
     """
@@ -163,6 +97,8 @@ def extract_data_from_log(log_content, log_type='log'):
             data_started = False
         elif data_started is True:
             data_content.append(line)
+    if len(data_content) == 0:
+        return None
     data_str = '\n'.join(data_content)
     return data_str
 
@@ -197,32 +133,3 @@ def parse_single_param(line):
         error_float = float(err_value)
         value_float = float(best_value)
     return par_name, value_float, error_float
-
-def prepare_fit(reduced_file):
-    import os
-    with open('__model.py', 'r') as fd:
-        c=fd.read().replace("{{REDUCED_FILE}}", '"%s"' % reduced_file)
-    with open('__model.py', 'w') as fd:
-        fd.write(c)
-    base_name = os.path.basename(reduced_file)
-    filename, _ = os.path.splitext(base_name)
-    return "%s_results" % filename
-
-def report_fit(output_dir, model_basename='__model', log_type='log'):
-    print("Results saved in: %s\n" % output_dir)
-    parse_params('%s/%s.err' % (output_dir, model_basename))
-    
-    # Read the reflectivity output and plot it
-    DATASET_NAME = '%s/%s-refl.dat' % (output_dir, model_basename)
-    raw_data = pandas.read_csv(DATASET_NAME, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
-    plot_r(raw_data, log_type=log_type)
-
-    # Read the SLD profile and plot it
-    DATASET_NAME = '%s/%s-profile.dat' % (output_dir, model_basename)
-    sld_data = pandas.read_csv(DATASET_NAME, delim_whitespace=True, comment='#', names=['z','rho','irho'])
-    plot_sld(sld_data)
-    
-    # Bumps output images
-    from IPython.core.display import Image, display
-    display(Image("%s/__model-vars.png" % output_dir))
-    display(Image("%s/__model-corr.png" % output_dir))

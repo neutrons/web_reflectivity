@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block title %}{{ instrument }} Configuration {% endblock %}
-
-{% block banner %}{{ instrument }} Configuration {% endblock %}
-
 {% block header %}
 <script>
   function remove_entry(remove_id, layer_number_id, name_id, thickness_id, sld_id, roughness_id,
@@ -39,8 +35,8 @@
   <div class="error">{{ message }}</div>
 
   <div id="graph">{{ html_data|safe }}</div>
-<p>
-Model parameters. Checked parameters will be kept fixed during the fitting procedure.
+<p><p>
+Checked parameters will be kept fixed during the fitting procedure.
 <p>
 <form action="" method="POST">{% csrf_token %}
   <table class="property_table  fixed_table" >
@@ -49,8 +45,8 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
     <tr><th>Background</th> <td {% if data_form.background.errors %}class='error_row' title='{{ data_form.background.errors|first }}'{% endif %}>{{ data_form.background }}</td><td onclick="set_fixed('#{{ data_form.background_is_fixed.id_for_label }}')">{{ data_form.background_is_fixed }}</td></tr>
   </table>
 
-  <p>
-  Film description. Neutrons scatter off the first layer on top of the following list:
+  <p><p>
+  Neutrons scatter off the first layer on top of the following list:
 
   {{ layers_form.management_form }}
   <table class="property_table">
@@ -95,6 +91,8 @@ Model parameters. Checked parameters will be kept fixed during the fitting proce
   <hr>
   <p>
   Fitting parameters {%if chi2 %}[<span class='layer'>&#x3C7;<sup>2</sup>={{chi2}}</span>]{% endif %}:
+  <p>
+  Q range: {{ data_form.q_min }} to {{ data_form.q_max }} 1/&#8491;
   <p>
   <table class="property_table">
     <thead><tr><th>Parameter</th> <th>Value</th> <th>Minimum</th> <th>Maximum</th><th></thead>

@@ -48,6 +48,7 @@ def modeling(request):
             if data_form.is_valid() and layers_form.is_valid():
                 task = request.POST.get('button_choice', 'fit')
                 # Check for form submission option
+                output = {}
                 if task == "evaluate":
                     # Process the form and evaluate the model (no fit)
                     output = view_util.evaluate_model(data_form, layers_form, html_data, fit=False, user=request.user)

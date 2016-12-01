@@ -4,12 +4,13 @@
 """
 import string
 import os
+from django.conf import settings
 
-def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_max=0.2, output_dir='/tmp'):
+def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True):
     """
     """
     if data_file is None:
-        data_file = data_form['data_path']
+        data_file = data_form.cleaned_data['data_path']
     materials = data_form.get_materials()
     layer_list = []
     ranges = ''
@@ -17,7 +18,8 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_m
         if form.info_complete():
             materials += "%s\n" % form.get_materials()
             layer_list.append(form.get_layer())
-            ranges += form.get_ranges(sample_name='sample')
+            if fit is True:
+                ranges += form.get_ranges(sample_name='sample')
 
     layer_list.reverse()
     _layers = ' | '.join(layer_list)
@@ -25,7 +27,10 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_m
         _layers += ' | '
     sample_template = data_form.get_sample_template()
     sample = "sample = " + sample_template % _layers
-    sample_ranges = data_form.get_ranges(sample_name='sample', probe_name='probe')
+    if fit is True:
+        sample_ranges = data_form.get_ranges(sample_name='sample', probe_name='probe')
+    else:
+        sample_ranges = data_form.get_predefined_intensity_range(probe_name='probe')
 
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     with open(os.path.join(template_dir, 'reflectivity_model.py.template'), 'r') as fd:
@@ -33,12 +38,16 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_m
 
         model_template = string.Template(template)
         script = model_template.substitute(REDUCED_FILE=data_file,
-                                           Q_MAX=q_max,
+                                           Q_MIN=data_form.cleaned_data['q_min'],
+                                           Q_MAX=data_form.cleaned_data['q_max'],
                                            MATERIALS=materials,
                                            SAMPLE=sample,
                                            RANGES=ranges,
                                            ASCII_DATA=ascii_data,
                                            OUTPUT_DIR=output_dir,
+                                           REFL1D_PATH=settings.REFL1D_PATH,
+                                           REFL1D_STEPS=1000,
+                                           REFL1D_BURN=1000,
                                            SAMPLE_RANGES=sample_ranges)
 
     return script

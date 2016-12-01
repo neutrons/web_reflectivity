@@ -147,6 +147,12 @@ CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 LOGIN_URL ='/users/login'
 LANDING_VIEW = 'fitting:modeling'
 
+# Fitting options
+REFL1D_PATH = '/SNS/users/m2d/anaconda/bin'
+REFL1D_BURN = 1000
+REFL1D_STEPS = 1000
+REFL1D_JOB_DIR = '/SNS/users'
+
 # Import local settings if available
 try:
     from local_settings import *
