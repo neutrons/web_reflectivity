@@ -12,8 +12,6 @@ from django.contrib.auth.decorators import login_required
 
 from .forms import ReflectivityFittingForm, LayerForm
 from . import view_util
-from . import job_handling
-
 
 import users.view_util
 
@@ -49,11 +47,8 @@ def modeling(request):
                 task = request.POST.get('button_choice', 'fit')
                 # Check for form submission option
                 output = {}
-                if task == "evaluate":
-                    # Process the form and evaluate the model (no fit)
-                    output = view_util.evaluate_model(data_form, layers_form, html_data, fit=False, user=request.user)
-                elif task == "fit":
-                    output = view_util.evaluate_model(data_form, layers_form, html_data, fit=True, user=request.user)
+                if task in ["evaluate", "fit"]:
+                    output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
                 if 'error' in output:
                     error_message.append(output['error'])
 
@@ -62,8 +57,6 @@ def modeling(request):
                 view_util.update_session(request, data_form, layers_form)
                 if len(error_message) == 0:
                     return redirect(reverse('fitting:modeling'))
-            else:
-                logging.error("Invalid POST")
         except:
             logging.error("Could not get data from live data server: %s", sys.exc_value)
             html_data = "<b>Could not get data from live data server</b>"

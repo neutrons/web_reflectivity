@@ -4,59 +4,49 @@
 from __future__ import unicode_literals
 from django.db import models
 
-
-class Instrument(models.Model):
+class ReflectivityModel(models.Model):
     """
-        Table of instruments
+        Main reflectivity parameters
     """
-    name = models.CharField(max_length=128, unique=True)
-    run_id_type = models.IntegerField(default=0)
+    data_path = models.TextField(unique=True, blank=True, default='144761')
+    # widget=forms.TextInput(attrs={'class' : 'font_resize'}))
 
-    def __unicode__(self):
-        return self.name
+    q_min = models.FloatField(blank=True, default=0)
+    q_max = models.FloatField(blank=True, default=1)
 
+    scale = models.FloatField(default=1)
+    scale_is_fixed = models.BooleanField(blank=True, default=True)
+    scale_min = models.FloatField(blank=True, default=0.9)
+    scale_max = models.FloatField(blank=True, default=1.1)
+    scale_error = models.FloatField(blank=True, default=0)
 
-class DataRun(models.Model):
-    """
-        Table of runs
-    """
-    run_number = models.IntegerField()
-    # Optional free-form run identifier
-    run_id = models.TextField()
-    experiment = models.TextField()
-    # Location can either be a url or a file path
-    location = models.TextField()
+    background = models.FloatField(default=0)
+    background_is_fixed = models.BooleanField(blank=True, default=True)
+    background_min = models.FloatField(blank=True, default=0)
+    background_max = models.FloatField(blank=True, default=1e-6)
+    background_error = models.FloatField(blank=True, default=0)
 
-    instrument = models.ForeignKey(Instrument)
-    created_on = models.DateTimeField('Timestamp', auto_now_add=True)
+    front_name = models.CharField(max_length=64, blank=True, default='air')
+    front_sld = models.FloatField(default=0)
+    front_sld_is_fixed = models.BooleanField(blank=True, default=True)
+    front_sld_min = models.FloatField(blank=True, default=0)
+    front_sld_max = models.FloatField(blank=True, default=1)
+    front_sld_error =models.FloatField(blank=True, default=0)
 
-    def __unicode__(self):
-        return "%s_%d_%s" % (self.instrument, self.run_number, self.run_id)
+    back_name = models.CharField(max_length=64, blank=True, default='Si')
+    back_sld = models.FloatField(default=2.07)
+    back_sld_is_fixed = models.BooleanField(blank=True, default=True)
+    back_sld_min = models.FloatField(blank=True, default=2.0)
+    back_sld_max = models.FloatField(blank=True, default=2.1)
+    back_sld_error = models.FloatField(blank=True, default=0)
 
+    back_roughness = models.FloatField(default=5.0)
+    back_roughness_is_fixed = models.BooleanField(blank=True, default=True)
+    back_roughness_min = models.FloatField(blank=True, default=1)
+    back_roughness_max = models.FloatField(blank=True, default=5)
+    back_roughness_error = models.FloatField(blank=True, default=0)
 
-class PlotData(models.Model):
-    """
-        Table of plot data.
-    """
-    ## DataRun this run status belongs to
-    data_run = models.ForeignKey(DataRun)
-    ## json data
-    data = models.TextField()
-    timestamp = models.DateTimeField('Timestamp')
-
-    def __unicode__(self):
-        return "%s" % self.data_run
-
-
-class ModelParameters(models.Model):
-    """
-        Table of model parameters
-    """
-    ## DataRun this run status belongs to
-    data_run = models.ForeignKey(DataRun)
-    ## Model parameters (json)
-    parameters = models.TextField()
-    timestamp = models.DateTimeField('Timestamp')
-
-    def __unicode__(self):
-        return "%s" % self.data_run
+class FitProblem(models.Model):
+    reflectivity_model = models.ForeignKey(ReflectivityModel)
+    timestamp = models.DateTimeField('timestamp')
+    

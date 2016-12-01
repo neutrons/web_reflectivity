@@ -1,3 +1,5 @@
 from django.contrib import admin
+from fitting.models import ReflectivityModel, FitProblem
 
-# Register your models here.
+admin.site.register(ReflectivityModel)
+admin.site.register(FitProblem)

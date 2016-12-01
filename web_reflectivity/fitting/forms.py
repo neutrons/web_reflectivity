@@ -5,14 +5,16 @@
     @author: M. Doucet, Oak Ridge National Laboratory
     @copyright: 2014 Oak Ridge National Laboratory
 """
-from django import forms
-from django.core.exceptions import ValidationError
-
 import sys
 import re
 import logging
+
+from django import forms
+from django.core.exceptions import ValidationError
+from django.forms import ModelForm
 from django.templatetags.l10n import localize
 
+from .models import ReflectivityModel
 
 class ValueErrorField(forms.Field):
     #widget = forms.NumberInput
@@ -42,16 +44,36 @@ class ValueErrorField(forms.Field):
     def validate(self, value):
         self.to_python(value)
 
-
-class ReflectivityFittingForm(forms.Form):
+# Create the form class.
+class ReflectivityFittingModelForm(ModelForm):
     """
-        Main reflectivity parameters
+        Form created from the ReflectivityModel class
+    """
+    class Meta:
+        model = ReflectivityModel
+        fields = ['data_path', 'q_min', 'q_max',
+                  'scale', 'scale_is_fixed', 'scale_min', 'scale_max', 'scale_error',
+                  'background', 'background_is_fixed', 'background_min', 'background_max', 'background_error',
+                  'front_sld', 'front_sld_is_fixed', 'front_sld_min', 'front_sld_max', 'front_sld_error',
+                  'back_sld', 'back_sld_is_fixed', 'back_sld_min', 'back_sld_max', 'back_sld_error',
+                  'back_roughness', 'back_roughness_is_fixed', 'back_roughness_min', 'back_roughness_max', 'back_roughness_error',
+                  'front_name', 'back_name',
+                  ]
+        widgets = {
+            'data_path': forms.TextInput(attrs={'class' : 'font_resize'}),
+        }
+
+class ReflectivityFittingForm_(forms.Form):
+    """
+        Old-style form.
+        TODO: Delete this code and merge the ModelForm class above
+        with the methods defined below.
     """
     data_path = forms.CharField(required=False, initial='144761', widget=forms.TextInput(attrs={'class' : 'font_resize'}))
     q_min = forms.FloatField(required=False, initial=0)
     q_max = forms.FloatField(required=False, initial=1)
 
-    scale = ValueErrorField(required=True, initial=1.0)
+    scale = forms.FloatField(required=True, initial=1.0)
     scale_is_fixed = forms.BooleanField(required=False, initial=True)
     scale_min = forms.FloatField(required=False, initial=0.9)
     scale_max = forms.FloatField(required=False, initial=1.1)
@@ -83,6 +105,7 @@ class ReflectivityFittingForm(forms.Form):
     back_roughness_max = forms.FloatField(required=False, initial=5)
     back_roughness_error = forms.FloatField(required=False, initial=0.0)
 
+class ReflectivityFittingForm(ReflectivityFittingModelForm):
     def get_materials(self):
         """
             C60 = SLD(name='C60',  rho=1.3, irho=0.0)
