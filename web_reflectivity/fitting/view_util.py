@@ -6,15 +6,21 @@ import sys
 import os
 import time
 import re
+import io
 import traceback
 import json
 import logging
 import hashlib
 import httplib
+import pandas
 import string
 from django.conf import settings
 from django_remote_submission.models import Server, Job, Log
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
+
+import plotly.offline as py
+import plotly.graph_objs as go
+
 from . import refl1d
 from . import job_handling
 
@@ -98,7 +104,7 @@ def extract_ascii_from_div(html_data):
                             dy = trace['error_y']['array']
                         break
                 for i in range(len(x)):
-                    ascii_data += "%g %g %g %g\n" % (x[i], y[i], dy[i], dx[i])
+                    ascii_data += u"%g %g %g %g\n" % (x[i], y[i], dy[i], dx[i])
                 return ascii_data
     except:
         # Unable to extract data from <div>
@@ -136,11 +142,32 @@ def get_latest_results(data_path, initial_values, initial_layers):
         Look for the latest results for this data set.
     """
     latest = Log.objects.all().latest('time')
-    return refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+    initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+    return initial_values, initial_layers, chi2, latest
 
-def assemble_plot(html_data, fit_data):
-    ascii_data = extract_ascii_from_div(html_data)
+def assemble_plot(html_data, log_object):
+    """
+        @param log_object: remote job Log object
+    """
+    data_list = []
+    data_names = []
+    # Check that the latest fit really corresponds to the latest data
+    current_str = io.StringIO(extract_ascii_from_div(html_data))
+    current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+    data_list.append([current_data['q'], current_data['r'], current_data['dr']])
+    data_names.append("Data")
 
+    # Extract data from log object
+    if log_object is not None:
+        data_str = io.StringIO(refl1d.extract_data_from_log(log_object.content))
+        raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
+
+        #data_list.append([raw_data['q'], raw_data['r'], raw_data['dr']])
+        data_list.append([raw_data['q'], raw_data['theory']])
+        #data_names.append("Data")
+        data_names.append("Fit")
+
+    return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
 
 def perform_fit():
     return None
@@ -186,3 +213,75 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
 
     return output
 
+
+def plot1d(data_list, data_names=None, x_title='', y_title='',
+           x_log=True, y_log=True, show_dx=False):
+    """
+        Produce a 1D plot
+        @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
+        @param data_names: name for each trace, for the legend
+    """
+    color_list = []
+    # Create traces
+    if not isinstance(data_list, list):
+        raise RuntimeError("plot1d: data_list parameter is expected to be a list")
+
+    # Catch the case where the list is in the format [x y]
+    data = []
+    show_legend = False
+    if len(data_list) == 2 and not isinstance(data_list[0], list):
+        label = ''
+        if isinstance(data_names, list) and len(data_names) == 1:
+            label = data_names[0]
+            show_legend = True
+        data = [go.Scatter(name=label, x=data_list[0], y=data_list[1])]
+    else:
+        for i in range(len(data_list)):
+            label = ''
+            if isinstance(data_names, list) and len(data_names) == len(data_list):
+                label = data_names[i]
+                show_legend = True
+            err_x = {}
+            err_y = {}
+            if len(data_list[i]) >= 3:
+                err_y = dict(type='data', array=data_list[i][2], visible=True)
+            if len(data_list[i]) >= 4:
+                err_x = dict(type='data', array=data_list[i][3], visible=True)
+                if show_dx is False:
+                    err_x['thickness'] = 0
+
+            if len(err_y) == 0:
+                data.append(go.Scatter(name=label, x=data_list[i][0], y=data_list[i][1],
+                                       error_x=err_x, error_y=err_y,
+                                       line=dict(color="rgb(102, 102, 102)",width=2)))
+            else:
+                data.append(go.Scatter(name=label, x=data_list[i][0], y=data_list[i][1],
+                                       error_x=err_x, error_y=err_y))
+
+
+    x_layout = dict(title=x_title, zeroline=False, exponentformat="power",
+                    showexponent="all", showgrid=True,
+                    showline=True, mirror="all", ticks="inside")
+    if x_log:
+        x_layout['type'] = 'log'
+    y_layout = dict(title=y_title, zeroline=False, exponentformat="power",
+                    showexponent="all", showgrid=True,
+                    showline=True, mirror="all", ticks="inside")
+    if y_log:
+        y_layout['type'] = 'log'
+
+    layout = go.Layout(
+        showlegend=show_legend,
+        autosize=True,
+        width=700,
+        height=400,
+        margin=dict(t=40, b=40, l=80, r=40),
+        hovermode='closest',
+        bargap=0,
+        xaxis=x_layout,
+        yaxis=y_layout
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    plot_div = py.plot(fig, output_type='div', include_plotlyjs=False, show_link=False)
+    return plot_div

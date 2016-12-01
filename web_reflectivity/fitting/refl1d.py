@@ -40,7 +40,7 @@ def plot_r(data, log_type='log'):
 
     fig = go.Figure(data=traces, layout=layout)
     py.iplot(fig, show_link=False)
-    
+
 def plot_sld(data):
     # Plot the SLD profile
     sld_trace = go.Scatter(name="Fit", x=data['z'], y=data['rho'],
@@ -148,6 +148,23 @@ def get_latest_results(content, initial_values, initial_layers):
         if item in params:
             initial_values[item] = params[item]
     return initial_values, initial_layers, params['chi2']
+
+def extract_data_from_log(log_content, log_type='log'):
+    """
+        @param log_content: string buffer of the job log
+    """
+    # Parse out the portion we need
+    data_started = False
+    data_content = []
+    for line in log_content.split('\n'):
+        if line.startswith("REFL_START"):
+            data_started = True
+        elif line.startswith("REFL_END"):
+            data_started = False
+        elif data_started is True:
+            data_content.append(line)
+    data_str = '\n'.join(data_content)
+    return data_str
 
 def parse_single_param(line):
     result = re.search(r'^\d (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+) ', line.strip())

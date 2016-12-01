@@ -34,6 +34,7 @@ def modeling(request):
         extra = default_extra
 
     html_data = ''
+    log_object = None
     chi2 = None
     error_message = []
     if request.method == 'POST':
@@ -70,7 +71,7 @@ def modeling(request):
         initial_layers = request.session.get('layers_form_values', {})
 
         data_path = initial_values.get('data_path', '')
-        initial_values, initial_layers, chi2 = view_util.get_latest_results(data_path, initial_values, initial_layers)
+        initial_values, initial_layers, chi2, log_object = view_util.get_latest_results(data_path, initial_values, initial_layers)
 
         data_form = ReflectivityFittingForm(initial=initial_values)
 
@@ -87,7 +88,7 @@ def modeling(request):
         except:
             logging.error("Could not get data from live data server: %s", sys.exc_value)
 
-    #html_data = view_util.assemble_plot(html_data, fit_data)
+    html_data = view_util.assemble_plot(html_data, log_object)
 
     template_values = {'breadcrumbs': breadcrumbs,
                        'data_form': data_form,
