@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.templatetags.l10n import localize
 
-from .models import ReflectivityModel
+from .models import ReflectivityModel, ReflectivityLayer
 
 class ValueErrorField(forms.Field):
     #widget = forms.NumberInput
@@ -44,7 +44,7 @@ class ValueErrorField(forms.Field):
     def validate(self, value):
         self.to_python(value)
 
-# Create the form class.
+# Create the model form class.
 class ReflectivityFittingModelForm(ModelForm):
     """
         Form created from the ReflectivityModel class
@@ -106,6 +106,15 @@ class ReflectivityFittingForm_(forms.Form):
     back_roughness_error = forms.FloatField(required=False, initial=0.0)
 
 class ReflectivityFittingForm(ReflectivityFittingModelForm):
+    def has_free_parameter(self):
+        """
+            Check that we have a least one free parameter, otherwise
+            the fitter will complain.
+        """
+        return not self.cleaned_data['scale_is_fixed'] or not self.cleaned_data['background_is_fixed'] or \
+            not self.cleaned_data['front_sld_is_fixed'] or not self.cleaned_data['back_sld_is_fixed'] or \
+            not self.cleaned_data['back_roughness_is_fixed']
+
     def get_materials(self):
         """
             C60 = SLD(name='C60',  rho=1.3, irho=0.0)
@@ -175,7 +184,22 @@ class ReflectivityFittingForm(ReflectivityFittingModelForm):
         back_layer = " %s(0, %s)" % (self.cleaned_data['back_name'], self.cleaned_data['back_roughness'])
         return "( " + back_layer + " | %s" + str(self.cleaned_data['front_name']) + " )"
 
-class LayerForm(forms.Form):
+
+# Create the layer form class.
+class LayerModelForm(ModelForm):
+    """
+        Form created from the ReflectivityLayer class
+    """
+    class Meta:
+        model = ReflectivityLayer
+        fields = ['name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
+                  'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',
+                  'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
+                  'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error',
+                  ]
+
+
+class LayerForm_(forms.Form):
     """
         Simple form for a layer
     """
@@ -202,6 +226,17 @@ class LayerForm(forms.Form):
     roughness_max = forms.FloatField(required=False, initial=10.0)
     roughness_error = forms.FloatField(required=False, initial=0.0)
 
+class LayerForm(LayerModelForm):
+    """
+        Reflectivity model layer
+    """
+    def has_free_parameter(self):
+        """
+            Check that we have a least one free parameter, otherwise
+            the fitter will complain.
+        """
+        return not self.cleaned_data['thickness_is_fixed'] or not self.cleaned_data['sld_is_fixed'] or \
+            not self.cleaned_data['roughness_is_fixed']
     def info_complete(self):
         return len(self.cleaned_data) > 0 and self.cleaned_data['remove'] is False
 

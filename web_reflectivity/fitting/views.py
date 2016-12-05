@@ -37,6 +37,7 @@ def modeling(request):
     error_message = []
     if request.method == 'POST':
         data_path = request.POST.get('data_path', '')
+        request.session['latest_data_path'] = data_path
         try:
             html_data = view_util.get_plot_data_from_server(settings.DEFAULT_INSTRUMENT, data_path)
             data_form = ReflectivityFittingForm(request.POST)
@@ -48,7 +49,10 @@ def modeling(request):
                 # Check for form submission option
                 output = {}
                 if task in ["evaluate", "fit"]:
-                    output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
+                    if view_util.is_fittable(data_form, layers_form):
+                        output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
+                    else:
+                        error_message.append("Your model needs at least one free parameter.")
                 if 'error' in output:
                     error_message.append(output['error'])
 
@@ -64,9 +68,9 @@ def modeling(request):
         initial_values = request.session.get('data_form_values', {})
         initial_layers = request.session.get('layers_form_values', {})
 
-        data_path = initial_values.get('data_path', '')
-        initial_values, initial_layers, chi2, log_object = view_util.get_latest_results(data_path, initial_values, initial_layers)
-
+        data_path = request.session.get('latest_data_path') #initial_values.get('data_path', '')
+        initial_values, initial_layers, chi2, log_object = view_util.get_latest_results(data_path, initial_values,
+                                                                                        initial_layers, user=request.user)
         data_form = ReflectivityFittingForm(initial=initial_values)
 
         if initial_layers == {}:

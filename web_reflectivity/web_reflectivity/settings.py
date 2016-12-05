@@ -152,6 +152,7 @@ REFL1D_PATH = '/SNS/users/m2d/anaconda/bin'
 REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'
+JOB_HANDLING_HOST = ''
 
 # Import local settings if available
 try:

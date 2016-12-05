@@ -23,6 +23,7 @@ import plotly.graph_objs as go
 
 from . import refl1d
 from . import job_handling
+from .models import FitProblem
 
 def generate_key(instrument, run_id):
     """
@@ -137,11 +138,35 @@ def update_session(request, data_form, layers_form):
 
         request.session['layers_form_values'] = sorted_layers
 
-def get_latest_results(data_path, initial_values, initial_layers):
+def get_latest_results(data_path, initial_values, initial_layers, user):
     """
         Look for the latest results for this data set.
     """
-    latest = Log.objects.all().latest('time')
+    # Look for the latest job owned by the user corresponding to this data.
+    logging.error("Looking for %s", data_path)
+    user_jobs = Job.objects.filter(owner=user, title=data_path)
+    if len(user_jobs) == 0:
+        logging.error("Nothing found for %s", data_path)
+        return initial_values, initial_layers, None, None
+    latest_job = user_jobs.latest('id')
+    logging.error("  - found %s", latest_job.id)
+    for job in user_jobs:
+        if not job == latest_job:
+            logging.error("remove job %s", job.id)
+            #job.delete()
+
+    # Find the latest log for that job
+    #TODO: what if the latest job was not successful? How do we report errors?
+    job_logs = Log.objects.filter(job=latest_job)
+    if len(job_logs) == 0:
+        logging.error("nothing found for %s", latest_job.id)
+        return initial_values, initial_layers, None, None
+    latest = job_logs.latest('time')
+    for job in job_logs:
+        if not job == latest:
+            logging.error("Deleting log %s", job.id)
+            #job.delete()
+
     initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
     return initial_values, initial_layers, chi2, latest
 
@@ -168,6 +193,12 @@ def assemble_plot(html_data, log_object):
 
     return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
 
+def is_fittable(data_form, layers_form):
+    has_free = data_form.has_free_parameter()
+    for layer in layers_form:
+        has_free = has_free or layer.has_free_parameter()
+    return has_free
+
 def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     try:
         return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user)
@@ -184,9 +215,9 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit)
 
-    server = Server.objects.get_or_create(title='Analysis', hostname='lrac.sns.gov',  port=22)[0]
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=22)[0]
 
-    job = Job.objects.get_or_create(title='Reflectivity fit %s' % time.time(),
+    job = Job.objects.get_or_create(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
                                     program=script,
                                     remote_directory=work_dir,
                                     remote_filename='fit_job.py',
@@ -198,7 +229,25 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         username=user.username,
         log_policy=LogPolicy.LOG_TOTAL
     )
-    return {}
+
+    # Save this fit job
+    save_fit_problem(data_form, layers_form, job, user)
+    return {'jod_id': job.pk}
+
+def save_fit_problem(data_form, layers_form, job_object, user):
+    # Save the ReflectivityModel object
+    ref_model = data_form.save()
+    fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
+                             remote_job=job_object)
+    fit_problem.save()
+
+    # Save the layer parameters
+    for layer in layers_form:
+        logging.error("layer")
+        l_object = layer.save()
+        fit_problem.layers.add(l_object)
+    fit_problem.save()
+    return fit_problem
 
 def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):
