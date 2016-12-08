@@ -15,6 +15,9 @@
       $(thickness_fixed_id).hide();
       $(sld_fixed_id).hide();
       $(roughness_fixed_id).hide();
+      $(thickness_fixed_id+'_range').hide();
+      $(sld_fixed_id+'_range').hide();
+      $(roughness_fixed_id+'_range').hide();
   }
 
   function set_fixed(fix_id) {
@@ -170,4 +173,31 @@ set_fixed('#{{ form.thickness_is_fixed.id_for_label }}');
 set_fixed('#{{ form.sld_is_fixed.id_for_label }}');
 set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 </script>
+
+{% if job_id %}
+<script type="text/javascript">
+    (function poll() {
+        setTimeout(function() {
+                $.ajax({
+                    type: "GET",
+                    url: "{% url 'fitting:is_completed' job_id %}",
+                    success: function(data) {
+                        if (data.completed==true) {
+                            new_alert("Fit completed: <a href='{% url 'fitting:modeling' %}'>click here</a> to view the results"); show_alert();
+                        } else {
+                            new_alert("Job status: " + data.status); show_alert();
+                        }
+                    },
+                    dataType: "json",
+                    complete: poll,
+                    statusCode: { 401: function() { new_alert("Your session expired. Please log in again"); show_alert(); }},
+                    timeout: 2000
+                })
+        }, 2000);
+    })();
+</script>
+{% endif %}
+
+
+
 {% endblock %}

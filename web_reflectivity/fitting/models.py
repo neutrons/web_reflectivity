@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 from django_remote_submission.models import Job
+from django.forms import model_to_dict
 
 class ReflectivityModel(models.Model):
     """
@@ -47,6 +48,9 @@ class ReflectivityModel(models.Model):
     back_roughness_max = models.FloatField(blank=True, default=5)
     back_roughness_error = models.FloatField(null=True, blank=True, default=0)
 
+    def __unicode__(self):
+        return u"id %s: %s" % (self.id, self.data_path)
+
 
 class ReflectivityLayer(models.Model):
     """
@@ -75,14 +79,27 @@ class ReflectivityLayer(models.Model):
     roughness_max = models.FloatField(blank=True, default=10.0)
     roughness_error = models.FloatField(null=True, blank=True, default=0)
 
+    def __unicode__(self):
+        return self.name
 
 class FitProblem(models.Model):
     """
         Reflectivity model
     """
-    user = models.ForeignKey(User)
-    reflectivity_model = models.ForeignKey(ReflectivityModel)
+    user = models.ForeignKey(User, models.PROTECT)
+    reflectivity_model = models.ForeignKey(ReflectivityModel, models.CASCADE)
     layers = models.ManyToManyField(ReflectivityLayer, related_name='_model_layers+')
-    remote_job = models.ForeignKey(Job)
+    remote_job = models.ForeignKey(Job, models.CASCADE)
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
+    def model_to_dicts(self):
+        refl_model_dict = model_to_dict(self.reflectivity_model)
+        model_layers = []
+        i = 0
+        for layer in self.layers.all().order_by('layer_number'):
+            i += 1
+            layer_dict = model_to_dict(layer)
+            # Start the ordering number at 1.
+            layer_dict['layer_number'] = i
+            model_layers.append(layer_dict)
+        return refl_model_dict, model_layers

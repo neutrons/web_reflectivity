@@ -4,13 +4,16 @@
 """
 import sys
 import logging
-from django.shortcuts import render, redirect
+import json
+from django.shortcuts import render, redirect, get_object_or_404
 from django.forms.formsets import formset_factory
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 from .forms import ReflectivityFittingForm, LayerForm
+from django_remote_submission.models import Job
 from . import view_util
 
 import users.view_util
@@ -24,7 +27,7 @@ def modeling(request):
     # You can either load a file or point to livedata.sns.gov using a URL
 
     # If we upload data, keep a sha so we can verify that it hasn't changed
-    breadcrumbs = "<a href='/'>home</a> &rsaquo; processing"
+    breadcrumbs = "<a href='/'>home</a> &rsaquo; reflectivity"
     default_extra = 0
     try:
         extra = int(request.GET.get('extra', default_extra))
@@ -34,6 +37,8 @@ def modeling(request):
     html_data = ''
     log_object = None
     chi2 = None
+    job_id = request.session.get('job_id', None)
+
     error_message = []
     if request.method == 'POST':
         data_path = request.POST.get('data_path', '')
@@ -51,6 +56,9 @@ def modeling(request):
                 if task in ["evaluate", "fit"]:
                     if view_util.is_fittable(data_form, layers_form):
                         output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
+                        if 'job_id' in output:
+                            job_id = output['job_id']
+                            request.session['job_id'] = job_id
                     else:
                         error_message.append("Your model needs at least one free parameter.")
                 if 'error' in output:
@@ -65,12 +73,9 @@ def modeling(request):
             logging.error("Could not get data from live data server: %s", sys.exc_value)
             html_data = "<b>Could not get data from live data server</b>"
     else:
-        initial_values = request.session.get('data_form_values', {})
-        initial_layers = request.session.get('layers_form_values', {})
-
-        data_path = request.session.get('latest_data_path') #initial_values.get('data_path', '')
-        initial_values, initial_layers, chi2, log_object = view_util.get_latest_results(data_path, initial_values,
-                                                                                        initial_layers, user=request.user)
+        data_path, fit_problem = view_util.get_latest_fit(request)
+        initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, fit_problem)
+        error_message.extend(errors)
         data_form = ReflectivityFittingForm(initial=initial_values)
 
         if initial_layers == {}:
@@ -93,7 +98,18 @@ def modeling(request):
                        'html_data': html_data,
                        'user_alert': error_message,
                        'chi2': chi2,
+                       'job_id': job_id if can_update else None,
                        'layers_form': layers_form}
     template_values = users.view_util.fill_template_values(request, **template_values)
     return render(request, 'fitting/modeling.html', template_values)
 
+@login_required
+def is_completed(request, job_id):
+    """
+    """
+    job_object = get_object_or_404(Job, pk=job_id)
+    return_value = {'status': job_object.status,
+                    'completed': job_object.status in [job_object.STATUS.success,
+                                                       job_object.STATUS.failure]}
+    response = HttpResponse(json.dumps(return_value), content_type="application/json")
+    return response

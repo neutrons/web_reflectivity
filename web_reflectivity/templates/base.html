@@ -54,6 +54,12 @@
 <a class="banner_logo" href="http://neutrons.ornl.gov/" target="_blank"><img title="ORNL" src="{% static 'images/ornl_logo_200_50.png' %}" width="200px" alt="ORNL" /></a>
 <div class="banner_title">{% if title %}{{ title }}{% else %}Reflectivity Fitting{% endif %}</div>
 
+<div class="breadcrumbs">
+  {% block breadcrumb %}
+  {% if breadcrumbs %}{{ breadcrumbs|safe }}{% else %}<a href="/">home</a>{% endif %}
+  {% block right_side_links %}{% endblock %}
+  {% endblock %}
+</div>
 <div class='user_alert'>
   {% if user_alert %}
   <div id="alert_message">
@@ -62,13 +68,6 @@
   {% endfor %}
   </div>
   {% else %}<div id="alert_message"></div>{% endif %}
-</div>
-
-<div class="breadcrumbs">
-  {% block breadcrumb %}
-  {% if breadcrumbs %}{{ breadcrumbs|safe }}{% else %}<a href="/">home</a>{% endif %}
-  {% block right_side_links %}{% endblock %}
-  {% endblock %}
 </div>
 
 {% block content %}

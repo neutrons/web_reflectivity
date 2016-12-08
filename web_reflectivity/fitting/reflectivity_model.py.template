@@ -7,6 +7,9 @@ def submit():
     output_dir = "${OUTPUT_DIR}"
     ascii_data = """${ASCII_DATA}"""
     data_file = "${REDUCED_FILE}"
+    data_dir = os.path.split(data_file)[0]
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     with open(data_file, 'w') as fd:
         fd.write(ascii_data)
 
@@ -22,11 +25,12 @@ q_max = ${Q_MAX}
 reduced_file = "${REDUCED_FILE}"
 
 Q, R, dR, dQ = numpy.loadtxt(reduced_file).T
-i_max = len([x for x in Q if x>q_min and x<q_max])-1
+i_min = min([i for i in range(len(Q)) if Q[i]>q_min])
+i_max = max([i for i in range(len(Q)) if Q[i]<q_max])+1
 
 # SNS data is FWHM
 dQ_std = dQ/2.35
-probe = QProbe(Q[:i_max], dQ_std[:i_max], data=(R[:i_max], dR[:i_max]))
+probe = QProbe(Q[i_min:i_max], dQ_std[i_min:i_max], data=(R[i_min:i_max], dR[i_min:i_max]))
 
 # Materials ####################################################################
 ${MATERIALS}
@@ -42,7 +46,6 @@ ${SAMPLE_RANGES}
 expt = Experiment(probe=probe, sample=sample)
 problem = FitProblem(expt)
 """
-    data_dir = os.path.split(data_file)[0]
     model_path = os.path.join(data_dir, '__model.py')
     with open(model_path, 'w') as fd:
         fd.write(model_file)

@@ -37,6 +37,10 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
         template = fd.read()
 
         model_template = string.Template(template)
+        if fit:
+            steps = 1000
+        else:
+            steps = 10
         script = model_template.substitute(REDUCED_FILE=data_file,
                                            Q_MIN=data_form.cleaned_data['q_min'],
                                            Q_MAX=data_form.cleaned_data['q_max'],
@@ -46,8 +50,8 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            ASCII_DATA=ascii_data,
                                            OUTPUT_DIR=output_dir,
                                            REFL1D_PATH=settings.REFL1D_PATH,
-                                           REFL1D_STEPS=1000,
-                                           REFL1D_BURN=1000,
+                                           REFL1D_STEPS=steps,
+                                           REFL1D_BURN=steps,
                                            SAMPLE_RANGES=sample_ranges)
 
     return script

@@ -23,7 +23,8 @@ import plotly.graph_objs as go
 
 from . import refl1d
 from . import job_handling
-from .models import FitProblem
+from . import forms
+from .models import FitProblem, ReflectivityModel
 
 def generate_key(instrument, run_id):
     """
@@ -138,37 +139,96 @@ def update_session(request, data_form, layers_form):
 
         request.session['layers_form_values'] = sorted_layers
 
-def get_latest_results(data_path, initial_values, initial_layers, user):
-    """
-        Look for the latest results for this data set.
-    """
-    # Look for the latest job owned by the user corresponding to this data.
-    logging.error("Looking for %s", data_path)
-    user_jobs = Job.objects.filter(owner=user, title=data_path)
-    if len(user_jobs) == 0:
-        logging.error("Nothing found for %s", data_path)
-        return initial_values, initial_layers, None, None
-    latest_job = user_jobs.latest('id')
-    logging.error("  - found %s", latest_job.id)
-    for job in user_jobs:
-        if not job == latest_job:
-            logging.error("remove job %s", job.id)
-            #job.delete()
+def get_latest_fit(request):
+    fit_problem = None
+    if request.GET.get('fit_id'):
+        fit_id = request.GET.get('fit_id')
+        try:
+            fit_problem = FitProblem.objects.get(pk=fit_id)
+        except:
+            logging.error("Could not find FitProblem with pk=%s", fit_id)
 
-    # Find the latest log for that job
-    #TODO: what if the latest job was not successful? How do we report errors?
-    job_logs = Log.objects.filter(job=latest_job)
-    if len(job_logs) == 0:
-        logging.error("nothing found for %s", latest_job.id)
-        return initial_values, initial_layers, None, None
-    latest = job_logs.latest('time')
-    for job in job_logs:
-        if not job == latest:
-            logging.error("Deleting log %s", job.id)
-            #job.delete()
+    if fit_problem is None:
+        if request.GET.get('data_path'):
+            data_path = request.GET.get('data_path')
+        else:
+            data_path = request.session.get('latest_data_path', '')
 
-    initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
-    return initial_values, initial_layers, chi2, latest
+        fit_problem_list = FitProblem.objects.filter(user=request.user,
+                                                     reflectivity_model__data_path=data_path)
+        if len(fit_problem_list) > 0:
+            fit_problem = fit_problem_list.latest('timestamp')
+
+            # Cleanup
+            job_id = request.session.get('job_id', None)
+            for item in fit_problem_list:
+                if not item == fit_problem and not item.id == job_id:
+                    logging.error("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
+                    delete_problem(item)
+    else:
+        data_path = fit_problem.reflectivity_model.data_path
+
+    return data_path, fit_problem
+
+def delete_problem(fit_problem):
+    """
+        Remove a FitProblem and all its related entries from the database
+        @param fit_problem: FitProblem ojbect
+    """
+    # Only delete jobs that are not active
+    try:
+        if fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
+                                                 fit_problem.remote_job.STATUS.failure]:
+            return
+
+        # Delete the reflectivity model objects
+        for item in fit_problem.layers.all():
+            #fit_problem.layers.remove(item)
+            item.delete()
+
+        fit_problem.reflectivity_model.delete()
+
+        # Delete the job
+        fit_problem.remote_job.delete()
+    except:
+        logging.error("Could not retrieve object: %s", sys.exc_value)
+        return
+
+def get_results(request, fit_problem):
+    errors = []
+    chi2 = None
+    latest = None
+    can_update = False
+    if fit_problem is not None:
+        try:
+            initial_values, initial_layers = fit_problem.model_to_dicts()
+
+            #TODO: what if the latest job was not successful? How do we report errors?
+            can_update = fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
+                                                               fit_problem.remote_job.STATUS.failure]
+            errors.append("Job status: %s" % fit_problem.remote_job.status)
+            job_logs = Log.objects.filter(job=fit_problem.remote_job)
+            if len(job_logs) > 0:
+                latest = job_logs.latest('time')
+                for job in job_logs:
+                    if not job == latest:
+                        logging.error("Logs for job %s needs cleaning up", job.id)
+                        #job.delete()
+                initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+            else:
+                errors.append("Not results found")
+                logging.error("nothing found for %s", fit_problem.remote_job.id)
+        except:
+            logging.error("Problem retrieving results: %s", sys.exc_value)
+            errors.append("Problem retrieving results")
+            initial_values = request.session.get('data_form_values', {})
+            initial_layers = request.session.get('layers_form_values', {})
+    else:
+        errors.append("No model found for this data set")
+        initial_values = request.session.get('data_form_values', {})
+        initial_layers = request.session.get('layers_form_values', {})
+
+    return initial_values, initial_layers, chi2, latest, errors, can_update
 
 def assemble_plot(html_data, log_object):
     """
@@ -208,21 +268,27 @@ def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         return {'error': "Problem evaluating model: %s" % sys.exc_value}
 
 def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+    try:
+        base_name = os.path.split(data_form.cleaned_data['data_path'])[1]
+    except:
+        base_name = data_form.cleaned_data['data_path']
+
     ascii_data = extract_ascii_from_div(html_data)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username)
-    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, 'fit')
+    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, 'reflectivity_fits', base_name)
     script = job_handling.create_model_file(data_form, layers_form,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit)
 
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=22)[0]
 
-    job = Job.objects.get_or_create(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
+    job = Job(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
                                     program=script,
                                     remote_directory=work_dir,
                                     remote_filename='fit_job.py',
                                     owner=user,
-                                    server=server)[0]
+                                    server=server)
+    job.save()
     submit_job_to_server.delay(
         job_pk=job.pk,
         password='',
@@ -232,7 +298,7 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
 
     # Save this fit job
     save_fit_problem(data_form, layers_form, job, user)
-    return {'jod_id': job.pk}
+    return {'job_id': job.pk}
 
 def save_fit_problem(data_form, layers_form, job_object, user):
     # Save the ReflectivityModel object
@@ -243,9 +309,9 @@ def save_fit_problem(data_form, layers_form, job_object, user):
 
     # Save the layer parameters
     for layer in layers_form:
-        logging.error("layer")
-        l_object = layer.save()
-        fit_problem.layers.add(l_object)
+        if 'remove' in layer.cleaned_data and layer.cleaned_data['remove'] is False:
+            l_object = layer.save()
+            fit_problem.layers.add(l_object)
     fit_problem.save()
     return fit_problem
 
