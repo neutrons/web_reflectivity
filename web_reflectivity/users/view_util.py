@@ -41,28 +41,18 @@ def fill_template_values(request, **template_args):
 
     return template_args
 
-def is_instrument_staff(request, instrument_id):
+def is_instrument_staff(request, instrument):
     """
         Determine whether a user is part of an
         instrument team
         @param request: HTTP request object
-        @param instrument_id: Instrument object
+        @param instrument: Instrument name
     """
-    # Look for Django group
-    try:
-        instrument_name = str(instrument_id).upper()
-        instr_group = Group.objects.get(name="%s%s" % (instrument_name,
-                                                       settings.INSTRUMENT_TEAM_SUFFIX))
-        if instr_group in request.user.groups.all():
-            return True
-    except Group.DoesNotExist:
-        # The group doesn't exist, carry on
-        pass
     # Look for LDAP group
     try:
         if request.user is not None and hasattr(request.user, "ldap_user"):
             groups = request.user.ldap_user.group_names
-            if u'sns_%s_team' % str(instrument_id).lower() in groups \
+            if u'sns_%s_team' % str(instrument).lower() in groups \
             or u'snsadmin' in groups:
                 return True
     except:
@@ -70,13 +60,13 @@ def is_instrument_staff(request, instrument_id):
         pass
     return request.user.is_staff
 
-def is_experiment_member(request, instrument_id, experiment_id):
+def is_experiment_member(request, instrument, experiment):
     """
         Determine whether a user is part of the given experiment.
 
         @param request: request object
-        @param instrument_id: Instrument object
-        @param experiment_id: IPTS object
+        @param instrument: Instrument name
+        @param experiment: IPTS name
     """
     if hasattr(settings, 'HIDE_RUN_DETAILS') and settings.HIDE_RUN_DETAILS is False:
         return True
@@ -84,11 +74,11 @@ def is_experiment_member(request, instrument_id, experiment_id):
     try:
         if request.user is not None and hasattr(request.user, "ldap_user"):
             groups = request.user.ldap_user.group_names
-            return u'sns_%s_team' % str(instrument_id).lower() in groups \
+            return u'sns_%s_team' % str(instrument).lower() in groups \
             or u'sns-ihc' in groups \
             or u'snsadmin' in groups \
-            or u'%s' % experiment_id.expt_name.upper() in groups \
-            or is_instrument_staff(request, instrument_id)
+            or u'%s' % experiment.upper() in groups \
+            or is_instrument_staff(request, instrument)
     except:
-        logging.error("Error determining whether user %s is part of %s", str(request.user), str(experiment_id))
+        logging.error("Error determining whether user %s is part of %s", request.user, experiment)
     return request.user.is_staff

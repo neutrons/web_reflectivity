@@ -154,6 +154,7 @@ REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'
 JOB_HANDLING_HOST = ''
 
+HELPLINE = 'NDAV'
 # Import local settings if available
 try:
     from local_settings import *

@@ -4,7 +4,6 @@
 """
 import sys
 import os
-import time
 import re
 import io
 import traceback
@@ -23,8 +22,10 @@ import plotly.graph_objs as go
 
 from . import refl1d
 from . import job_handling
-from . import forms
-from .models import FitProblem, ReflectivityModel
+from . import icat_server_communication as icat
+from .models import FitProblem
+
+import users.view_util
 
 def generate_key(instrument, run_id):
     """
@@ -139,6 +140,18 @@ def update_session(request, data_form, layers_form):
 
         request.session['layers_form_values'] = sorted_layers
 
+def check_permissions(request, data_path, instrument):
+    # Check whether the user is staff or instrument staff
+    #if users.view_util.is_instrument_staff(request, instrument):
+    #    return True
+
+    # Get the IPTS from ICAT
+    run_info = icat.get_run_info(instrument, data_path)
+    if 'proposal' in run_info:
+        logging.error(run_info['proposal'])
+        return users.view_util.is_experiment_member(request, instrument, run_info['proposal'])
+    return False
+
 def get_latest_fit(request):
     fit_problem = None
     if request.GET.get('fit_id'):
@@ -163,7 +176,7 @@ def get_latest_fit(request):
             job_id = request.session.get('job_id', None)
             for item in fit_problem_list:
                 if not item == fit_problem and not item.id == job_id:
-                    logging.error("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
+                    logging.info("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
                     delete_problem(item)
     else:
         data_path = fit_problem.reflectivity_model.data_path

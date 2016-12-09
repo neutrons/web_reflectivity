@@ -42,6 +42,9 @@ def modeling(request):
     error_message = []
     if request.method == 'POST':
         data_path = request.POST.get('data_path', '')
+        if not view_util.check_permissions(request, data_path, settings.DEFAULT_INSTRUMENT):
+            return redirect(reverse('fitting:private'))
+
         request.session['latest_data_path'] = data_path
         try:
             html_data = view_util.get_plot_data_from_server(settings.DEFAULT_INSTRUMENT, data_path)
@@ -74,6 +77,8 @@ def modeling(request):
             html_data = "<b>Could not get data from live data server</b>"
     else:
         data_path, fit_problem = view_util.get_latest_fit(request)
+        if not view_util.check_permissions(request, data_path, settings.DEFAULT_INSTRUMENT):
+            return redirect(reverse('fitting:private'))
         initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, fit_problem)
         error_message.extend(errors)
         data_form = ReflectivityFittingForm(initial=initial_values)
@@ -102,6 +107,11 @@ def modeling(request):
                        'layers_form': layers_form}
     template_values = users.view_util.fill_template_values(request, **template_values)
     return render(request, 'fitting/modeling.html', template_values)
+
+@login_required
+def private(request):
+    return render(request, 'fitting/private.html', {'instrument': settings.DEFAULT_INSTRUMENT,
+                                                    'helpline': settings.HELPLINE})
 
 @login_required
 def is_completed(request, job_id):
