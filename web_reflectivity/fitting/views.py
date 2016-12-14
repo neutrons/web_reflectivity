@@ -130,7 +130,7 @@ class FitView(View):
         html_data = view_util.assemble_plot(html_data, log_object)
 
         job_id = request.session.get('job_id', None)
-        template_values = {'breadcrumbs': self.breadcrumbs,
+        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
                            'data_form': data_form,
                            'html_data': html_data,
                            'user_alert': error_message,
@@ -194,7 +194,7 @@ class FitView(View):
             error_message.append("Could not fit data")
 
         html_data = view_util.assemble_plot(html_data, None)
-        template_values = {'breadcrumbs': self.breadcrumbs,
+        template_values = {'breadcrumbs':  "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
                            'data_form': data_form,
                            'html_data': html_data,
                            'user_alert': error_message,
