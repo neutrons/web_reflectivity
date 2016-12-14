@@ -5,14 +5,10 @@
     @author: M. Doucet, Oak Ridge National Laboratory
     @copyright: 2014 Oak Ridge National Laboratory
 """
-import sys
-import re
 import logging
 
 from django import forms
-from django.core.exceptions import ValidationError
 from django.forms import ModelForm
-from django.templatetags.l10n import localize
 
 from .models import ReflectivityModel, ReflectivityLayer
 
@@ -22,33 +18,6 @@ class UploadFileForm(forms.Form):
     """
     file = forms.FileField()
 
-class ValueErrorField(forms.Field):
-    #widget = forms.NumberInput
-    default_error_messages = {
-        'invalid': 'Enter a whole number.',
-    }
-    re_decimal = re.compile(r'\.0*\s*$')
-    plus_minus = '+-'
-
-    def to_python(self, value):
-        """
-        Validates that float() can be called on the input. Returns the result
-        of float(). Returns None for empty values.
-        """
-        # Look for +- string. If we find it, strip everything after it.
-        value_as_string = str(value)
-        pm_location = value_as_string.find(self.plus_minus)
-        if pm_location > 0:
-            value_as_string = value_as_string[:pm_location].strip()
-        try:
-            value = float(value_as_string)
-        except:
-            raise ValidationError(self.error_messages['invalid'], code='invalid')
-
-        return super(ValueErrorField, self).to_python(value)
-
-    def validate(self, value):
-        self.to_python(value)
 
 # Create the model form class.
 class ReflectivityFittingModelForm(ModelForm):
@@ -69,49 +38,11 @@ class ReflectivityFittingModelForm(ModelForm):
             'data_path': forms.TextInput(attrs={'class' : 'font_resize'}),
         }
 
-class ReflectivityFittingForm_(forms.Form):
-    """
-        Old-style form.
-        TODO: Delete this code and merge the ModelForm class above
-        with the methods defined below.
-    """
-    data_path = forms.CharField(required=False, initial='144761', widget=forms.TextInput(attrs={'class' : 'font_resize'}))
-    q_min = forms.FloatField(required=False, initial=0)
-    q_max = forms.FloatField(required=False, initial=1)
-
-    scale = forms.FloatField(required=True, initial=1.0)
-    scale_is_fixed = forms.BooleanField(required=False, initial=True)
-    scale_min = forms.FloatField(required=False, initial=0.9)
-    scale_max = forms.FloatField(required=False, initial=1.1)
-    scale_error = forms.FloatField(required=False, initial=0.0)
-
-    background = forms.FloatField(required=True, initial=0.0)
-    background_is_fixed = forms.BooleanField(required=False, initial=True)
-    background_min = forms.FloatField(required=False, initial=0)
-    background_max = forms.FloatField(required=False, initial=1e-6)
-    background_error = forms.FloatField(required=False, initial=0.0)
-
-    front_name = forms.CharField(required=False, initial='air')
-    front_sld = forms.FloatField(required=True, initial=0.0)
-    front_sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    front_sld_min = forms.FloatField(required=False, initial=0)
-    front_sld_max = forms.FloatField(required=False, initial=1)
-    front_sld_error = forms.FloatField(required=False, initial=0.0)
-
-    back_name = forms.CharField(required=False, initial='Si')
-    back_sld = forms.FloatField(required=True, initial=2.07)
-    back_sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    back_sld_min = forms.FloatField(required=False, initial=2.0)
-    back_sld_max = forms.FloatField(required=False, initial=2.1)
-    back_sld_error = forms.FloatField(required=False, initial=0.0)
-
-    back_roughness = forms.FloatField(required=True, initial=5.0)
-    back_roughness_is_fixed = forms.BooleanField(required=False, initial=True)
-    back_roughness_min = forms.FloatField(required=False, initial=1)
-    back_roughness_max = forms.FloatField(required=False, initial=5)
-    back_roughness_error = forms.FloatField(required=False, initial=0.0)
 
 class ReflectivityFittingForm(ReflectivityFittingModelForm):
+    """
+        Model parameters, excluding layers
+    """
     def has_free_parameter(self):
         """
             Check that we have a least one free parameter, otherwise
@@ -205,33 +136,6 @@ class LayerModelForm(ModelForm):
                   ]
 
 
-class LayerForm_(forms.Form):
-    """
-        Simple form for a layer
-    """
-    name = forms.CharField(required=False, initial='')
-    thickness = forms.FloatField(required=True, initial=0.0)
-    sld = forms.FloatField(required=True, initial=0.0)
-    roughness = forms.FloatField(required=True, initial=0.0)
-    remove = forms.BooleanField(required=False, initial=False)
-    layer_number = forms.IntegerField(initial=1000)
-
-    # Fitting information
-    thickness_is_fixed = forms.BooleanField(required=False, initial=True)
-    thickness_min = forms.FloatField(required=False, initial=10.0)
-    thickness_max = forms.FloatField(required=False, initial=100.0)
-    thickness_error = forms.FloatField(required=False, initial=0.0)
-
-    sld_is_fixed = forms.BooleanField(required=False, initial=True)
-    sld_min = forms.FloatField(required=False, initial=1.0)
-    sld_max = forms.FloatField(required=False, initial=4.0)
-    sld_error = forms.FloatField(required=False, initial=0.0)
-
-    roughness_is_fixed = forms.BooleanField(required=False, initial=True)
-    roughness_min = forms.FloatField(required=False, initial=1.0)
-    roughness_max = forms.FloatField(required=False, initial=10.0)
-    roughness_error = forms.FloatField(required=False, initial=0.0)
-
 class LayerForm(LayerModelForm):
     """
         Reflectivity model layer
@@ -243,7 +147,9 @@ class LayerForm(LayerModelForm):
         """
         return not self.cleaned_data['thickness_is_fixed'] or not self.cleaned_data['sld_is_fixed'] or \
             not self.cleaned_data['roughness_is_fixed']
+
     def info_complete(self):
+        """ Return True of this layer should be used """
         return len(self.cleaned_data) > 0 and self.cleaned_data['remove'] is False
 
     def get_materials(self):
@@ -260,6 +166,9 @@ class LayerForm(LayerModelForm):
                                                           self.cleaned_data['sld'])
 
     def get_layer(self):
+        """
+            Get layer info in a format we can send to refl1d
+        """
         if self.cleaned_data['thickness'] == 0 and self.cleaned_data['roughness'] == 0:
             return self.cleaned_data['name']
         layer_name = self.cleaned_data['name']
@@ -294,4 +203,3 @@ class LayerForm(LayerModelForm):
                                                               self.cleaned_data['roughness_min'],
                                                               self.cleaned_data['roughness_max'])
         return ranges
-

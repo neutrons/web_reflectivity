@@ -1,3 +1,6 @@
+"""
+    Admin views for models
+"""
 from django.contrib import admin
 from fitting.models import ReflectivityModel, FitProblem, ReflectivityLayer
 

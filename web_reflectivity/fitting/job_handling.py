@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name
+#pylint: disable=bare-except, invalid-name, line-too-long, too-many-arguments, too-many-locals
 """
     Abstraction layer for handling fitting jobs
 """
@@ -8,6 +8,7 @@ from django.conf import settings
 
 def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True):
     """
+        Create a refl1d model file from a template
     """
     if data_file is None:
         data_file = data_form.cleaned_data['data_path']
@@ -57,6 +58,9 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
     return script
 
 def write_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_max=0.2, output_dir='/tmp'):
+    """
+        Write a model file to disk
+    """
     script = create_model_file(data_form, layer_forms, data_file, ascii_data, q_max, output_dir='/tmp')
     model_file = '%/__model.py' % output_dir
     with open(model_file, 'w') as fd:

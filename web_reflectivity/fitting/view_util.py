@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate, too-many-arguments
+#pylint: disable=bare-except, invalid-name, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate, too-many-arguments, too-many-locals, too-many-branches
 """
     Utilities for modeling application
 """
@@ -118,6 +118,7 @@ def extract_ascii_from_div(html_data):
 
 def update_session(request, data_form, layers_form):
     """
+        Update the session information with the latest fit
     """
     if not data_form.is_valid() or not layers_form.is_valid():
         logging.error("update_session: Forms are invalid: cannot update session information")
@@ -143,6 +144,9 @@ def update_session(request, data_form, layers_form):
         request.session['layers_form_values'] = sorted_layers
 
 def check_permissions(request, run_id, instrument):
+    """
+        Verify that the user has the permissions to access the data
+    """
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
         return True
@@ -157,38 +161,10 @@ def check_permissions(request, run_id, instrument):
         return users.view_util.is_experiment_member(request, instrument, run_info['proposal'])
     return False
 
-def get_latest_fit(request):
-    fit_problem = None
-    if request.GET.get('fit_id'):
-        fit_id = request.GET.get('fit_id')
-        try:
-            fit_problem = FitProblem.objects.get(pk=fit_id)
-        except:
-            logging.error("Could not find FitProblem with pk=%s", fit_id)
-
-    if fit_problem is None:
-        if request.GET.get('data_path'):
-            data_path = request.GET.get('data_path')
-        else:
-            data_path = request.session.get('latest_data_path', '')
-
-        fit_problem_list = FitProblem.objects.filter(user=request.user,
-                                                     reflectivity_model__data_path=data_path)
-        if len(fit_problem_list) > 0:
-            fit_problem = fit_problem_list.latest('timestamp')
-
-            # Cleanup
-            job_id = request.session.get('job_id', None)
-            for item in fit_problem_list:
-                if not item == fit_problem and not item.id == job_id:
-                    logging.info("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
-                    delete_problem(item)
-    else:
-        data_path = fit_problem.reflectivity_model.data_path
-
-    return data_path, fit_problem
-
 def get_fit_problem(request, instrument, data_id):
+    """
+        Get the latest FitProblem object for an instrument/data pair
+    """
     data_path = "%s/%s" % (instrument, data_id)
     fit_problem_list = FitProblem.objects.filter(user=request.user,
                                                  reflectivity_model__data_path=data_path)
@@ -205,8 +181,6 @@ def get_fit_problem(request, instrument, data_id):
         return data_path, fit_problem
     return data_path, None
 
-
-    
 def delete_problem(fit_problem):
     """
         Remove a FitProblem and all its related entries from the database
@@ -232,6 +206,9 @@ def delete_problem(fit_problem):
         return
 
 def get_results(request, data_path, fit_problem):
+    """
+        Get the model parameters for a given fit problem
+    """
     errors = []
     chi2 = None
     latest = None
@@ -292,12 +269,20 @@ def assemble_plot(html_data, log_object):
     return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
 
 def is_fittable(data_form, layers_form):
+    """
+        Return True if a fit problem (comprised of all its forms)
+        is fittable or not. To be fittable, refl1d requires at least
+        one free parameter.
+    """
     has_free = data_form.has_free_parameter()
     for layer in layers_form:
         has_free = has_free or layer.has_free_parameter()
     return has_free
 
 def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+    """
+        Protected version of the call to refl1d
+    """
     try:
         return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user)
     except:
@@ -306,6 +291,9 @@ def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         return {'error': "Problem evaluating model: %s" % sys.exc_value}
 
 def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+    """
+        Refl1d fitting job
+    """
     try:
         base_name = os.path.split(data_form.cleaned_data['data_path'])[1]
     except:
@@ -339,6 +327,9 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     return {'job_id': job.pk}
 
 def save_fit_problem(data_form, layers_form, job_object, user):
+    """
+        Save the state of the model forms
+    """
     # Save the ReflectivityModel object
     ref_model = data_form.save()
     fit_problem = FitProblem(user=user, reflectivity_model=ref_model,

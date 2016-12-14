@@ -96,9 +96,13 @@ class FileView(View):
 
 @method_decorator(login_required, name='dispatch')
 class FitView(View):
+    """
+        View for data fitting
+    """
     breadcrumbs = "<a href='/'>home</a> &rsaquo; reflectivity"
 
     def get(self, request, instrument, data_id, *args, **kwargs):
+        """ Process GET """
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
@@ -139,6 +143,7 @@ class FitView(View):
         return render(request, 'fitting/modeling.html', template_values)
 
     def post(self, request, instrument, data_id, *args, **kwargs):
+        """ Process POST """
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
