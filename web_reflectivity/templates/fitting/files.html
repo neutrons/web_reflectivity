@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block header %}
+<link rel="stylesheet" media="all" href="/static/thirdparty/dynatable/jquery.dynatable.css" />
+<script type='text/javascript' src='/static/thirdparty/dynatable/jquery.dynatable.js'></script>
+<script>
+    var records = {% autoescape off %}{{ file_list }}{% endautoescape %};
+    var dynatable = null;
+    $(document).ready( function() {
+     $('#data_table').dynatable({dataset: {records: records,
+                                           perPageOptions: [25, 50, 100],
+                                           perPageDefault: 25},
+                                 features: {pushState: false}
+     });
+     dynatable = $('#data_table').data('dynatable');
+     dynatable.sorts.add('timestamp', -1)
+     dynatable.process();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="error">{{ message }}</div>
+
+<h2>Upload data</h2>
+Use the following form to upload a new data file. The file format should be 4-column ascii in
+the following order: q, R, dR, dq.
+<p>
+<form id='left' enctype="multipart/form-data" action="" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit" />
+</form>
+
+<h2>Available data</h2>
+You current list of data sets is the following:
+<p>
+<div class='data_manager' >
+<table id='data_table'>
+  <thead>
+    <tr>
+      <th data-dynatable-column="run_id">File identifier</th>
+      <th data-dynatable-column="run_number">Unique ID</th>
+      <th data-dynatable-column="url">URL</th>
+      <th data-dynatable-column="created_on" data-dynatable-sorts="timestamp" >Time</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+{% endblock %}

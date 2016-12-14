@@ -43,7 +43,7 @@ Checked parameters will be kept fixed during the fitting procedure.
 <p>
 <form action="" method="POST">{% csrf_token %}
   <table class="property_table  fixed_table" >
-    <tr><th>Data path</th> <td {% if data_form.data_path.errors %}class='error_row' title='{{ data_form.data_path.errors|first }}'{% endif %}>{{ data_form.data_path }}</td></tr>
+    <tr><th>Data</th> <td {% if data_form.data_path.errors %}class='error_row' title='{{ data_form.data_path.errors|first }}'{% endif %}>{{ data_form.data_path }}</td></tr>
     <tr><th>Scale</th> <td {% if data_form.scale.errors %}class='error_row' title='{{ data_form.scale.errors|first }}'{% endif %}>{{ data_form.scale }}</td><td onclick="set_fixed('#{{ data_form.scale_is_fixed.id_for_label }}')">{{ data_form.scale_is_fixed }}</td></tr>
     <tr><th>Background</th> <td {% if data_form.background.errors %}class='error_row' title='{{ data_form.background.errors|first }}'{% endif %}>{{ data_form.background }}</td><td onclick="set_fixed('#{{ data_form.background_is_fixed.id_for_label }}')">{{ data_form.background_is_fixed }}</td></tr>
   </table>
@@ -183,7 +183,7 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
                     url: "{% url 'fitting:is_completed' job_id %}",
                     success: function(data) {
                         if (data.completed==true) {
-                            new_alert("Fit completed: <a href='{% url 'fitting:modeling' %}'>click here</a> to view the results"); show_alert();
+                            new_alert("Fit completed: <a href='{% url 'fitting:fit' instrument data_id %}'>click here</a> to view the results"); show_alert();
                         } else {
                             new_alert("Job status: " + data.status); show_alert();
                         }
@@ -197,7 +197,10 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
     })();
 </script>
 {% endif %}
+{% endblock %}
 
-
-
+{% block right_side_links %}
+  <span style="float:right">
+    <a href="{% url 'fitting:show_files' %}">show files</a>
+  </span>
 {% endblock %}

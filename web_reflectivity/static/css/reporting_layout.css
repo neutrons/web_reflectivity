@@ -76,6 +76,7 @@ body {
     color:#555555;
 }
 
+h2 {padding-top:30px;}
 p {text-align:left;}
 
 a:link {color:#0077cc; text-decoration:none;}      /* unvisited link */
@@ -155,3 +156,59 @@ input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }
+
+table {border-collapse: collapse; border-spacing: 0;}
+.data_manager table { border-collapse: collapse; border-spacing: 0; 
+    margin-left:auto;
+    margin-right:auto;
+    margin-top:10px;
+    width:100%;
+}
+
+.data_manager td, th {
+    line-height: 13px;
+    vertical-align: middle;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.data_manager th {
+    vertical-align: bottom;
+}
+
+.data_manager thead th,
+tfoot td {
+    padding: 2px 2px;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+.data_manager tfoot td {
+    border-bottom: none;
+    border-top: 1px solid #ddd;
+}
+
+.data_manager thead th:first-child,
+tfoot td:first-child {
+    border-left: none !important;
+}
+
+.data_manager fieldset table {
+    border-right: 1px solid #eee;
+}
+
+.data_manager tr.row-label td {
+    padding-top: 2px;
+    padding-bottom: 0;
+    border-bottom: none;
+    color: #666;
+    margin-top: -1px;
+}
+
+.data_manager tr.alt {
+    background: #f6f6f6;
+}
+
+.data_manager tr:nth-child(even) {background: #f5ede3;}

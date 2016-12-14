@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate
+#pylint: disable=bare-except, invalid-name, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate, too-many-arguments
 """
     Utilities for modeling application
 """
@@ -12,10 +12,12 @@ import logging
 import hashlib
 import httplib
 import pandas
+import requests
 import string
 from django.conf import settings
 from django_remote_submission.models import Server, Job, Log
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
+from django.core.urlresolvers import reverse
 
 import plotly.offline as py
 import plotly.graph_objs as go
@@ -140,13 +142,16 @@ def update_session(request, data_form, layers_form):
 
         request.session['layers_form_values'] = sorted_layers
 
-def check_permissions(request, data_path, instrument):
+def check_permissions(request, run_id, instrument):
+    # When the user is accessing their own data, the instrument is set to the username
+    if instrument == str(request.user):
+        return True
     # Check whether the user is staff or instrument staff
     #if users.view_util.is_instrument_staff(request, instrument):
     #    return True
 
     # Get the IPTS from ICAT
-    run_info = icat.get_run_info(instrument, data_path)
+    run_info = icat.get_run_info(instrument, run_id)
     if 'proposal' in run_info:
         logging.error(run_info['proposal'])
         return users.view_util.is_experiment_member(request, instrument, run_info['proposal'])
@@ -183,6 +188,25 @@ def get_latest_fit(request):
 
     return data_path, fit_problem
 
+def get_fit_problem(request, instrument, data_id):
+    data_path = "%s/%s" % (instrument, data_id)
+    fit_problem_list = FitProblem.objects.filter(user=request.user,
+                                                 reflectivity_model__data_path=data_path)
+    if len(fit_problem_list) > 0:
+        fit_problem = fit_problem_list.latest('timestamp')
+
+        # Cleanup
+        job_id = request.session.get('job_id', None)
+        for item in fit_problem_list:
+            if not item == fit_problem and not item.id == job_id:
+                logging.info("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
+                delete_problem(item)
+
+        return data_path, fit_problem
+    return data_path, None
+
+
+    
 def delete_problem(fit_problem):
     """
         Remove a FitProblem and all its related entries from the database
@@ -207,7 +231,7 @@ def delete_problem(fit_problem):
         logging.error("Could not retrieve object: %s", sys.exc_value)
         return
 
-def get_results(request, fit_problem):
+def get_results(request, data_path, fit_problem):
     errors = []
     chi2 = None
     latest = None
@@ -239,6 +263,7 @@ def get_results(request, fit_problem):
     else:
         errors.append("No model found for this data set")
         initial_values = request.session.get('data_form_values', {})
+        initial_values['data_path'] = data_path
         initial_layers = request.session.get('layers_form_values', {})
 
     return initial_values, initial_layers, chi2, latest, errors, can_update
@@ -398,3 +423,59 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
     fig = go.Figure(data=data, layout=layout)
     plot_div = py.plot(fig, output_type='div', include_plotlyjs=False, show_link=False)
     return plot_div
+
+def parse_ascii_file(request, file_name, raw_content):
+    """
+        Process an uploaded data file
+        @param request: http request object
+        @param file_name: name of the uploaded file
+        @param raw_content: content of the file
+    """
+    try:
+        current_str = io.StringIO(unicode(raw_content))
+        current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+        data_set = [current_data['q'], current_data['r'], current_data['dr'], current_data['dq']]
+
+        # Package the data in a plot
+        plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
+
+        # Upload plot to live data server
+        url_template = string.Template(settings.LIVE_DATA_USER_UPLOAD_URL)
+        live_data_url = url_template.substitute(user=str(request.user),
+                                                domain=settings.LIVE_DATA_SERVER_DOMAIN,
+                                                port=settings.LIVE_DATA_SERVER_PORT)
+        monitor_user = {'username': settings.LIVE_DATA_API_USER, 'password': settings.LIVE_DATA_API_PWD,
+                        'data_id': file_name}
+        files = {'file': plot}
+        http_request = requests.post(live_data_url, data=monitor_user, files=files, verify=True)
+
+        if http_request.status_code == 200:
+            return True, ""
+        else:
+            logging.error("Return code %s for %s:", http_request.status_code, live_data_url)
+            return False, "Could not send data to server"
+    except:
+        logging.error("Could not parse file %s: %s", file_name, sys.exc_value)
+        return False, "Could not parse data file %s" % file_name
+
+def get_user_files(request):
+    """
+        Get a list of the user's data on the live data server
+    """
+    try:
+        # Upload plot to live data server
+        url_template = string.Template(settings.LIVE_DATA_USER_FILES_URL)
+        live_data_url = url_template.substitute(user=str(request.user),
+                                                domain=settings.LIVE_DATA_SERVER_DOMAIN,
+                                                port=settings.LIVE_DATA_SERVER_PORT)
+        logging.error(live_data_url)
+        monitor_user = {'username': settings.LIVE_DATA_API_USER, 'password': settings.LIVE_DATA_API_PWD}
+        http_request = requests.post(live_data_url, data=monitor_user, files={}, verify=True)
+
+        data_list = json.loads(http_request.content)
+        for item in data_list:
+            item['url'] = "<a href='%s'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item['run_number']))
+        return json.dumps(data_list)
+    except:
+        logging.error("Could not retrieve user files: %s", sys.exc_value)
+        return None

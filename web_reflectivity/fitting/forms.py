@@ -16,6 +16,12 @@ from django.templatetags.l10n import localize
 
 from .models import ReflectivityModel, ReflectivityLayer
 
+class UploadFileForm(forms.Form):
+    """
+        Simple form to select a data file on the user's machine
+    """
+    file = forms.FileField()
+
 class ValueErrorField(forms.Field):
     #widget = forms.NumberInput
     default_error_messages = {

@@ -8,3 +8,4 @@ psycopg2
 django_remote_submission
 django_auth_ldap
 scipy
+requests
