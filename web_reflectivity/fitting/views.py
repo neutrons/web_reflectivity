@@ -106,11 +106,19 @@ class FitView(View):
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
+        # Check whether we need an extra layer
         default_extra = 0
         try:
             extra = int(request.GET.get('extra', default_extra))
         except:
             extra = default_extra
+
+        # Check whether we want to plot RQ^4 vs Q
+        if 'rq4' in request.GET:
+            rq4 = not request.GET.get('rq4', True) == '0'
+            request.session['rq4'] = rq4
+        else:
+            rq4 = request.session.get('rq4', False)
 
         error_message = []
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
@@ -127,7 +135,7 @@ class FitView(View):
         html_data = view_util.get_plot_data_from_server(instrument, data_id)
         if html_data is None:
             error_message.append("Could not find data for %s/%s" % (instrument, data_id))
-        html_data = view_util.assemble_plot(html_data, log_object)
+        html_data = view_util.assemble_plot(html_data, log_object, rq4=rq4)
 
         job_id = request.session.get('job_id', None)
         template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
@@ -135,6 +143,7 @@ class FitView(View):
                            'html_data': html_data,
                            'user_alert': error_message,
                            'chi2': chi2,
+                           'rq4': rq4,
                            'instrument': instrument,
                            'data_id': data_id,
                            'job_id': job_id if can_update else None,

@@ -245,7 +245,7 @@ def get_results(request, data_path, fit_problem):
 
     return initial_values, initial_layers, chi2, latest, errors, can_update
 
-def assemble_plot(html_data, log_object):
+def assemble_plot(html_data, log_object, rq4=False):
     """
         @param log_object: remote job Log object
     """
@@ -254,7 +254,13 @@ def assemble_plot(html_data, log_object):
     # Check that the latest fit really corresponds to the latest data
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
-    data_list.append([current_data['q'], current_data['r'], current_data['dr']])
+    if rq4 is True:
+        r_values = current_data['r'] * current_data['q']**4
+        dr_values = current_data['dr'] * current_data['q']**4
+    else:
+        r_values = current_data['r']
+        dr_values = current_data['dr']
+    data_list.append([current_data['q'], r_values, dr_values])
     data_names.append("Data")
 
     # Extract data from log object
@@ -263,10 +269,17 @@ def assemble_plot(html_data, log_object):
         if data_log is not None:
             data_str = io.StringIO(data_log)
             raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
-            data_list.append([raw_data['q'], raw_data['theory']])
+            if rq4 is True:
+                fit_values = raw_data['theory'] * raw_data['q']**4
+            else:
+                fit_values = raw_data['theory']
+            data_list.append([raw_data['q'], fit_values])
             data_names.append("Fit")
 
-    return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
+    y_title=u"Reflectivity"
+    if rq4 is True:
+        y_title += u" x Q<sup>4</sup> (1/\u212b<sup>4</sup>)"
+    return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
 
 def is_fittable(data_form, layers_form):
     """
