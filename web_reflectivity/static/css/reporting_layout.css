@@ -76,8 +76,9 @@ body {
     color:#555555;
 }
 
-h2 {padding-top:30px;}
-p {text-align:left;}
+h2 {color: #71af5a;}
+form { margin-top:10px; }
+p {text-align:left; margin-top:30px;}
 
 a:link {color:#0077cc; text-decoration:none;}      /* unvisited link */
 a:visited {color:#0077cc; text-decoration:none;}  /* visited link */
@@ -141,14 +142,16 @@ img {border: 0;}
     font-size: 8px;
 }
 
-.layer { color: #1f77b4; font-weight: bold;}
+.layer { color: #71af5a; font-weight: bold;}
 .error_row { background: #f8bdb7; }
-.highlight_row { background: #f8e7b3; }
+.highlight_row { background: #faffbd; }
 .short_label { display: inline-block; text-align:right; min-width:60px; width:60px; }
 .tiny_input input { min-width:80px; width:80px; }
 .short_input input { min-width:50px; width:100px; margin-right:10px}
 .short_input input[type='checkbox'] { min-width:30px; width:30px; padding-rgiht:0px; margin-left:-10px; margin-right:10px}
 
+.ui-button:active {background:#0a7ffb;}
+.ui-button {border-width: 1px; border-color: #2c91fc; border-style: solid; background:#3b99fc; color:white;}
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -157,7 +160,7 @@ input::-webkit-inner-spin-button {
     margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }
 
-table {border-collapse: collapse; border-spacing: 0;}
+table {border-collapse: collapse; border-spacing: 0; }
 .data_manager table { border-collapse: collapse; border-spacing: 0; 
     margin-left:auto;
     margin-right:auto;
@@ -211,4 +214,4 @@ tfoot td:first-child {
     background: #f6f6f6;
 }
 
-.data_manager tr:nth-child(even) {background: #f5ede3;}
+.data_manager tr:nth-child(even) {background: #f4f4f4;}

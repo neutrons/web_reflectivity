@@ -151,9 +151,9 @@ class FitView(View):
         # Check whether we need to redirect because the user changes the data path
         data_path = request.POST.get('data_path', '')
         toks = data_path.split('/')
-        if len(toks) == 1:
+        if len(toks) == 1 and len(toks[0]) > 0:
             data_id = toks[0]
-        elif len(toks) == 2:
+        elif len(toks) == 2 and len(toks[0]) > 0 and len(toks[1]) > 0:
             instrument = toks[0]
             data_id = toks[1]
 

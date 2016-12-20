@@ -38,9 +38,10 @@
   <div class="error">{{ message }}</div>
 
   <div id="graph">{{ html_data|safe }}</div>
-<p><p>
+
+<h2>Layer model</h2>
 Checked parameters will be kept fixed during the fitting procedure.
-<p>
+
 <form action="" method="POST">{% csrf_token %}
   <table class="property_table  fixed_table" >
     <tr><th>Data</th> <td {% if data_form.data_path.errors %}class='error_row' title='{{ data_form.data_path.errors|first }}'{% endif %}>{{ data_form.data_path }}</td></tr>
@@ -48,7 +49,7 @@ Checked parameters will be kept fixed during the fitting procedure.
     <tr><th>Background</th> <td {% if data_form.background.errors %}class='error_row' title='{{ data_form.background.errors|first }}'{% endif %}>{{ data_form.background }}</td><td onclick="set_fixed('#{{ data_form.background_is_fixed.id_for_label }}')">{{ data_form.background_is_fixed }}</td></tr>
   </table>
 
-  <p><p>
+  <p>
   Neutrons scatter off the first layer on top of the following list. You can change the order of the layers by changing the <b>layer number</b>.
   The layers will be re-ordered upon submission.
 
@@ -87,15 +88,15 @@ Checked parameters will be kept fixed during the fitting procedure.
   </table>
 
   <span style="float: right; margin-left:15px;" >
-  <input id="choose_file_button" title="Click to set your data and get the latest fit" type="submit" name="button_choice" value="set data"/>
-  <input id="submit_button" title="Click to fit your data" type="submit" name="button_choice" value="fit"/>
-  <input id="evaluate_button" title="Click to evaluate the current model" type="submit" name="button_choice" value="evaluate"/>
+  <input class="ui-button ui-widget ui-corner-all" id="choose_file_button" title="Click to set your data and get the latest fit" type="submit" name="button_choice" value="set data"/>
+  <input class="ui-button ui-widget ui-corner-all" id="submit_button" title="Click to fit your data" type="submit" name="button_choice" value="fit"/>
+  <input class="ui-button ui-widget ui-corner-all" id="evaluate_button" title="Click to evaluate the current model" type="submit" name="button_choice" value="evaluate"/>
   </span>
   <p>
   <hr>
-  <p>
-  Fitting parameters {%if chi2 %}[<span class='layer'>&#x3C7;<sup>2</sup>={{chi2}}</span>]{% endif %}:
-  <p>
+
+  <h2>Fitting parameters {%if chi2 %}<span class='layer'>[&#x3C7;<sup>2</sup>={{chi2}}]</span>{% endif %}</h2> 
+
   Q range: {{ data_form.q_min }} to {{ data_form.q_max }} 1/&#8491;
   <p>
   <table class="property_table">
@@ -157,7 +158,7 @@ function compute_size(id) {
         size = 11-Math.round(len); 
         if(size >= 8) $(id).css("font-size",size + "px")
     } else $(id).css("font-size","11px");
-    if($(id).val().length == 0) {$(id).css("background","#f8e7b3")};
+    if($(id).val().length == 0) {$(id).css("background","#faffbd")};
 }
 compute_size('#id_data_path');
 $('.font_resize').keyup(function(ev) {
