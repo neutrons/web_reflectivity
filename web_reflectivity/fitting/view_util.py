@@ -73,7 +73,7 @@ def get_plot_data_from_server(instrument, run_id, data_type='html'):
         live_data_url = url_template.substitute(instrument=instrument, run_number=run_id)
         live_data_url += "/%s/" % data_type
         live_data_url = append_key(live_data_url, instrument, run_id)
-        conn = httplib.HTTPSConnection(settings.LIVE_DATA_SERVER_DOMAIN, timeout=1.5)
+        conn = httplib.HTTPSConnection(settings.LIVE_DATA_SERVER_DOMAIN, timeout=5.5)
         conn.request('GET', live_data_url)
         data_request = conn.getresponse()
         if data_request.status == 200:
