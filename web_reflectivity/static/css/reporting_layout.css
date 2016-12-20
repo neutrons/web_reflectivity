@@ -150,6 +150,7 @@ img {border: 0;}
 .short_input input { min-width:50px; width:100px; margin-right:10px}
 .short_input input[type='checkbox'] { min-width:30px; width:30px; padding-rgiht:0px; margin-left:-10px; margin-right:10px}
 
+.ui-button:focus {outline:none;}
 .ui-button:active {background:#0a7ffb;}
 .ui-button {border-width: 1px; border-color: #2c91fc; border-style: solid; background:#3b99fc; color:white;}
 
