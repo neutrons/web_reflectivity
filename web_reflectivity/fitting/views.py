@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long
+#pylint: disable=bare-except, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
 """
     Definition of views
 """
@@ -10,12 +10,15 @@ from django.forms.formsets import formset_factory
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.views.generic.base import View
+from django.views.generic.list import ListView
+from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm
 from django_remote_submission.models import Job
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm
+from .models import FitProblem
 from . import view_util
 
 import users.view_util
@@ -25,11 +28,15 @@ def landing_page(request):
     """
         Landing page for the app. Redirects to the last fit.
     """
-    data_path = request.session.get('latest_data_path', None)
-    toks = data_path.split('/')
-    if len(toks) == 2:
-        instrument = toks[0]
-        data_id = toks[1]
+    data_path = request.GET.get('data', None)
+    if data_path is None:
+        data_path = request.session.get('latest_data_path', None)
+    if data_path is None:
+        raise Http404()
+    instrument, data_id = view_util.parse_data_path(data_path)
+    if instrument is None:
+        instrument = settings.DEFAULT_INSTRUMENT
+    if instrument is not None and data_id is not None:
         return redirect(reverse('fitting:fit', args=(instrument, data_id)))
     raise Http404()
 
@@ -69,7 +76,7 @@ class FileView(View):
 
         data = view_util.get_user_files(request)
         if data is None:
-            errors.append("No user files found")
+            errors.append("No user file found")
         form = self.form_class()
         template_values = {'breadcrumbs': breadcrumbs,
                            'file_list': data,
@@ -93,6 +100,70 @@ class FileView(View):
         return render(request, self.template_name, {'form': form,
                                                     'user_alert': errors})
 
+@login_required
+def download_reduced_data(request, instrument, data_id):
+    """
+        Download reduced data from live data server
+        @param request: http request object
+        @param instrument: instrument name
+        @param run_id: run number
+    """
+    html_data = view_util.get_plot_data_from_server(instrument, data_id)
+    ascii_data = view_util.extract_ascii_from_div(html_data)
+    if ascii_data is None:
+        error_msg = "Could not find data for %s/%s"  % (instrument, data_id)
+        return HttpResponseNotFound(error_msg)
+    ascii_data = "# %s Run %s\n# X Y dY dX\n%s" % (instrument.upper(), data_id, ascii_data)
+    response = HttpResponse(ascii_data, content_type="text/plain")
+    response['Content-Disposition'] = 'attachment; filename=%s_%s.txt' % (instrument.upper(), data_id)
+    return response
+
+@login_required
+def download_fit_data(request, instrument, data_id):
+    """
+        Download reduced data and fit data from latest fit
+        @param request: http request object
+        @param instrument: instrument name
+        @param run_id: run number
+    """
+    ascii_data = view_util.get_fit_data(request, instrument, data_id)
+    if ascii_data is None:
+        return download_reduced_data(request, instrument, data_id)
+
+    response = HttpResponse(ascii_data, content_type="text/plain")
+    response['Content-Disposition'] = 'attachment; filename=%s_%s.txt' % (instrument.upper(), data_id)
+    return response
+
+@method_decorator(login_required, name='dispatch')
+class FitListView(ListView):
+    """
+        List of fits
+    """
+    model = FitProblem
+    template_name = 'fitting/fit_list.html'
+    context_object_name = 'fit_list'
+
+    def get_queryset(self):
+        return FitProblem.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super(FitListView, self).get_context_data(**kwargs)
+        errors = []
+        if len(context) == 0:
+            errors.append("No fit found")
+        fit_list = []
+        for item in context['fit_list']:
+            localtime = timezone.localtime(item.timestamp)
+            df = dateformat.DateFormat(localtime)
+            fit_list.append({'id': item.id, 'layers': item.show_layers(), 'data': item.reflectivity_model.data_path,
+                             'url': "<a href='%s?data=%s' target='_blank'>click to fit</a>" % (reverse('fitting:modeling'),
+                                                                               item.reflectivity_model.data_path),
+                             'timestamp': item.timestamp.isoformat(),
+                             'created_on': df.format(settings.DATETIME_FORMAT)})
+        context['json_list'] = json.dumps(fit_list)
+        context['user_alert'] = errors
+        context['breadcrumbs'] = "<a href='/'>home</a> &rsaquo; recent fits"
+        return context
 
 @method_decorator(login_required, name='dispatch')
 class FitView(View):
@@ -159,12 +230,11 @@ class FitView(View):
         error_message = []
         # Check whether we need to redirect because the user changes the data path
         data_path = request.POST.get('data_path', '')
-        toks = data_path.split('/')
-        if len(toks) == 1 and len(toks[0]) > 0:
-            data_id = toks[0]
-        elif len(toks) == 2 and len(toks[0]) > 0 and len(toks[1]) > 0:
-            instrument = toks[0]
-            data_id = toks[1]
+        instrument_, data_id_ = view_util.parse_data_path(data_path)
+        if instrument_ is not None:
+            instrument = instrument_
+        if data_id_ is not None:
+            data_id = data_id_
 
         request.session['latest_data_path'] = data_path
         html_data = view_util.get_plot_data_from_server(instrument, data_id)

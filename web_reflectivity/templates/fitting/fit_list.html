@@ -4,7 +4,7 @@
 <link rel="stylesheet" media="all" href="/static/thirdparty/dynatable/jquery.dynatable.css" />
 <script type='text/javascript' src='/static/thirdparty/dynatable/jquery.dynatable.js'></script>
 <script>
-    var records = {% autoescape off %}{{ file_list }}{% endautoescape %};
+    var records = {% autoescape off %}{{ json_list }}{% endautoescape %};
     var dynatable = null;
     $(document).ready( function() {
      $('#data_table').dynatable({dataset: {records: records,
@@ -22,26 +22,15 @@
 {% block content %}
 <div class="error">{{ message }}</div>
 
-<h2>Upload data</h2>
-Use the following form to upload a new data file. The file format should be 4-column ascii in
-the following order: q, R, dR, dq.
-<p>
-<form id='left' enctype="multipart/form-data" action="" method="post">
-    {% csrf_token %}
-    {{ form }}
-    <input type="submit" value="Submit" />
-</form>
-
-<p>
-<h2>Available data</h2>
-Your current list of data sets is the following:
+<h2>Available fits</h2>
+The following are your latest fits:
 <p>
 <div class='data_manager' >
 <table id='data_table'>
   <thead>
     <tr>
-      <th data-dynatable-column="run_id">File identifier</th>
-      <th data-dynatable-column="run_number">Unique ID</th>
+      <th data-dynatable-column="data">Data</th>
+      <th data-dynatable-column="layers">Layers</th>
       <th data-dynatable-column="url">URL</th>
       <th data-dynatable-column="created_on" data-dynatable-sorts="timestamp" >Time</th>
     </tr>
@@ -54,6 +43,6 @@ Your current list of data sets is the following:
 
 {% block right_side_links %}
   <span style="float:right">
-    <a href="{% url 'fitting:show_fits' %}">show fits</a>
+    <a href="{% url 'fitting:show_files' %}">show files</a>
   </span>
 {% endblock %}

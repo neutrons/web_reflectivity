@@ -181,6 +181,19 @@ def get_fit_problem(request, instrument, data_id):
         return data_path, fit_problem
     return data_path, None
 
+def get_fit_data(request, instrument, data_id):
+    """
+        Get the latest ascii data from 
+    """
+    ascii_data = None
+    _, fit_problem = get_fit_problem(request, instrument, data_id)
+    if fit_problem is not None:
+        job_logs = Log.objects.filter(job=fit_problem.remote_job)
+        if len(job_logs) > 0:
+            latest = job_logs.latest('time')
+            ascii_data = refl1d.extract_data_from_log(latest.content)
+    return ascii_data
+
 def delete_problem(fit_problem):
     """
         Remove a FitProblem and all its related entries from the database
@@ -478,8 +491,22 @@ def get_user_files(request):
 
         data_list = json.loads(http_request.content)
         for item in data_list:
-            item['url'] = "<a href='%s'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item['run_number']))
+            item['url'] = "<a href='%s' target='_blank'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item['run_number']))
         return json.dumps(data_list)
     except:
         logging.error("Could not retrieve user files: %s", sys.exc_value)
         return None
+
+def parse_data_path(data_path):
+    """
+        Parse a data path of the form <instrument>/<data>
+    """
+    instrument = None
+    data_id = None
+    toks = data_path.split('/')
+    if len(toks) == 1 and len(toks[0]) > 0:
+        data_id = toks[0]
+    elif len(toks) == 2 and len(toks[0]) > 0 and len(toks[1]) > 0:
+        instrument = toks[0]
+        data_id = toks[1]
+    return instrument, data_id

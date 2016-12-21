@@ -153,6 +153,7 @@ REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'
 JOB_HANDLING_HOST = ''
+DEFAULT_INSTRUMENT = 'ref_l'
 
 HELPLINE = 'NDAV'
 # Import local settings if available

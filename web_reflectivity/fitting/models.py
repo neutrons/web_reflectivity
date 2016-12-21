@@ -103,3 +103,14 @@ class FitProblem(models.Model):
             layer_dict['layer_number'] = i
             model_layers.append(layer_dict)
         return refl_model_dict, model_layers
+
+    def show_layers(self):
+        front_name = self.reflectivity_model.front_name
+        back_name = self.reflectivity_model.back_name
+        layers = [str(i) for i in self.layers.all().order_by('layer_number')]
+        if len(layers) > 0:
+            layers_str = ', '.join(layers)+', '
+        else:
+            layers_str = ''
+        return u"%s, %s%s" % (front_name, layers_str, back_name)
+    show_layers.short_description = "Layers"
