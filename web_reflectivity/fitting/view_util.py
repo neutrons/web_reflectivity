@@ -15,7 +15,7 @@ import pandas
 import requests
 import string
 from django.conf import settings
-from django_remote_submission.models import Server, Job, Log
+from django_remote_submission.models import Server, Job, Log, Interpreter
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
 
@@ -334,11 +334,18 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
 
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=22)[0]
 
+    python2_interpreter = Interpreter.objects.get_or_create(name = 'python2',
+                                                            path = '/usr/bin/python2.7 -u')[0]
+    python3_interpreter = Interpreter.objects.get_or_create(name = 'python3',
+                                                            path = '/usr/bin/python3.5 -u')[0]
+    server.interpreters.set([python2_interpreter, python3_interpreter])
+
     job = Job(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
                                     program=script,
                                     remote_directory=work_dir,
                                     remote_filename='fit_job.py',
                                     owner=user,
+                                    interpreter=python2_interpreter,
                                     server=server)
     job.save()
     submit_job_to_server.delay(
