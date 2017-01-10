@@ -332,7 +332,7 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit)
 
-    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=22)[0]
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=settings.JOB_HANDLING_POST)[0]
 
     python2_interpreter = Interpreter.objects.get_or_create(name = 'python2',
                                                             path = '/usr/bin/python2.7 -u')[0]

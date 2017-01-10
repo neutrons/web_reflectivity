@@ -4,6 +4,7 @@
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth import login, logout, authenticate
+from django_remote_submission.remote import RemoteWrapper
 
 # Application-specific imports
 from django.conf import settings
@@ -21,6 +22,10 @@ def perform_login(request):
         user = authenticate(username=username, password=password)
         if user is not None and not user.is_anonymous():
             login(request,user)
+            wrapper = RemoteWrapper(hostname=settings.JOB_HANDLING_HOST,
+                                    username=username, port=settings.JOB_HANDLING_POST)
+            with wrapper.connect(password, public_key_filename=settings.JOB_HANDLING_PUBLIC_KEY):
+                wrapper.close()
         else:
             login_failure = ["Invalid username or password"]
 
