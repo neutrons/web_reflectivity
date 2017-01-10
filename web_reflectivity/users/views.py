@@ -22,7 +22,7 @@ def perform_login(request):
         if user is not None and not user.is_anonymous():
             login(request,user)
         else:
-            login_failure = "Invalid username or password"
+            login_failure = ["Invalid username or password"]
 
     if request.user.is_authenticated():
         # If we came from a given page and just needed
@@ -36,7 +36,7 @@ def perform_login(request):
         breadcrumbs = "<a href='%s'>home</a> &rsaquo; login" % reverse(settings.LANDING_VIEW)
 
         template_values = {'breadcrumbs': breadcrumbs,
-                           'login_failure': login_failure}
+                           'user_alert': login_failure}
         template_values = fill_template_values(request, **template_values)
         return render(request, 'users/authenticate.html', template_values)
 
