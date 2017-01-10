@@ -227,6 +227,13 @@ class FitView(View):
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
+        # Check whether we want to plot RQ^4 vs Q
+        if 'rq4' in request.GET:
+            rq4 = not request.GET.get('rq4', True) == '0'
+            request.session['rq4'] = rq4
+        else:
+            rq4 = request.session.get('rq4', False)
+
         error_message = []
         # Check whether we need to redirect because the user changes the data path
         data_path = request.POST.get('data_path', '')
@@ -277,6 +284,9 @@ class FitView(View):
                            'data_form': data_form,
                            'html_data': html_data,
                            'user_alert': error_message,
+                           'rq4': rq4,
+                           'instrument': instrument,
+                           'data_id': data_id,
                            'layers_form': layers_form}
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
