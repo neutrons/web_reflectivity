@@ -62,6 +62,12 @@ first_install: webapp/core
 	# Modify and copy the wsgi configuration
 	cp apache/apache_django_wsgi.conf /etc/httpd/conf.d
 
+start:
+	apachectl restart
+	/sbin/service redis restart
+	/sbin/service celery restart
+
+.PHONY: start
 .PHONY: check
 .PHONY: install
 .PHONY: webapp
