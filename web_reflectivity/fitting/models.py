@@ -56,7 +56,7 @@ class ReflectivityLayer(models.Model):
     """
         One layer of a reflectivity model
     """
-    name = models.CharField(max_length=64, blank=True, default='')
+    name = models.CharField(max_length=64, blank=True, default='material')
     thickness = models.FloatField(default=50.0)
     sld = models.FloatField(default=2.0)
     roughness = models.FloatField(default=1.0)
