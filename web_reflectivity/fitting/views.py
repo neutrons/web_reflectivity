@@ -258,7 +258,7 @@ class FitView(View):
                 # Check for form submission option
                 output = {}
                 if task in ["evaluate", "fit"]:
-                    if view_util.is_fittable(data_form, layers_form):
+                    if task == "evaluate" or view_util.is_fittable(data_form, layers_form):
                         output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
                         if 'job_id' in output:
                             job_id = output['job_id']
