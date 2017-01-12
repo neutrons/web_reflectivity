@@ -1,0 +1,13 @@
+#
+# Configuration for celery, to be placed in /etc/default/celeryd
+# In addition, the following file should be placed in /etc/init.d/celeryd
+#     https://github.com/celery/celery/blob/master/extra/generic-init.d/celeryd
+#
+# Use: /usr/sbin/service celeryd start
+# 
+CELERY_APP="fitting"
+CELERYD_CHDIR="/var/www/web_reflectivity/app/"
+CELERYD_LOG_LEVEL=DEBUG
+CELERY_CONFIG_MODULE="web_reflectivity.settings"
+
+export DJANGO_SETTINGS_MODULE="web_reflectivity.settings"

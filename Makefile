@@ -44,10 +44,6 @@ webapp/core:
 	cp -R $(app_dir)/users $(prefix)/app
 	cp -R $(app_dir)/static $(prefix)/app
 
-	# The following should be done with the proper apache user
-	#chgrp apache $(prefix)/static/web_monitor
-	#chown apache $(prefix)/static/web_monitor
-
 webapp: webapp/core
 	# Collect the static files and install them
 	cd $(prefix)/app; python manage.py collectstatic --noinput

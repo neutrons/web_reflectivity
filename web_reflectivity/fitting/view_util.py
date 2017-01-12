@@ -332,13 +332,11 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit)
 
-    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST,  port=settings.JOB_HANDLING_POST)[0]
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
 
-    python2_interpreter = Interpreter.objects.get_or_create(name = 'python2',
-                                                            path = '/usr/bin/python2.7 -u')[0]
-    python3_interpreter = Interpreter.objects.get_or_create(name = 'python3',
-                                                            path = '/usr/bin/python3.5 -u')[0]
-    server.interpreters.set([python2_interpreter, python3_interpreter])
+    python2_interpreter = Interpreter.objects.get_or_create(name='python2',
+                                                            path=settings.JOB_HANDLING_INTERPRETER)[0]
+    server.interpreters.set([python2_interpreter,])
 
     job = Job(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
                                     program=script,
