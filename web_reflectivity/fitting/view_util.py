@@ -157,7 +157,6 @@ def check_permissions(request, run_id, instrument):
     # Get the IPTS from ICAT
     run_info = icat.get_run_info(instrument, run_id)
     if 'proposal' in run_info:
-        logging.error(run_info['proposal'])
         return users.view_util.is_experiment_member(request, instrument, run_info['proposal'])
     return False
 
@@ -242,8 +241,11 @@ def get_results(request, data_path, fit_problem):
                         logging.error("Logs for job %s needs cleaning up", job.id)
                         #job.delete()
                 initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+                if chi2 is None:
+                    errors.append("The fit results appear to be incomplete.")
+                    can_update = False
             else:
-                errors.append("Not results found")
+                errors.append("No results found")
                 logging.error("nothing found for %s", fit_problem.remote_job.id)
         except:
             logging.error("Problem retrieving results: %s", sys.exc_value)
@@ -490,7 +492,6 @@ def get_user_files(request):
         live_data_url = url_template.substitute(user=str(request.user),
                                                 domain=settings.LIVE_DATA_SERVER_DOMAIN,
                                                 port=settings.LIVE_DATA_SERVER_PORT)
-        logging.error(live_data_url)
         monitor_user = {'username': settings.LIVE_DATA_API_USER, 'password': settings.LIVE_DATA_API_PWD}
         http_request = requests.post(live_data_url, data=monitor_user, files={}, verify=True)
 
