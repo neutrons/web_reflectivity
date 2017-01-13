@@ -187,10 +187,10 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 
 # The following block is only needed if we use the optional django_celery_results app
-CELERY_ACCEPT_CONTENT = ['pickle']
-CELERY_EVENT_SERIALIZER = 'pickle'
-CELERY_TASK_SERIALIZER = 'pickle'
-CELERY_RESULT_SERIALIZER = 'pickle'
+#CELERY_ACCEPT_CONTENT = ['pickle']
+#CELERY_EVENT_SERIALIZER = 'pickle'
+#CELERY_TASK_SERIALIZER = 'pickle'
+#CELERY_RESULT_SERIALIZER = 'pickle'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/var/www/web_reflectivity/media'
 
