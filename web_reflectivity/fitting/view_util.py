@@ -349,7 +349,8 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         job_pk=job.pk,
         password='',
         username=user.username,
-        log_policy=LogPolicy.LOG_TOTAL
+        log_policy=LogPolicy.LOG_TOTAL,
+        store_results=''
     )
 
     # Save this fit job

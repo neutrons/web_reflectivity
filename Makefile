@@ -35,6 +35,7 @@ webapp/core:
 	test -d $(prefix) || mkdir -m 0755 -p $(prefix)
 	test -d $(prefix)/app || mkdir -m 0755 $(prefix)/app
 	test -d $(prefix)/static || mkdir -m 0755 $(prefix)/static
+	test -d $(prefix)/media || mkdir -m 0755 $(prefix)/media
 	
 	# Install application code
 	cp $(app_dir)/manage.py $(prefix)/app
