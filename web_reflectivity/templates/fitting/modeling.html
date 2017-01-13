@@ -193,6 +193,7 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
                     dataType: "json",
                     complete: poll,
                     statusCode: { 401: function() { new_alert("Your session expired. Please log in again"); show_alert(); }},
+                    statusCode: { 404: function() { new_alert("A more recent fit is now available. Please <a href='{% url 'fitting:fit' instrument data_id %}'>refresh</a> your page."); show_alert(); }},
                     timeout: 2000
                 })
         }, 2000);
