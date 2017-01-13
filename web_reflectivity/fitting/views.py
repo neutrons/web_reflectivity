@@ -148,8 +148,8 @@ class FitListView(ListView):
             localtime = timezone.localtime(item.timestamp)
             df = dateformat.DateFormat(localtime)
             fit_list.append({'id': item.id, 'layers': item.show_layers(), 'data': item.reflectivity_model.data_path,
-                             'url': "<a href='%s?data=%s' target='_blank'>click to fit</a>" % (reverse('fitting:modeling'),
-                                                                               item.reflectivity_model.data_path),
+                             'url': "<a href='%s%s' target='_blank'>click to fit</a>" % (reverse('fitting:modeling'),
+                                                                                         item.reflectivity_model.data_path),
                              'timestamp': item.timestamp.isoformat(),
                              'created_on': df.format(settings.DATETIME_FORMAT)})
         context['json_list'] = json.dumps(fit_list)
