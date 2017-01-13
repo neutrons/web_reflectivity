@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_auth_ldap',
     'django_remote_submission',
-    #'django_celery_results',
+    'django_celery_results',
     'fitting',
     'users',
 ]
