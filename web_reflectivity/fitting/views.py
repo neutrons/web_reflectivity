@@ -70,36 +70,45 @@ class FileView(View):
     form_class = UploadFileForm
     template_name = 'fitting/files.html'
 
-    def get(self, request, *args, **kwargs):
-        """ Process a GET request """
+    def _get_template_values(self, request):
         errors = []
         breadcrumbs = "<a href='/'>home</a> &rsaquo; data files"
 
         data = view_util.get_user_files(request)
         if data is None:
             errors.append("No user file found")
-        form = self.form_class()
         template_values = {'breadcrumbs': breadcrumbs,
                            'file_list': data,
-                           'form': form,
                            'user_alert': errors}
+        return template_values
+
+    def get(self, request, *args, **kwargs):
+        """ Process a GET request """
+        template_values = self._get_template_values(request)
+        form = self.form_class()
+        template_values['form'] = form
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, self.template_name, template_values)
 
     def post(self, request, *args, **kwargs):
         """ Process a POST request """
+        template_values = self._get_template_values(request)
         form = self.form_class(request.POST, request.FILES)
         errors = []
         if form.is_valid():
             file_name = request.FILES['file'].name
-            raw_content = request.FILES['file'].read()
-            success, error_msg = view_util.parse_ascii_file(request, file_name, raw_content)
-            if success is True:
-                return redirect(reverse('fitting:show_files'))
+            if request.FILES['file'].size < 1024 * 1024:
+                raw_content = request.FILES['file'].read()
+                success, error_msg = view_util.parse_ascii_file(request, file_name, raw_content)
+                if success is True:
+                    return redirect(reverse('fitting:show_files'))
+                else:
+                    errors.append(error_msg)
             else:
-                errors.append(error_msg)
-        return render(request, self.template_name, {'form': form,
-                                                    'user_alert': errors})
+                errors.append("The uploaded file is too big.")
+        template_values['form'] = form
+        template_values['user_alert'] = errors
+        return render(request, self.template_name, template_values)
 
 @login_required
 def download_reduced_data(request, instrument, data_id):
