@@ -150,9 +150,6 @@ def check_permissions(request, run_id, instrument):
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
         return True
-    # Check whether the user is staff or instrument staff
-    #if users.view_util.is_instrument_staff(request, instrument):
-    #    return True
 
     # Get the IPTS from ICAT
     run_info = icat.get_run_info(instrument, run_id)

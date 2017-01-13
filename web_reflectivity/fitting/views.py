@@ -24,24 +24,6 @@ from . import view_util
 import users.view_util
 
 @login_required
-def landing_page(request):
-    """
-        Landing page for the app. Redirects to the last fit.
-    """
-    data_path = request.GET.get('data', None)
-    if data_path is None:
-        data_path = request.session.get('latest_data_path', None)
-    if data_path is not None:
-        instrument, data_id = view_util.parse_data_path(data_path)
-        if instrument is None:
-            instrument = settings.DEFAULT_INSTRUMENT
-        if instrument is not None and data_id is not None:
-            return redirect(reverse('fitting:fit', args=(instrument, data_id)))
-
-    # If don't have any data to show, just go to the file list
-    return redirect(reverse('fitting:show_files'))
-
-@login_required
 def private(request):
     """
         Return the page telling the user that the data is private.

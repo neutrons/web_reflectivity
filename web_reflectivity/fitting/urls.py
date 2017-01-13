@@ -7,7 +7,7 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^$',                                                views.landing_page,          name='modeling'),
+    url(r'^$',                                                views.FileView.as_view(),    name='modeling'),
     url(r'^(?P<job_id>\d+)/$',                                views.is_completed,          name='is_completed'),
     url(r'^private$',                                         views.private,               name='private'),
     url(r'^files',                                            views.FileView.as_view(),    name='show_files'),
