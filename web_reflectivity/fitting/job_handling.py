@@ -2,11 +2,12 @@
 """
     Abstraction layer for handling fitting jobs
 """
+from __future__ import absolute_import, division, print_function
 import string
 import os
 from django.conf import settings
 
-def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True):
+def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True, options={}):
     """
         Create a refl1d model file from a template
     """
@@ -36,12 +37,17 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     with open(os.path.join(template_dir, 'reflectivity_model.py.template'), 'r') as fd:
         template = fd.read()
-
         model_template = string.Template(template)
-        if fit:
-            steps = 1000
+
+        # Determine number of steps for refl1d
+        default_value = 1000 if fit else 2
+        if fit is False:
+            steps = default_value
+            burn = default_value
         else:
-            steps = 10
+            steps = options.get('steps', default_value)
+            burn = options.get('burn', default_value)
+
         script = model_template.substitute(REDUCED_FILE=data_file,
                                            Q_MIN=data_form.cleaned_data['q_min'],
                                            Q_MAX=data_form.cleaned_data['q_max'],
@@ -52,7 +58,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            OUTPUT_DIR=output_dir,
                                            REFL1D_PATH=settings.REFL1D_PATH,
                                            REFL1D_STEPS=steps,
-                                           REFL1D_BURN=steps,
+                                           REFL1D_BURN=burn,
                                            SAMPLE_RANGES=sample_ranges)
 
     return script

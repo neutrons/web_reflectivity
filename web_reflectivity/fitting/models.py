@@ -86,7 +86,7 @@ class FitProblem(models.Model):
     """
         Reflectivity model
     """
-    user = models.ForeignKey(User, models.PROTECT)
+    user = models.ForeignKey(User, models.CASCADE)
     reflectivity_model = models.ForeignKey(ReflectivityModel, models.CASCADE)
     layers = models.ManyToManyField(ReflectivityLayer, related_name='_model_layers+')
     remote_job = models.ForeignKey(Job, models.CASCADE)
@@ -114,3 +114,30 @@ class FitProblem(models.Model):
             layers_str = ''
         return u"%s, %s%s" % (front_name, layers_str, back_name)
     show_layers.short_description = "Layers"
+
+
+class FitterOptions(models.Model):
+    """
+        Reflectivity model
+    """
+    user = models.ForeignKey(User, models.CASCADE)
+    steps = models.IntegerField(default=1000, help_text='Number of fitter steps')
+    burn = models.IntegerField(default=1000, help_text='Number of fitter burn steps')
+
+    class Meta:
+        verbose_name_plural = "Fitter options"
+
+    def get_dict(self):
+        """
+            Return an options dictionary
+        """
+        return dict(steps=self.steps, burn=self.burn)
+
+
+class Constraint(models.Model):
+    user = models.ForeignKey(User, models.CASCADE)
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    definition = models.TextField(blank=True, default='')
+    layer = models.TextField(blank=True, default='')
+    parameter = models.TextField(blank=True, default='')
+    variables = models.TextField(blank=True, default='')

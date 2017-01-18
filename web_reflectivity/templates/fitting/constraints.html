@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block header %}
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+{% endblock %}
+
+
+{% block content %}
+  <div class="error">{{ message }}</div>
+
+
+<h2>Layer model</h2>
+
+{%if error_list %}{{ error_list }}{% else %}
+ <table class="property_table">
+   <thead>
+     <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
+   </thead>
+   <tbody>
+     <tr class="short_input">
+       <td>Front</td>
+       <td>{{ data_form.front_name.value }}</td><td>-</td>
+       <td>{{ data_form.front_sld.value }}</td>
+       <td>-</td><td></td>
+     </tr>
+   {% for form in layers_form %}
+     <tr class="short_input">
+       {{ form.id }}
+       <td>{{ form.layer_number.value}}</td>
+       <td>{{ form.name.value }}</td>
+       <td>{{ form.thickness.value }}</td>
+       <td>{{ form.sld.value }}</td>
+       <td>{{ form.roughness.value }}</td>
+
+     </tr>{% endfor %}
+     <tr class="short_input">
+       <td>Back</td>
+       <td>{{ data_form.back_name.value }}</td><td>-</td>
+       <td>{{ data_form.back_sld.value }}</td>
+       <td>{{ data_form.back_roughness.value }}</td>
+       <td></td>
+     </tr>
+   </tbody>
+ </table>
+{% endif %}
+
+<h2>Constraint</h2>
+<form action="" method="POST">{% csrf_token %}
+  Select which layer and parameter you want to define a constraint for:<br>
+  {{ constraint_form.layer }} {{ constraint_form.parameter }}
+  <p>
+  Select the variables you want to use to define your constraint:<br>
+  {{ constraint_form.variables }}
+  <p>
+  Define your constraint in the box below using the available variables. Use python syntax.
+  <p>
+  <b>def constraint(</b><i><span id='function_signature'></span></i><b>)</b>:<br>
+  {{ constraint_form.definition }}
+  <p>
+  <input class="ui-button ui-widget ui-corner-all" id="submit_button" title="Click to set your constraint" type="submit" name="button_choice" value="submit"/>
+</form>
+
+<script type="text/javascript">
+$( "option" ).click(function() {
+  var selected_vars = [];
+  $('#id_variables option:selected').each(function(){ selected_vars.push($(this).text()); });
+  $('#function_signature').replaceWith("<span id='function_signature'>"+selected_vars+"</span>");
+});
+</script>
+{% endblock %}
+
+{% block right_side_links %}
+  <span style="float:right">
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a>
+  </span>
+{% endblock %}

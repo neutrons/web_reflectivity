@@ -25,7 +25,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem
+from .models import FitProblem, FitterOptions
 
 import users.view_util
 
@@ -171,7 +171,7 @@ def get_fit_problem(request, instrument, data_id):
         job_id = request.session.get('job_id', None)
         for item in fit_problem_list:
             if not item == fit_problem and not item.id == job_id:
-                logging.info("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
+                logging.debug("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
                 delete_problem(item)
 
         return data_path, fit_problem
@@ -327,9 +327,15 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     ascii_data = extract_ascii_from_div(html_data)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username)
     output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, 'reflectivity_fits', base_name)
+    # Get fitter options
+    options = {}
+    if user is not None:
+        obj, _ = FitterOptions.objects.get_or_create(user=user)
+        options = obj.get_dict()
+
     script = job_handling.create_model_file(data_form, layers_form,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
-                                            output_dir=output_dir, fit=fit)
+                                            output_dir=output_dir, fit=fit, options=options)
 
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
 
@@ -363,8 +369,23 @@ def save_fit_problem(data_form, layers_form, job_object, user):
     """
     # Save the ReflectivityModel object
     ref_model = data_form.save()
-    fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
-                             remote_job=job_object)
+    fit_problem_list = FitProblem.objects.filter(user=user,
+                                                 reflectivity_model__data_path=data_form.cleaned_data['data_path'])
+    if len(fit_problem_list) > 0:
+        fit_problem = fit_problem_list.latest('timestamp')
+        # Remove old layers
+        fit_problem.layers.all().delete()
+        # Replace foreign keys
+        old_job = fit_problem.remote_job
+        fit_problem.remote_job = job_object
+        old_ref_mod = fit_problem.reflectivity_model
+        fit_problem.reflectivity_model = ref_model
+        # Clean up previous data that is now obsolete
+        old_ref_mod.delete()
+        old_job.delete()
+    else:
+        fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
+                                 remote_job=job_object)
     fit_problem.save()
 
     # Save the layer parameters

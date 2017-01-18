@@ -1,9 +1,6 @@
 #pylint: disable=line-too-long
 """
-    Forms for auto-reduction configuration
-
-    @author: M. Doucet, Oak Ridge National Laboratory
-    @copyright: 2014 Oak Ridge National Laboratory
+    Forms for web reflectivity
 """
 import logging
 
@@ -18,6 +15,19 @@ class UploadFileForm(forms.Form):
     """
     file = forms.FileField()
 
+
+class ConstraintForm(forms.Form):
+    """
+        Simple form to select a data file on the user's machine
+    """
+    PARAMETER_CHOICES = ((1, "thickness"),
+                         (2, "SLD"),
+                         (3, "roughness"),
+                         )
+    definition = forms.CharField(widget=forms.Textarea)
+    layer = forms.ModelChoiceField(queryset=ReflectivityLayer.objects.all())
+    parameter = forms.ChoiceField(choices=PARAMETER_CHOICES)
+    variables = forms.MultipleChoiceField(choices=[])
 
 # Create the model form class.
 class ReflectivityFittingModelForm(ModelForm):

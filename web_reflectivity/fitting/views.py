@@ -17,11 +17,33 @@ from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm
-from .models import FitProblem
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm
+from .models import FitProblem, FitterOptions
 from . import view_util
 
 import users.view_util
+
+from django.views.generic.edit import UpdateView
+
+@method_decorator(login_required, name='dispatch')
+class FitterOptionsUpdate(UpdateView):
+    """
+        View to update the refl1d options
+    """
+    model = FitterOptions
+    fields = ['steps', 'burn']
+    template_name_suffix = '_update_form'
+
+    def get(self, request, **kwargs):
+        self.object, _ = FitterOptions.objects.get_or_create(user=self.request.user)
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        context = self.get_context_data(object=self.object, form=form)
+        return self.render_to_response(context)
+
+    def get_object(self, queryset=None):
+        return FitterOptions.objects.get(user=self.request.user)
+
 
 @login_required
 def private(request):
@@ -53,6 +75,7 @@ class FileView(View):
     template_name = 'fitting/files.html'
 
     def _get_template_values(self, request):
+        """ Return template dict """
         errors = []
         breadcrumbs = "<a href='/'>home</a> &rsaquo; data files"
 
@@ -282,3 +305,74 @@ class FitView(View):
                            'layers_form': layers_form}
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
+
+
+@method_decorator(login_required, name='dispatch')
+class ConstraintView(View):
+    """
+        View for data fitting
+    """
+    breadcrumbs = "<a href='/'>home</a> &rsaquo; constraint"
+
+    def _get_variable_choices(self, fit_problem):
+        variable_names = []
+        v_num = 0
+        params = fit_problem.model_to_dicts()
+        for item in params:
+            if isinstance(item, list):
+                for layer in item:
+                    if 'name' in layer:
+                        v_num += 1
+                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'thickness')))
+                        v_num += 1
+                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'sld')))
+                        v_num += 1
+                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'roughness')))
+        return variable_names
+
+    def get(self, request, instrument, data_id, *args, **kwargs):
+        """ Process GET """
+        error_message = []
+        data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+
+        initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, data_path, fit_problem)
+        data_form = ReflectivityFittingForm(initial=initial_values)
+
+        LayerFormSet = formset_factory(LayerForm, extra=0)
+        layers_form = LayerFormSet(initial=initial_layers)
+
+        variable_names = self._get_variable_choices(fit_problem)
+
+        constraint_form = ConstraintForm(initial={'definition': 'return 1'})
+        constraint_form.fields['layer'].queryset = fit_problem.layers.all()
+        constraint_form.fields['variables'].choices = variable_names
+
+        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
+                           'data_form': data_form,
+                           'user_alert': error_message,
+                           'instrument': instrument,
+                           'data_id': data_id,
+                           'constraint_form': constraint_form,
+                           'layers_form': layers_form}
+        template_values = users.view_util.fill_template_values(request, **template_values)
+        return render(request, 'fitting/constraints.html', template_values)
+
+    def post(self, request, instrument, data_id, *args, **kwargs):
+        """ Process POST """
+        _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        constraint_form = ConstraintForm(request.POST)
+        variable_names = self._get_variable_choices(fit_problem)
+        constraint_form.fields['layer'].queryset = fit_problem.layers.all()
+        constraint_form.fields['variables'].choices = variable_names
+
+        if constraint_form.is_valid():
+            return redirect(reverse('fitting:fit', args=(instrument, data_id)))
+
+        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
+                           'error_list': constraint_form.errors,
+                           'user_alert': ["There were errors in the form, likely due to an old model: refresh your page"], 
+                           'instrument': instrument,
+                           'data_id': data_id,
+                           'constraint_form': constraint_form}
+        template_values = users.view_util.fill_template_values(request, **template_values)
+        return render(request, 'fitting/constraints.html', template_values)

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2> Refl1d fitter options</h2>
+The following are options for the fit engine. The number of steps represents the number of iterations used to determine the final statistics.
+the number of burn steps are used to explore the solution space.
+<p>
+<form action="" method="POST">{% csrf_token %}
+{{ form.as_p }}
+  <input class="ui-button ui-widget ui-corner-all" title="Click to change your fitter options" type="submit" value="update"/>
+</form>
+<p>
+{% endblock %}
