@@ -14,17 +14,15 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseNotFound
 from django.views.generic.base import View
 from django.views.generic.list import ListView
+from django.views.generic.edit import UpdateView
 from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm
-from .models import FitProblem, FitterOptions, Constraint
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer
 from . import view_util
-
 import users.view_util
-
-from django.views.generic.edit import UpdateView
 
 @method_decorator(login_required, name='dispatch')
 class FitterOptionsUpdate(UpdateView):
@@ -200,6 +198,21 @@ class FitView(View):
     """
     breadcrumbs = "<a href='/'>home</a> &rsaquo; reflectivity"
 
+    def _fill_template_values(self, request, instrument, data_id, **template_args): #pylint: disable=no-self-use
+        """ Get common template values """
+        # Check whether we want to plot RQ^4 vs Q
+        if 'rq4' in request.GET:
+            rq4 = not request.GET.get('rq4', True) == '0'
+            request.session['rq4'] = rq4
+        else:
+            rq4 = request.session.get('rq4', False)
+
+        template_args['breadcrumbs'] = "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id)
+        template_args['instrument'] = instrument
+        template_args['data_id'] = data_id
+        template_args['rq4'] = rq4
+        return template_args
+
     def get(self, request, instrument, data_id, *args, **kwargs):
         """
             Process GET
@@ -210,6 +223,8 @@ class FitView(View):
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
+        template_values = self._fill_template_values(request, instrument, data_id)
+
         # Check whether we need an extra layer
         default_extra = 0
         try:
@@ -217,44 +232,36 @@ class FitView(View):
         except:
             extra = default_extra
 
-        # Check whether we want to plot RQ^4 vs Q
-        if 'rq4' in request.GET:
-            rq4 = not request.GET.get('rq4', True) == '0'
-            request.session['rq4'] = rq4
-        else:
-            rq4 = request.session.get('rq4', False)
-
         error_message = []
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
 
         initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, data_path, fit_problem)
         error_message.extend(errors)
-        data_form = ReflectivityFittingForm(initial=initial_values)
+        if fit_problem is not None:
+            data_form = ReflectivityFittingForm(instance=fit_problem.reflectivity_model)
+        else:
+            data_form = ReflectivityFittingForm(initial=initial_values)
 
         if initial_layers == {}:
             extra = 1
-        LayerFormSet = formset_factory(LayerForm, extra=extra)
-        layers_form = LayerFormSet(initial=initial_layers)
+        LayerFormSet = layer_modelformset(extra=extra)
+        layers_form = LayerFormSet(queryset = fit_problem.layers.all() if fit_problem is not None else ReflectivityLayer.objects.none())
 
         html_data = view_util.get_plot_data_from_server(instrument, data_id)
         if html_data is None:
             error_message.append("Could not find data for %s/%s" % (instrument, data_id))
-        html_data = view_util.assemble_plot(html_data, log_object, rq4=rq4)
+        html_data = view_util.assemble_plot(html_data, log_object, rq4=template_values['rq4'])
 
         number_of_constraints = Constraint.objects.filter(fit_problem=fit_problem).count()
 
         job_id = request.session.get('job_id', None)
-        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
-                           'data_form': data_form,
-                           'html_data': html_data,
-                           'user_alert': error_message,
-                           'chi2': chi2,
-                           'rq4': rq4,
-                           'instrument': instrument,
-                           'number_of_constraints': number_of_constraints,
-                           'data_id': data_id,
-                           'job_id': job_id if can_update else None,
-                           'layers_form': layers_form}
+        template_values.update({'data_form': data_form,
+                                'html_data': html_data,
+                                'user_alert': error_message,
+                                'chi2': chi2,
+                                'number_of_constraints': number_of_constraints,
+                                'job_id': job_id if can_update else None,
+                                'layers_form': layers_form})
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
@@ -268,12 +275,7 @@ class FitView(View):
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
-        # Check whether we want to plot RQ^4 vs Q
-        if 'rq4' in request.GET:
-            rq4 = not request.GET.get('rq4', True) == '0'
-            request.session['rq4'] = rq4
-        else:
-            rq4 = request.session.get('rq4', False)
+        template_values = self._fill_template_values(request, instrument, data_id)
 
         error_message = []
         # Check whether we need to redirect because the user changes the data path
@@ -290,8 +292,16 @@ class FitView(View):
             return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
         try:
-            data_form = ReflectivityFittingForm(request.POST)
-            LayerFormSet = formset_factory(LayerForm, extra=0, can_order=True)
+            # See if we have a fit problem already
+            fit_problem_list = FitProblem.objects.filter(user=request.user,
+                                                         reflectivity_model__data_path=data_path)
+            if len(fit_problem_list) > 0:
+                reflectivity_model = fit_problem_list.latest('timestamp').reflectivity_model
+            else:
+                reflectivity_model = None
+
+            data_form = ReflectivityFittingForm(request.POST, instance=reflectivity_model)
+            LayerFormSet = layer_modelformset(extra=0)
             layers_form = LayerFormSet(request.POST)
             # Check for invalid form
             if data_form.is_valid() and layers_form.is_valid():
@@ -311,7 +321,7 @@ class FitView(View):
 
                 # Set the session data. This is the only thing we need
                 # when requesting task = "set_data".
-                view_util.update_session(request, data_form, layers_form)
+                #view_util.update_session(request, data_form, layers_form)
                 if len(error_message) == 0:
                     return redirect(reverse('fitting:fit', args=(instrument, data_id)))
             else:
@@ -321,14 +331,12 @@ class FitView(View):
             error_message.append("Could not fit data")
 
         html_data = view_util.assemble_plot(html_data, None)
-        template_values = {'breadcrumbs':  "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
-                           'data_form': data_form,
-                           'html_data': html_data,
-                           'user_alert': error_message,
-                           'rq4': rq4,
-                           'instrument': instrument,
-                           'data_id': data_id,
-                           'layers_form': layers_form}
+        template_values.update({'data_form': data_form,
+                                'html_data': html_data,
+                                'user_alert': error_message,
+                                'instrument': instrument,
+                                'data_id': data_id,
+                                'layers_form': layers_form})
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
@@ -394,8 +402,6 @@ class ConstraintView(View):
         template_values = self._fill_template_values(request, instrument, data_id, const_id)
         fit_problem = template_values['fit_problem']
 
-        variable_names = self._get_variable_choices(fit_problem)
-
         const_init = {'definition': 'return 1'}
         if const_id is not None:
             constraint = get_object_or_404(Constraint, pk=const_id)
@@ -405,8 +411,13 @@ class ConstraintView(View):
             const_init['variables'] = [ v.strip() for v in constraint.variables.split(',')]
 
         constraint_form = ConstraintForm(initial=const_init)
-        constraint_form.fields['layer'].queryset = fit_problem.layers.all()
-        constraint_form.fields['variables'].choices = variable_names
+        if fit_problem is not None:
+            variable_names = self._get_variable_choices(fit_problem)
+            constraint_form.fields['variables'].choices = variable_names
+            constraint_form.fields['layer'].queryset = fit_problem.layers.all()
+        else:
+            template_values['user_alert'] = ["No model is available for this data.",
+                                             "<a href='%s'>Create</a> and evaluate a model before adding a constraint." % reverse('fitting:fit', args=(instrument, data_id))]
 
         template_values['constraint_form'] = constraint_form
         template_values = users.view_util.fill_template_values(request, **template_values)

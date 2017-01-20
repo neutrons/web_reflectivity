@@ -7,7 +7,7 @@ import string
 import os
 from django.conf import settings
 
-def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True, options={}):
+def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True, options={}, constraints=[]):
     """
         Create a refl1d model file from a template
     """

@@ -147,7 +147,6 @@ class LayerModelForm(ModelForm):
                   'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error',
                   ]
 
-
 class LayerForm(LayerModelForm):
     """
         Reflectivity model layer
@@ -215,3 +214,10 @@ class LayerForm(LayerModelForm):
                                                               self.cleaned_data['roughness_min'],
                                                               self.cleaned_data['roughness_max'])
         return ranges
+
+def layer_modelformset(extra=0):
+    return forms.modelformset_factory(ReflectivityLayer, form=LayerForm, extra=extra,
+                                      fields=('name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
+                                              'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',
+                                              'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
+                                              'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error'))

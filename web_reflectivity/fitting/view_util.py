@@ -26,7 +26,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions
+from .models import FitProblem, FitterOptions, Constraint
 
 import users.view_util
 
@@ -169,11 +169,12 @@ def get_fit_problem(request, instrument, data_id):
         fit_problem = fit_problem_list.latest('timestamp')
 
         # Cleanup
-        job_id = request.session.get('job_id', None)
-        for item in fit_problem_list:
-            if not item == fit_problem and not item.id == job_id:
-                logging.debug("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
-                delete_problem(item)
+        #TODO: make sure we can remove the following block of code
+        #job_id = request.session.get('job_id', None)
+        #for item in fit_problem_list:
+        #    if not item == fit_problem and not item.id == job_id:
+        #        logging.debug("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
+        #        delete_problem(item)
 
         return data_path, fit_problem
     return data_path, None
@@ -244,7 +245,6 @@ def get_results(request, data_path, fit_problem):
                     can_update = False
             else:
                 errors.append("No results found")
-                logging.error("nothing found for %s", fit_problem.remote_job.id)
         except:
             logging.error("Problem retrieving results: %s", sys.exc_value)
             errors.append("Problem retrieving results")
@@ -320,6 +320,10 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     """
         Refl1d fitting job
     """
+    # Save the model first
+    fit_problem = save_fit_problem(data_form, layers_form, None, user)
+    constraint_list = Constraint.objects.filter(fit_problem=fit_problem)
+
     try:
         base_name = os.path.split(data_form.cleaned_data['data_path'])[1]
     except:
@@ -336,7 +340,7 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
 
     script = job_handling.create_model_file(data_form, layers_form,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
-                                            output_dir=output_dir, fit=fit, options=options)
+                                            output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)
 
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
 
@@ -360,8 +364,9 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
         store_results=''
     )
 
-    # Save this fit job
-    save_fit_problem(data_form, layers_form, job, user)
+    # Update the remote job info
+    fit_problem.remote_job = job
+    fit_problem.save()
     return {'job_id': job.pk}
 
 def save_fit_problem(data_form, layers_form, job_object, user):
@@ -374,15 +379,11 @@ def save_fit_problem(data_form, layers_form, job_object, user):
                                                  reflectivity_model__data_path=data_form.cleaned_data['data_path'])
     if len(fit_problem_list) > 0:
         fit_problem = fit_problem_list.latest('timestamp')
-        # Remove old layers
-        fit_problem.layers.all().delete()
         # Replace foreign keys
         old_job = fit_problem.remote_job
         fit_problem.remote_job = job_object
-        old_ref_mod = fit_problem.reflectivity_model
         fit_problem.reflectivity_model = ref_model
         # Clean up previous data that is now obsolete
-        old_ref_mod.delete()
         old_job.delete()
     else:
         fit_problem = FitProblem(user=user, reflectivity_model=ref_model,

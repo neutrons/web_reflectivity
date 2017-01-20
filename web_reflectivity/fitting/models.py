@@ -89,7 +89,7 @@ class FitProblem(models.Model):
     user = models.ForeignKey(User, models.CASCADE)
     reflectivity_model = models.ForeignKey(ReflectivityModel, models.CASCADE)
     layers = models.ManyToManyField(ReflectivityLayer, related_name='_model_layers+')
-    remote_job = models.ForeignKey(Job, models.CASCADE)
+    remote_job = models.ForeignKey(Job, models.SET_NULL, null=True)
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
     def model_to_dicts(self):
@@ -117,6 +117,8 @@ class FitProblem(models.Model):
         return u"%s, %s%s" % (front_name, layers_str, back_name)
     show_layers.short_description = "Layers"
 
+    def __unicode__(self):
+        return u"%s" % self.reflectivity_model
 
 class FitterOptions(models.Model):
     """
@@ -146,3 +148,6 @@ class Constraint(models.Model):
     layer = models.ForeignKey(ReflectivityLayer, models.CASCADE)
     parameter = models.TextField(blank=True, default='')
     variables = models.TextField(blank=True, default='')
+
+    def __unicode__(self):
+        return u"%s_%s" % (self.layer, self.parameter)
