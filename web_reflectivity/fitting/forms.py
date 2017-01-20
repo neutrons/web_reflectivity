@@ -20,9 +20,9 @@ class ConstraintForm(forms.Form):
     """
         Simple form to select a data file on the user's machine
     """
-    PARAMETER_CHOICES = ((1, "thickness"),
-                         (2, "SLD"),
-                         (3, "roughness"),
+    PARAMETER_CHOICES = (("thickness", "thickness"),
+                         ("sld", "sld"),
+                         ("roughness", "roughness"),
                          )
     definition = forms.CharField(widget=forms.Textarea)
     layer = forms.ModelChoiceField(queryset=ReflectivityLayer.objects.all())
@@ -34,7 +34,8 @@ class ReflectivityFittingModelForm(ModelForm):
     """
         Form created from the ReflectivityModel class
     """
-    class Meta:
+    class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
+        """ Define how we use the model to create a form """
         model = ReflectivityModel
         fields = ['data_path', 'q_min', 'q_max',
                   'scale', 'scale_is_fixed', 'scale_min', 'scale_max', 'scale_error',
@@ -137,7 +138,8 @@ class LayerModelForm(ModelForm):
     """
         Form created from the ReflectivityLayer class
     """
-    class Meta:
+    class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
+        """ Define how we use the model to create a form """
         model = ReflectivityLayer
         fields = ['name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
                   'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',

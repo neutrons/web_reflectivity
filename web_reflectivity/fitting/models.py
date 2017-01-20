@@ -93,6 +93,7 @@ class FitProblem(models.Model):
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
     def model_to_dicts(self):
+        """ Return a dict with all the data values """
         refl_model_dict = model_to_dict(self.reflectivity_model)
         model_layers = []
         i = 0
@@ -105,6 +106,7 @@ class FitProblem(models.Model):
         return refl_model_dict, model_layers
 
     def show_layers(self):
+        """ Useful method to return the layers as a concise string """
         front_name = self.reflectivity_model.front_name
         back_name = self.reflectivity_model.back_name
         layers = [str(i) for i in self.layers.all().order_by('layer_number')]
@@ -124,7 +126,7 @@ class FitterOptions(models.Model):
     steps = models.IntegerField(default=1000, help_text='Number of fitter steps')
     burn = models.IntegerField(default=1000, help_text='Number of fitter burn steps')
 
-    class Meta:
+    class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
         verbose_name_plural = "Fitter options"
 
     def get_dict(self):
@@ -135,9 +137,12 @@ class FitterOptions(models.Model):
 
 
 class Constraint(models.Model):
+    """
+        Fitting parameter constraints
+    """
     user = models.ForeignKey(User, models.CASCADE)
     fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
     definition = models.TextField(blank=True, default='')
-    layer = models.TextField(blank=True, default='')
+    layer = models.ForeignKey(ReflectivityLayer, models.CASCADE)
     parameter = models.TextField(blank=True, default='')
     variables = models.TextField(blank=True, default='')

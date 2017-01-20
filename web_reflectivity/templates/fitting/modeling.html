@@ -98,6 +98,18 @@ Checked parameters will be kept fixed during the fitting procedure.
   <h2>Fitting parameters {%if chi2 %}<span class='layer'>[&#x3C7;<sup>2</sup>={{chi2}}]</span>{% endif %}</h2> 
 
   Q range: {{ data_form.q_min }} to {{ data_form.q_max }} 1/&#8491;
+  {% if number_of_constraints == 0 %}
+  <p>
+  There is no <a href='{% url 'fitting:constraints' instrument data_id %}'>constraint</a> on this model.
+   {% elif number_of_constraints == 1 %}
+  <p>
+  There is {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}'>constraint</a> on this model.
+  Constraints take precedence over the fitting options below.
+  {% elif number_of_constraints > 1 %}
+  <p>
+  There are {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}'>constraints</a> on this model.
+  Constraints take precedence over the fitting options below.
+  {% endif %}
   <p>
   <table class="property_table">
     <thead><tr><th>Parameter</th> <th>Value</th> <th>Minimum</th> <th>Maximum</th><th></thead>

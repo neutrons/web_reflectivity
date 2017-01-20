@@ -176,7 +176,7 @@ table {border-collapse: collapse; border-spacing: 0; }
     padding-right: 2px;
     padding-top: 2px;
     padding-bottom: 2px;
-    min-width:120px; width:120px; 
+    min-width:120px;
 }
 
 .data_manager th {

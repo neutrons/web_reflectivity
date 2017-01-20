@@ -2,6 +2,7 @@
 """
     Utilities for modeling application
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import os
 import re
@@ -179,7 +180,7 @@ def get_fit_problem(request, instrument, data_id):
 
 def get_fit_data(request, instrument, data_id):
     """
-        Get the latest ascii data from 
+        Get the latest ascii data from
     """
     ascii_data = None
     _, fit_problem = get_fit_problem(request, instrument, data_id)
@@ -535,3 +536,47 @@ def parse_data_path(data_path):
         instrument = toks[0]
         data_id = toks[1]
     return instrument, data_id
+
+def validate_constraint(constraint_code, variables):
+    """
+        Validate user-submitted constraint code.
+    """
+    comments = []
+    is_valid = True
+
+    # Import statements are not allowed
+    if constraint_code.find('import') >= 0:
+        comments.append('Imports are not allowed in constraint code.')
+        is_valid = False
+
+    # The code must contain a return statement
+    if constraint_code.find('return') < 0:
+        comments.append("The code must contain a return statement.")
+        is_valid = False
+
+    # Prepend function definition
+    constraint_function = "from math import *\n"
+    constraint_function += "def constraint(%s):\n" % ','.join(variables)
+    for line in constraint_code.splitlines():
+        constraint_function += "    %s\n" % line
+
+    # Check that it compiles
+    try:
+        compile(constraint_function, 'constraint.py', 'exec')
+    except:
+        comments.append("Syntax error:\n%s" % sys.exc_value)
+        is_valid = False
+
+    test_script = ""
+    for v in variables:
+        test_script += "%s = 1\n" % v
+    test_script += constraint_function
+    test_script += "output_value = constraint(%s)\n" % ','.join(variables)
+    try:
+        exec test_script
+    except:
+        comments.append("Code doesn't execute:\n%s" % sys.exc_value)
+        logging.error(test_script)
+        is_valid = False
+
+    return is_valid, comments

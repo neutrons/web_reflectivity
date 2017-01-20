@@ -2,10 +2,11 @@
 """
     Definition of views
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import logging
 import json
-from django.shortcuts import render, redirect, get_object_or_404, Http404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.forms.formsets import formset_factory
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -18,7 +19,7 @@ from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm
-from .models import FitProblem, FitterOptions
+from .models import FitProblem, FitterOptions, Constraint
 from . import view_util
 
 import users.view_util
@@ -44,6 +45,18 @@ class FitterOptionsUpdate(UpdateView):
     def get_object(self, queryset=None):
         return FitterOptions.objects.get(user=self.request.user)
 
+@login_required
+def remove_constraint(request, instrument, data_id, const_id):
+    """
+        Remove a constraint
+        @param request: request object
+        @param instrument: instrument name
+        @param data_id: data set identifier
+        @param const_id: pk of the constraint object to delete
+    """
+    const_obj = get_object_or_404(Constraint, id=const_id)
+    const_obj.delete()
+    return redirect(reverse('fitting:constraints', args=(instrument, data_id)))
 
 @login_required
 def private(request):
@@ -74,7 +87,7 @@ class FileView(View):
     form_class = UploadFileForm
     template_name = 'fitting/files.html'
 
-    def _get_template_values(self, request):
+    def _get_template_values(self, request): #pylint: disable=no-self-use
         """ Return template dict """
         errors = []
         breadcrumbs = "<a href='/'>home</a> &rsaquo; data files"
@@ -188,7 +201,12 @@ class FitView(View):
     breadcrumbs = "<a href='/'>home</a> &rsaquo; reflectivity"
 
     def get(self, request, instrument, data_id, *args, **kwargs):
-        """ Process GET """
+        """
+            Process GET
+            @param request: request object
+            @param instrument: instrument name
+            @param data_id: data set identifier
+        """
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
@@ -223,6 +241,8 @@ class FitView(View):
             error_message.append("Could not find data for %s/%s" % (instrument, data_id))
         html_data = view_util.assemble_plot(html_data, log_object, rq4=rq4)
 
+        number_of_constraints = Constraint.objects.filter(fit_problem=fit_problem).count()
+
         job_id = request.session.get('job_id', None)
         template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
                            'data_form': data_form,
@@ -231,6 +251,7 @@ class FitView(View):
                            'chi2': chi2,
                            'rq4': rq4,
                            'instrument': instrument,
+                           'number_of_constraints': number_of_constraints,
                            'data_id': data_id,
                            'job_id': job_id if can_update else None,
                            'layers_form': layers_form}
@@ -238,7 +259,12 @@ class FitView(View):
         return render(request, 'fitting/modeling.html', template_values)
 
     def post(self, request, instrument, data_id, *args, **kwargs):
-        """ Process POST """
+        """
+            Process POST
+            @param request: request object
+            @param instrument: instrument name
+            @param data_id: data set identifier
+        """
         if not view_util.check_permissions(request, data_id, instrument):
             return redirect(reverse('fitting:private'))
 
@@ -314,65 +340,110 @@ class ConstraintView(View):
     """
     breadcrumbs = "<a href='/'>home</a> &rsaquo; constraint"
 
-    def _get_variable_choices(self, fit_problem):
+    @classmethod
+    def _get_variable_choices(cls, fit_problem):
         variable_names = []
-        v_num = 0
         params = fit_problem.model_to_dicts()
         for item in params:
             if isinstance(item, list):
                 for layer in item:
                     if 'name' in layer:
-                        v_num += 1
-                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'thickness')))
-                        v_num += 1
-                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'sld')))
-                        v_num += 1
-                        variable_names.append((v_num, "%s_%s" % (layer['name'], 'roughness')))
+                        v_name = "%s_%s" % (layer['name'], 'thickness')
+                        variable_names.append((v_name, v_name))
+                        v_name = "%s_%s" % (layer['name'], 'sld')
+                        variable_names.append((v_name, v_name))
+                        v_name = "%s_%s" % (layer['name'], 'roughness')
+                        variable_names.append((v_name, v_name))
         return variable_names
 
-    def get(self, request, instrument, data_id, *args, **kwargs):
-        """ Process GET """
-        error_message = []
+    def _fill_template_values(self, request, instrument, data_id, const_id, **template_args): #pylint: disable=no-self-use
+        """ Return template dict """
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
 
-        initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, data_path, fit_problem)
+        initial_values, initial_layers, _, _, _, _ = view_util.get_results(request, data_path, fit_problem)
         data_form = ReflectivityFittingForm(initial=initial_values)
 
         LayerFormSet = formset_factory(LayerForm, extra=0)
         layers_form = LayerFormSet(initial=initial_layers)
 
+        # Find existing constraints
+        constraint_list = Constraint.objects.filter(fit_problem=fit_problem)
+        # Sanity check
+        parameter_names = []
+        error_message = []
+        for item in constraint_list:
+            p_name = "%s_%s" % (item.layer.name, item.parameter)
+            if p_name in parameter_names:
+                error_message.append("Parameter <b>%s</b> found more than once in the constraint list" % p_name)
+            else:
+                parameter_names.append(p_name)
+
+        template_args['breadcrumbs'] = "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id)
+        template_args['instrument'] = instrument
+        template_args['data_id'] = data_id
+        template_args['layers_form'] = layers_form
+        template_args['data_form'] = data_form
+        template_args['constraint_list'] = constraint_list
+        template_args['user_alert'] = error_message
+        template_args['fit_problem'] = fit_problem
+
+        return template_args
+
+    def get(self, request, instrument, data_id, const_id=None, *args, **kwargs):
+        """ Process GET """
+        template_values = self._fill_template_values(request, instrument, data_id, const_id)
+        fit_problem = template_values['fit_problem']
+
         variable_names = self._get_variable_choices(fit_problem)
 
-        constraint_form = ConstraintForm(initial={'definition': 'return 1'})
+        const_init = {'definition': 'return 1'}
+        if const_id is not None:
+            constraint = get_object_or_404(Constraint, pk=const_id)
+            const_init['definition'] = constraint.definition
+            const_init['layer'] = constraint.layer
+            const_init['parameter'] = constraint.parameter
+            const_init['variables'] = [ v.strip() for v in constraint.variables.split(',')]
+
+        constraint_form = ConstraintForm(initial=const_init)
         constraint_form.fields['layer'].queryset = fit_problem.layers.all()
         constraint_form.fields['variables'].choices = variable_names
 
-        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
-                           'data_form': data_form,
-                           'user_alert': error_message,
-                           'instrument': instrument,
-                           'data_id': data_id,
-                           'constraint_form': constraint_form,
-                           'layers_form': layers_form}
+        template_values['constraint_form'] = constraint_form
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/constraints.html', template_values)
 
-    def post(self, request, instrument, data_id, *args, **kwargs):
+    def post(self, request, instrument, data_id, const_id=None, *args, **kwargs):
         """ Process POST """
-        _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        template_values = self._fill_template_values(request, instrument, data_id, const_id)
+        fit_problem = template_values['fit_problem']
+
         constraint_form = ConstraintForm(request.POST)
         variable_names = self._get_variable_choices(fit_problem)
         constraint_form.fields['layer'].queryset = fit_problem.layers.all()
         constraint_form.fields['variables'].choices = variable_names
 
+        alerts = []
+        form_errors = ""
         if constraint_form.is_valid():
-            return redirect(reverse('fitting:fit', args=(instrument, data_id)))
+            is_valid, alerts = view_util.validate_constraint(constraint_form.cleaned_data['definition'],
+                                                             constraint_form.cleaned_data['variables'])
+            if is_valid:
+                if const_id is not None:
+                    constraint = get_object_or_404(Constraint, pk=const_id)
+                else:
+                    constraint = Constraint(user=request.user, fit_problem=fit_problem)
+                constraint.layer=constraint_form.cleaned_data['layer']
+                constraint.definition=constraint_form.cleaned_data['definition']
+                constraint.parameter=constraint_form.cleaned_data['parameter']
+                constraint.variables=','.join(constraint_form.cleaned_data['variables'])
+                constraint.save()
+                return redirect(reverse('fitting:constraints', args=(instrument, data_id)))
+        else:
+            alerts =  ["There were errors in the form, likely due to an old model: refresh your page"]
+            form_errors = constraint_form.errors
 
-        template_values = {'breadcrumbs': "%s  &rsaquo; %s &rsaquo; %s" % (self.breadcrumbs, instrument, data_id),
-                           'error_list': constraint_form.errors,
-                           'user_alert': ["There were errors in the form, likely due to an old model: refresh your page"], 
-                           'instrument': instrument,
-                           'data_id': data_id,
-                           'constraint_form': constraint_form}
+        template_values['error_list'] = form_errors
+        template_values['user_alert'] = alerts
+        template_values['constraint_form'] = constraint_form
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/constraints.html', template_values)

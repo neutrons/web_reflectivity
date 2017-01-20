@@ -13,40 +13,60 @@
 
 <h2>Layer model</h2>
 
-{%if error_list %}{{ error_list }}{% else %}
- <table class="property_table">
-   <thead>
-     <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
-   </thead>
-   <tbody>
-     <tr class="short_input">
-       <td>Front</td>
-       <td>{{ data_form.front_name.value }}</td><td>-</td>
-       <td>{{ data_form.front_sld.value }}</td>
-       <td>-</td><td></td>
-     </tr>
-   {% for form in layers_form %}
-     <tr class="short_input">
-       {{ form.id }}
-       <td>{{ form.layer_number.value}}</td>
-       <td>{{ form.name.value }}</td>
-       <td>{{ form.thickness.value }}</td>
-       <td>{{ form.sld.value }}</td>
-       <td>{{ form.roughness.value }}</td>
+<table class="property_table">
+  <thead>
+    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
+  </thead>
+  <tbody>
+    <tr class="short_input">
+      <td>Front</td>
+      <td>{{ data_form.front_name.value }}</td><td>-</td>
+      <td>{{ data_form.front_sld.value }}</td>
+      <td>-</td><td></td>
+    </tr>
+  {% for form in layers_form %}
+    <tr class="short_input">
+      {{ form.id }}
+      <td>{{ form.layer_number.value}}</td>
+      <td>{{ form.name.value }}</td>
+      <td>{{ form.thickness.value }}</td>
+      <td>{{ form.sld.value }}</td>
+      <td>{{ form.roughness.value }}</td>
+    </tr>{% endfor %}
+    <tr class="short_input">
+      <td>Back</td>
+      <td>{{ data_form.back_name.value }}</td><td>-</td>
+      <td>{{ data_form.back_sld.value }}</td>
+      <td>{{ data_form.back_roughness.value }}</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
 
-     </tr>{% endfor %}
-     <tr class="short_input">
-       <td>Back</td>
-       <td>{{ data_form.back_name.value }}</td><td>-</td>
-       <td>{{ data_form.back_sld.value }}</td>
-       <td>{{ data_form.back_roughness.value }}</td>
-       <td></td>
-     </tr>
-   </tbody>
- </table>
+{%if error_list %}<p>{{ error_list }}<p>{% endif %}
+
+<h2>Current constraints</h2>
+{% if constraint_list %}
+<div class='data_manager' >
+<table>
+  <thead>
+    <tr><th>Layer</th><th>Constraint</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+  {% for item in constraint_list %}
+    <tr>
+      <td>{{ item.layer }}</td>
+      <td><b>{{ item.parameter }}</b> = constraint( <b>{{ item.variables }}</b> )</td>
+      <td><a href='{% url 'fitting:constraints_edit' instrument data_id item.id %}'>edit</a> | <a href='{% url 'fitting:constraints_remove' instrument data_id item.id %}'>remove</a></td>
+    </tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div>No existing constraints for this model</div>
 {% endif %}
 
-<h2>Constraint</h2>
+<h2>New constraint</h2>
 <form action="" method="POST">{% csrf_token %}
   Select which layer and parameter you want to define a constraint for:<br>
   {{ constraint_form.layer }} {{ constraint_form.parameter }}
@@ -56,23 +76,25 @@
   <p>
   Define your constraint in the box below using the available variables. Use python syntax.
   <p>
-  <b>def constraint(</b><i><span id='function_signature'></span></i><b>)</b>:<br>
+  <b>def constraint( <span id='function_signature'></span> )</b>:<br>
   {{ constraint_form.definition }}
   <p>
   <input class="ui-button ui-widget ui-corner-all" id="submit_button" title="Click to set your constraint" type="submit" name="button_choice" value="submit"/>
 </form>
 
 <script type="text/javascript">
-$( "option" ).click(function() {
+function update_function() {
   var selected_vars = [];
-  $('#id_variables option:selected').each(function(){ selected_vars.push($(this).text()); });
+  $('#id_variables option:selected').each(function(){ selected_vars.push(' '+$(this).text()); });
   $('#function_signature').replaceWith("<span id='function_signature'>"+selected_vars+"</span>");
-});
+}
+update_function();
+$( "option" ).click(update_function);
 </script>
 {% endblock %}
 
 {% block right_side_links %}
   <span style="float:right">
-    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a>
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | <a href='{% url 'fitting:fit' instrument data_id %}'>fit data</a>
   </span>
 {% endblock %}

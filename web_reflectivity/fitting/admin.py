@@ -1,3 +1,4 @@
+#pylint: disable=missing-docstring
 """
     Admin views for models
 """
@@ -21,7 +22,7 @@ class FitterOptionsAdmin(admin.ModelAdmin):
     list_filter = ('user',)
 
 class ConstraintAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'fit_problem', 'parameter', 'variables')
+    list_display = ('id', 'user', 'fit_problem', 'layer', 'parameter', 'variables')
     list_filter = ('user', 'fit_problem')
 
 admin.site.register(ReflectivityModel, ReflectivityModelAdmin)
