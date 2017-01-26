@@ -318,6 +318,8 @@ class FitView(View):
                             request.session['job_id'] = job_id
                     else:
                         error_message.append("Your model needs at least one free parameter.")
+                else:
+                    view_util.save_fit_problem(data_form, layers_form, None, request.user)
                 if 'error' in output:
                     error_message.append(output['error'])
 

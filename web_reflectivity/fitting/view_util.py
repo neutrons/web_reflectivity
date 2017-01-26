@@ -228,30 +228,33 @@ def get_results(request, fit_problem):
     latest = None
     can_update = False
     if fit_problem is not None:
-        try:
-            #TODO: what if the latest job was not successful? How do we report errors?
-            can_update = fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
-                                                               fit_problem.remote_job.STATUS.failure]
-            errors.append("Job status: %s" % fit_problem.remote_job.status)
-            job_logs = Log.objects.filter(job=fit_problem.remote_job)
-            if len(job_logs) > 0:
-                latest = job_logs.latest('time')
-                for job in job_logs:
-                    if not job == latest:
-                        logging.error("Logs for job %s needs cleaning up", job.id)
-                        #job.delete()
-
-                chi2 = refl1d.update_model(latest.content, fit_problem)
-                for item in Constraint.objects.filter(fit_problem=fit_problem):
-                    item.apply_constraint(fit_problem)
-                if chi2 is None:
-                    errors.append("The fit results appear to be incomplete.")
-                    can_update = False
-            else:
-                errors.append("No results found")
-        except:
-            logging.error("Problem retrieving results: %s", sys.exc_value)
-            errors.append("Problem retrieving results")
+        if fit_problem.remote_job is not None:
+            try:
+                #TODO: what if the latest job was not successful? How do we report errors?
+                can_update = fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
+                                                                   fit_problem.remote_job.STATUS.failure]
+                errors.append("Job status: %s" % fit_problem.remote_job.status)
+                job_logs = Log.objects.filter(job=fit_problem.remote_job)
+                if len(job_logs) > 0:
+                    latest = job_logs.latest('time')
+                    for job in job_logs:
+                        if not job == latest:
+                            logging.error("Logs for job %s needs cleaning up", job.id)
+                            #job.delete()
+    
+                    chi2 = refl1d.update_model(latest.content, fit_problem)
+                    for item in Constraint.objects.filter(fit_problem=fit_problem):
+                        item.apply_constraint(fit_problem)
+                    if chi2 is None:
+                        errors.append("The fit results appear to be incomplete.")
+                        can_update = False
+                else:
+                    errors.append("No results found")
+            except:
+                logging.error("Problem retrieving results: %s", sys.exc_value)
+                errors.append("Problem retrieving results")
+        else:
+            errors.append("No result for this model")
     else:
         errors.append("No model found for this data set")
 
@@ -448,7 +451,7 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
                                        line=dict(color="rgb(102, 102, 102)",width=2)))
             else:
                 data.append(go.Scatter(name=label, x=data_list[i][0], y=data_list[i][1],
-                                       error_x=err_x, error_y=err_y))
+                                       mode='markers', error_x=err_x, error_y=err_y))
 
 
     x_layout = dict(title=x_title, zeroline=False, exponentformat="power",

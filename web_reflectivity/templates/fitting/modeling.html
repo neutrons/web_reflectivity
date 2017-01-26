@@ -191,16 +191,18 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 
 {% if job_id %}
 <script type="text/javascript">
+    var elapsed_time = 0;
     (function poll() {
         setTimeout(function() {
+                elapsed_time += 2;
                 $.ajax({
                     type: "GET",
                     url: "{% url 'fitting:is_completed' job_id %}",
                     success: function(data) {
                         if (data.completed==true) {
-                            new_alert("Fit completed: <a href='{% url 'fitting:fit' instrument data_id %}'>click here</a> to view the results"); show_alert();
+                            new_alert("<h1>Fit completed.<br><br><a href='{% url 'fitting:fit' instrument data_id %}'>Click here</a> to view the results.</h1>"); show_alert();
                         } else {
-                            new_alert("Job status: " + data.status); show_alert();
+                            new_alert("Job status: " + data.status + "<br>Elapsed time: <b>" + elapsed_time + " seconds</b>"); show_alert();
                         }
                     },
                     dataType: "json",
