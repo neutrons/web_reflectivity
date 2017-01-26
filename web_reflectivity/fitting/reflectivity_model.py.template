@@ -17,6 +17,7 @@ def submit():
 import numpy
 import os
 from refl1d.names import *
+from math import *
 
 # Maximum Q-value ##############################################################
 q_min = ${Q_MIN}

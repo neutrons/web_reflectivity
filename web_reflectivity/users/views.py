@@ -21,11 +21,14 @@ def perform_login(request):
         password = request.POST["password"]
         user = authenticate(username=username, password=password)
         if user is not None and not user.is_anonymous():
-            login(request,user)
-            wrapper = RemoteWrapper(hostname=settings.JOB_HANDLING_HOST,
-                                    username=username, port=settings.JOB_HANDLING_POST)
-            wrapper.connect(password)
-            wrapper.close()
+            try:
+                wrapper = RemoteWrapper(hostname=settings.JOB_HANDLING_HOST,
+                                        username=username, port=settings.JOB_HANDLING_POST)
+                wrapper.connect(password)
+                wrapper.close()
+                login(request,user)
+            except:
+                login_failure = ["Could not connect to computing resource: it may be unavailable"]
         else:
             login_failure = ["Invalid username or password"]
 

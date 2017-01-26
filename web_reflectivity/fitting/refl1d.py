@@ -1,45 +1,62 @@
+#pylint: disable=too-many-branches, too-many-statements, too-many-nested-blocks, bare-except, line-too-long
 """
     Interface to refl1d
 """
 import logging
 import re
 
-def parse_params(model_err_content):
+def update_model(content, fit_problem):
     """
         [chisq=23.426(15), nllf=1850.62]
                       Parameter       mean  median    best [   68% interval] [   95% interval]
          1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
          2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
     """
-    output = {}
     start_data = False
 
-    for line in model_err_content.split('\n'):
+    for line in content.split('\n'):
         if start_data:
             try:
                 par_name, value, error = parse_single_param(line)
                 if par_name is not None:
                     toks = par_name.split(' ')
-                    if toks[0] not in output:
-                        output[toks[0]] = {'name':toks[0]}
+                    # The first token is the layer name or top-level parameter name
                     if toks[0] == 'intensity':
-                        output['scale'] = value
-                        output['scale_error'] = error
+                        fit_problem.reflectivity_model.scale = value
+                        fit_problem.reflectivity_model.scale_error = error
                     elif toks[0] == 'background':
-                        output['background'] = value
-                        output['background_error'] = error
-                    elif toks[0] == 'background':
-                        output[toks[0]]['background'] = value
-                        output[toks[0]]['background_error'] = error
+                        fit_problem.reflectivity_model.background = value
+                        fit_problem.reflectivity_model.background_error = error
                     elif toks[1] == 'rho':
-                        output[toks[0]]['sld'] = value
-                        output[toks[0]]['sld_error'] = error
+                        if toks[0] == fit_problem.reflectivity_model.front_name:
+                            fit_problem.reflectivity_model.front_sld = value
+                            fit_problem.reflectivity_model.front_sld_error = error
+                        elif toks[0] == fit_problem.reflectivity_model.back_name:
+                            fit_problem.reflectivity_model.back_sld = value
+                            fit_problem.reflectivity_model.back_sld_error = error
+                        else:
+                            for layer in fit_problem.layers.all():
+                                if toks[0] == layer.name:
+                                    layer.sld = value
+                                    layer.sld_error = error
+                                    layer.save()
                     elif toks[1] == 'thickness':
-                        output[toks[0]]['thickness'] = value
-                        output[toks[0]]['thickness_error'] = error
+                        for layer in fit_problem.layers.all():
+                            if toks[0] == layer.name:
+                                layer.thickness = value
+                                layer.thickness_error = error
+                                layer.save()
                     elif toks[1] == 'interface':
-                        output[toks[0]]['roughness'] = value
-                        output[toks[0]]['roughness_error'] = error
+                        if toks[0] == fit_problem.reflectivity_model.back_name:
+                            fit_problem.reflectivity_model.back_roughness = value
+                            fit_problem.reflectivity_model.back_roughness_error = error
+                        else:
+                            for layer in fit_problem.layers.all():
+                                if toks[0] == layer.name:
+                                    layer.roughness = value
+                                    layer.roughness_error = error
+                                    layer.save()
+                    fit_problem.save()
             except:
                 logging.error("Could not parse line %s", line)
 
@@ -55,35 +72,12 @@ def parse_params(model_err_content):
             start_data = False
 
     try:
-        output['chi2'] = float(chi2)
+        chi2_value = float(chi2)
     except:
-        output['chi2'] = None
-    return output
+        chi2_value = None
+    return chi2_value
 
-def get_latest_results(content, initial_values, initial_layers):
-    """
-        Look for the latest results for this data set.
-    """
-    params = parse_params(content)
-
-    for item in initial_layers:
-        if item['name'] in params:
-            item.update(params[item['name']])
-
-    for boundary in ['front', 'back']:
-        boundary_name = boundary+'_name'
-        if initial_values[boundary_name] in params:
-            for key in ['sld', 'roughness', 'thickness', 'sld_error', 'roughness_error', 'thickness_error']:
-                if key in params[initial_values[boundary_name]]:
-                    initial_values['%s_%s' % (boundary, key)] = params[initial_values[boundary_name]][key]
-            initial_values.update(params[initial_values[boundary_name]])
-
-    for item in ['scale', 'background', 'scale_error', 'background_error']:
-        if item in params:
-            initial_values[item] = params[item]
-    return initial_values, initial_layers, params['chi2']
-
-def extract_data_from_log(log_content, log_type='log'):
+def extract_data_from_log(log_content):
     """
         @param log_content: string buffer of the job log
     """
@@ -103,6 +97,9 @@ def extract_data_from_log(log_content, log_type='log'):
     return data_str
 
 def parse_single_param(line):
+    """
+        Parse a line of the refl1d output log
+    """
     result = re.search(r'^\d (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+) ', line.strip())
     value_float = None
     error_float = None
@@ -120,7 +117,7 @@ def parse_single_param(line):
         err_value = ''
         i_digit = 0
 
-        for c in mean_value:
+        for c in mean_value: #pylint: disable=invalid-name
             if c == '.':
                 err_value += '.'
             else:

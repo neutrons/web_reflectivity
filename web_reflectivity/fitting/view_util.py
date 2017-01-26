@@ -119,6 +119,7 @@ def extract_ascii_from_div(html_data):
 
 def update_session(request, data_form, layers_form):
     """
+        #TODO: clean this up
         Update the session information with the latest fit
     """
     if not data_form.is_valid() or not layers_form.is_valid():
@@ -150,13 +151,15 @@ def check_permissions(request, run_id, instrument):
     """
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
-        return True
+        return True, {}
 
     # Get the IPTS from ICAT
     run_info = icat.get_run_info(instrument, run_id)
     if 'proposal' in run_info:
-        return users.view_util.is_experiment_member(request, instrument, run_info['proposal'])
-    return False
+        return users.view_util.is_experiment_member(request, instrument, run_info['proposal']), run_info
+    else:
+        return request.user.is_staff, {}
+    return False, run_info
 
 def get_fit_problem(request, instrument, data_id):
     """
@@ -216,7 +219,7 @@ def delete_problem(fit_problem):
         logging.error("Could not retrieve object: %s", sys.exc_value)
         return
 
-def get_results(request, data_path, fit_problem):
+def get_results(request, fit_problem):
     """
         Get the model parameters for a given fit problem
     """
@@ -226,8 +229,6 @@ def get_results(request, data_path, fit_problem):
     can_update = False
     if fit_problem is not None:
         try:
-            initial_values, initial_layers = fit_problem.model_to_dicts()
-
             #TODO: what if the latest job was not successful? How do we report errors?
             can_update = fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
                                                                fit_problem.remote_job.STATUS.failure]
@@ -239,7 +240,10 @@ def get_results(request, data_path, fit_problem):
                     if not job == latest:
                         logging.error("Logs for job %s needs cleaning up", job.id)
                         #job.delete()
-                initial_values, initial_layers, chi2 = refl1d.get_latest_results(latest.content, initial_values, initial_layers)
+
+                chi2 = refl1d.update_model(latest.content, fit_problem)
+                for item in Constraint.objects.filter(fit_problem=fit_problem):
+                    item.apply_constraint(fit_problem)
                 if chi2 is None:
                     errors.append("The fit results appear to be incomplete.")
                     can_update = False
@@ -248,15 +252,10 @@ def get_results(request, data_path, fit_problem):
         except:
             logging.error("Problem retrieving results: %s", sys.exc_value)
             errors.append("Problem retrieving results")
-            initial_values = request.session.get('data_form_values', {})
-            initial_layers = request.session.get('layers_form_values', {})
     else:
         errors.append("No model found for this data set")
-        initial_values = request.session.get('data_form_values', {})
-        initial_values['data_path'] = data_path
-        initial_layers = request.session.get('layers_form_values', {})
 
-    return initial_values, initial_layers, chi2, latest, errors, can_update
+    return chi2, latest, errors, can_update
 
 def assemble_plot(html_data, log_object, rq4=False):
     """
@@ -384,7 +383,8 @@ def save_fit_problem(data_form, layers_form, job_object, user):
         fit_problem.remote_job = job_object
         fit_problem.reflectivity_model = ref_model
         # Clean up previous data that is now obsolete
-        old_job.delete()
+        if old_job is not None:
+            old_job.delete()
     else:
         fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
                                  remote_job=job_object)
@@ -395,12 +395,21 @@ def save_fit_problem(data_form, layers_form, job_object, user):
         if 'remove' in layer.cleaned_data and layer.cleaned_data['remove'] is False:
             l_object = layer.save()
             fit_problem.layers.add(l_object)
+
+    # Reorder the layers
+    i = 0
+    for layer in fit_problem.layers.all().order_by('layer_number'):
+        i += 1
+        layer.layer_number = i
+        layer.save()
+
     fit_problem.save()
     return fit_problem
 
 def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):
     """
+        #TODO: no connecting line for data
         Produce a 1D plot
         @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
         @param data_names: name for each trace, for the legend
@@ -538,46 +547,3 @@ def parse_data_path(data_path):
         data_id = toks[1]
     return instrument, data_id
 
-def validate_constraint(constraint_code, variables):
-    """
-        Validate user-submitted constraint code.
-    """
-    comments = []
-    is_valid = True
-
-    # Import statements are not allowed
-    if constraint_code.find('import') >= 0:
-        comments.append('Imports are not allowed in constraint code.')
-        is_valid = False
-
-    # The code must contain a return statement
-    if constraint_code.find('return') < 0:
-        comments.append("The code must contain a return statement.")
-        is_valid = False
-
-    # Prepend function definition
-    constraint_function = "from math import *\n"
-    constraint_function += "def constraint(%s):\n" % ','.join(variables)
-    for line in constraint_code.splitlines():
-        constraint_function += "    %s\n" % line
-
-    # Check that it compiles
-    try:
-        compile(constraint_function, 'constraint.py', 'exec')
-    except:
-        comments.append("Syntax error:\n%s" % sys.exc_value)
-        is_valid = False
-
-    test_script = ""
-    for v in variables:
-        test_script += "%s = 1\n" % v
-    test_script += constraint_function
-    test_script += "output_value = constraint(%s)\n" % ','.join(variables)
-    try:
-        exec test_script
-    except:
-        comments.append("Code doesn't execute:\n%s" % sys.exc_value)
-        logging.error(test_script)
-        is_valid = False
-
-    return is_valid, comments

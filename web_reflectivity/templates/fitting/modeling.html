@@ -35,6 +35,7 @@
 
 
 {% block content %}
+<h2>{{ run_title }}</h2>
   <div class="error">{{ message }}</div>
 
   <div id="graph">{{ html_data|safe }}</div>
@@ -216,6 +217,7 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 
 {% block right_side_links %}
   <span style="float:right">
+    <a href="{% url 'fitting:options' %}" target='_blank'>settings</a> | 
     <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | {% if rq4 %}<a href="?rq4=0">plot R vs Q</a>{% else %}<a href="?rq4=1">plot RQ<sup>4</sup> vs Q</a>{% endif %}
   </span>
 {% endblock %}

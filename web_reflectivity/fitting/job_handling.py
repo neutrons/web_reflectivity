@@ -10,6 +10,7 @@ from django.conf import settings
 def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True, options={}, constraints=[]):
     """
         Create a refl1d model file from a template
+        #TODO: rewrite this to take a fit_problem object
     """
     if data_file is None:
         data_file = data_form.cleaned_data['data_path']
@@ -22,6 +23,11 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
             layer_list.append(form.get_layer())
             if fit is True:
                 ranges += form.get_ranges(sample_name='sample')
+
+    # Add constraints
+    ranges += '\n'
+    for item in constraints:
+        ranges += item.get_ranges(sample_name='sample', probe_name='probe')
 
     layer_list.reverse()
     _layers = ' | '.join(layer_list)
@@ -40,7 +46,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
         model_template = string.Template(template)
 
         # Determine number of steps for refl1d
-        default_value = 1000 if fit else 2
+        default_value = 1000 if fit else 1
         if fit is False:
             steps = default_value
             burn = default_value

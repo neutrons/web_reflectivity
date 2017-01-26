@@ -220,7 +220,8 @@ class FitView(View):
             @param instrument: instrument name
             @param data_id: data set identifier
         """
-        if not view_util.check_permissions(request, data_id, instrument):
+        is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
+        if is_allowed is False: 
             return redirect(reverse('fitting:private'))
 
         template_values = self._fill_template_values(request, instrument, data_id)
@@ -235,17 +236,16 @@ class FitView(View):
         error_message = []
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
 
-        initial_values, initial_layers, chi2, log_object, errors, can_update = view_util.get_results(request, data_path, fit_problem)
+        chi2, log_object, errors, can_update = view_util.get_results(request, fit_problem)
         error_message.extend(errors)
         if fit_problem is not None:
             data_form = ReflectivityFittingForm(instance=fit_problem.reflectivity_model)
         else:
-            data_form = ReflectivityFittingForm(initial=initial_values)
-
-        if initial_layers == {}:
             extra = 1
+            data_form = ReflectivityFittingForm(initial={'data_path': data_path})
+
         LayerFormSet = layer_modelformset(extra=extra)
-        layers_form = LayerFormSet(queryset = fit_problem.layers.all() if fit_problem is not None else ReflectivityLayer.objects.none())
+        layers_form = LayerFormSet(queryset = fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
 
         html_data = view_util.get_plot_data_from_server(instrument, data_id)
         if html_data is None:
@@ -262,6 +262,7 @@ class FitView(View):
                                 'number_of_constraints': number_of_constraints,
                                 'job_id': job_id if can_update else None,
                                 'layers_form': layers_form})
+        template_values['run_title'] = run_info.get('title', '')
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
@@ -272,11 +273,6 @@ class FitView(View):
             @param instrument: instrument name
             @param data_id: data set identifier
         """
-        if not view_util.check_permissions(request, data_id, instrument):
-            return redirect(reverse('fitting:private'))
-
-        template_values = self._fill_template_values(request, instrument, data_id)
-
         error_message = []
         # Check whether we need to redirect because the user changes the data path
         data_path = request.POST.get('data_path', '')
@@ -285,6 +281,12 @@ class FitView(View):
             instrument = instrument_
         if data_id_ is not None:
             data_id = data_id_
+
+        is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
+        if is_allowed is False: 
+            return redirect(reverse('fitting:private'))
+
+        template_values = self._fill_template_values(request, instrument, data_id)
 
         request.session['latest_data_path'] = data_path
         html_data = view_util.get_plot_data_from_server(instrument, data_id)
@@ -337,6 +339,7 @@ class FitView(View):
                                 'instrument': instrument,
                                 'data_id': data_id,
                                 'layers_form': layers_form})
+        template_values['run_title'] = run_info.get('title', '')
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
@@ -367,8 +370,11 @@ class ConstraintView(View):
     def _fill_template_values(self, request, instrument, data_id, const_id, **template_args): #pylint: disable=no-self-use
         """ Return template dict """
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
-
-        initial_values, initial_layers, _, _, _, _ = view_util.get_results(request, data_path, fit_problem)
+        if fit_problem is not None:
+            initial_values, initial_layers = fit_problem.model_to_dicts()
+        else:
+            initial_layers = []
+            initial_values = {'data_path': data_path}
         data_form = ReflectivityFittingForm(initial=initial_values)
 
         LayerFormSet = formset_factory(LayerForm, extra=0)
@@ -436,8 +442,8 @@ class ConstraintView(View):
         alerts = []
         form_errors = ""
         if constraint_form.is_valid():
-            is_valid, alerts = view_util.validate_constraint(constraint_form.cleaned_data['definition'],
-                                                             constraint_form.cleaned_data['variables'])
+            is_valid, alerts = Constraint.validate_constraint(constraint_form.cleaned_data['definition'],
+                                                              constraint_form.cleaned_data['variables'])
             if is_valid:
                 if const_id is not None:
                     constraint = get_object_or_404(Constraint, pk=const_id)
