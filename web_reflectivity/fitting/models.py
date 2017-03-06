@@ -262,17 +262,21 @@ class Constraint(models.Model):
             comments.append("Syntax error:\n%s" % sys.exc_value)
             is_valid = False
 
-        parameters_1 = {}
-        parameters_2 = {}
-        for variable in variables:
-            parameters_1[variable] = 1
-            parameters_2[variable] = 10
-        output_value_1 = constraint(**parameters_1)
-        output_value_2 = constraint(**parameters_2)
+        try:
+            parameters_1 = {}
+            parameters_2 = {}
+            for variable in variables:
+                parameters_1[variable] = 1
+                parameters_2[variable] = 10
+            output_value_1 = constraint(**parameters_1)
+            output_value_2 = constraint(**parameters_2)
 
-        if output_value_1 == output_value_2:
-            comments.append("Your constraint cannot be a constant")
+            if output_value_1 == output_value_2:
+                comments.append("Your constraint cannot be a constant.")
+                is_valid = False
+        except:
+            comments.append("Invalid parameters. Check your function.")
+            comments.append("Syntax error:\n%s" % sys.exc_value)
             is_valid = False
-
         return is_valid, comments
 
