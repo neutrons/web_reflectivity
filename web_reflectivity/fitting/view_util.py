@@ -391,8 +391,8 @@ def save_fit_problem(data_form, layers_form, job_object, user):
     else:
         fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
                                  remote_job=job_object)
-    fit_problem.layers.clear()
     fit_problem.save()
+    fit_problem.layers.clear()
 
     # Save the layer parameters
     for layer in layers_form:
