@@ -160,6 +160,20 @@ def download_fit_data(request, instrument, data_id):
     response['Content-Disposition'] = 'attachment; filename=%s_%s.txt' % (instrument.upper(), data_id)
     return response
 
+@login_required
+def download_model(request, instrument, data_id):
+    """
+        Download reduced data and fit data from latest fit
+        @param request: http request object
+        @param instrument: instrument name
+        @param run_id: run number
+    """
+    ascii_data = view_util.get_model_as_csv(request, instrument, data_id)
+
+    response = HttpResponse(ascii_data, content_type="text/plain")
+    response['Content-Disposition'] = 'attachment; filename=%s_%s_model.txt' % (instrument.upper(), data_id)
+    return response
+
 @method_decorator(login_required, name='dispatch')
 class FitListView(ListView):
     """

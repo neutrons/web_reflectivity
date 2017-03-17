@@ -195,6 +195,36 @@ def get_fit_data(request, instrument, data_id):
             ascii_data = refl1d.extract_data_from_log(latest.content)
     return ascii_data
 
+def get_model_as_csv(request, instrument, data_id):
+    """
+        Return an ASCII block with model information to be loaded
+        in third party applications.
+    """
+    ascii_data = None
+    _, fit_problem = get_fit_problem(request, instrument, data_id)
+    if fit_problem is not None:
+        model_dict, layer_dicts = fit_problem.model_to_dicts()
+        ascii_data = "# Reflectivity model\n"
+        ascii_data += "# Created on %s\n" % fit_problem.timestamp
+        ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.5281/zenodo.260178]\n"
+        ascii_data += "# Data File: %s\n\n" % fit_problem.reflectivity_model.data_path
+        ascii_data += "# SCALE\n"
+        ascii_data += "scale = %g\n" % model_dict['scale']
+        ascii_data += "background = %g\n\n" % model_dict['background']
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'ROUGH')
+        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
+                                                       0, model_dict['front_sld'], 0)
+        for layer in layer_dicts:
+            ascii_data += "  %8s %24s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
+                                                            layer['thickness'], layer['sld'],
+                                                            layer['roughness'])
+
+        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
+                                                       0, model_dict['back_sld'],
+                                                       model_dict['back_roughness'])
+
+    return ascii_data
+
 def delete_problem(fit_problem):
     """
         Remove a FitProblem and all its related entries from the database

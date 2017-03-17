@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^list/$',                                             views.FitListView.as_view(), name='show_fits'),
     url(r'^options/$',                                          views.FitterOptionsUpdate.as_view(success_url='/fit/options'), name='options'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/$',         views.FitView.as_view(),     name='fit'),
+    url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/model/$', views.download_model,     name='download_model'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/download/$', views.download_fit_data,     name='download_data'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/constraints/$', views.ConstraintView.as_view(), name='constraints'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/constraints/(?P<const_id>\d+)/$', views.ConstraintView.as_view(), name='constraints_edit'),
