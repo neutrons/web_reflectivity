@@ -169,7 +169,8 @@ def download_model(request, instrument, data_id):
         @param run_id: run number
     """
     ascii_data = view_util.get_model_as_csv(request, instrument, data_id)
-
+    if ascii_data is None:
+        ascii_data = "There is no model for this data: construct your model and click Evaluate first."
     response = HttpResponse(ascii_data, content_type="text/plain")
     response['Content-Disposition'] = 'attachment; filename=%s_%s_model.txt' % (instrument.upper(), data_id)
     return response
