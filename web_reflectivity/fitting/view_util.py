@@ -241,7 +241,7 @@ def get_results(request, fit_problem):
                         if not job == latest:
                             logging.error("Logs for job %s needs cleaning up", job.id)
                             #job.delete()
-    
+
                     chi2 = refl1d.update_model(latest.content, fit_problem)
                     for item in Constraint.objects.filter(fit_problem=fit_problem):
                         item.apply_constraint(fit_problem)

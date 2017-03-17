@@ -221,7 +221,7 @@ class FitView(View):
             @param data_id: data set identifier
         """
         is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
-        if is_allowed is False: 
+        if is_allowed is False:
             return redirect(reverse('fitting:private'))
 
         template_values = self._fill_template_values(request, instrument, data_id)
@@ -259,6 +259,7 @@ class FitView(View):
                                 'html_data': html_data,
                                 'user_alert': error_message,
                                 'chi2': chi2,
+                                'extra': extra,
                                 'number_of_constraints': number_of_constraints,
                                 'job_id': job_id if can_update else None,
                                 'layers_form': layers_form})

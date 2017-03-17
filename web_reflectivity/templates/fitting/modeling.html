@@ -59,7 +59,11 @@ Checked parameters will be kept fixed during the fitting procedure.
     <thead>
       <tr><th>Layer number <span title="The layer number indicates the order of the layers. The layers will be re-ordered according to their layer number upon submission." class="ui-icon ui-icon-info"> </span></th><th>Name</th> <th>Thickness (&#8491;)</th> <th></th>
       <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th></th> <th>Roughness (&#8491;)</th> <th></th>
+      {% if extra > 0 %}
+      <td class='icon_input'><span title='You already have an added layer. Click Enter or Evaluate to confirm this layer before adding another one.' class="ui-icon ui-icon-circle-plus"></span></td></tr>
+      {% else %}
       <td class='icon_input'><a href="?extra=1"><span title='Click to add an entry' class="ui-icon ui-icon-circle-plus"></span></a></td></tr>
+      {% endif %}
     </thead>
     <tbody>
       <tr class="short_input">
