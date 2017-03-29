@@ -26,7 +26,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions, Constraint
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer
 
 import users.view_util
 
@@ -434,8 +434,10 @@ def save_fit_problem(data_form, layers_form, job_object, user):
             # we need to copy the layers, not update them.
             # TODO: We also need to copy over any existing constraint.
             if fit_created:
-                layer.pk = None
-            l_object = layer.save()
+                layer.cleaned_data['id'] = None
+                l_object = ReflectivityLayer.objects.create(**(layer.cleaned_data))
+            else:
+                l_object = layer.save()
             fit_problem.layers.add(l_object)
 
     # Reorder the layers
