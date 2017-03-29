@@ -432,10 +432,18 @@ def save_fit_problem(data_form, layers_form, job_object, user):
             # The object ID is part of the form, so if we changed the dataset
             # while submitting (if we had to create a new FitProblem), then
             # we need to copy the layers, not update them.
-            # TODO: We also need to copy over any existing constraint.
+            # We also need to copy over any existing constraint.
             if fit_created:
+                c_list = Constraint.objects.filter(layer=layer.cleaned_data['id'])
                 layer.cleaned_data['id'] = None
                 l_object = ReflectivityLayer.objects.create(**(layer.cleaned_data))
+                if len(c_list) > 0:
+                    Constraint.objects.create(user=c_list[0].user,
+                                              fit_problem=fit_problem,
+                                              definition=c_list[0].definition,
+                                              layer=l_object,
+                                              parameter=c_list[0].parameter,
+                                              variables=c_list[0].variables)
             else:
                 l_object = layer.save()
             fit_problem.layers.add(l_object)
@@ -591,3 +599,65 @@ def parse_data_path(data_path):
         data_id = toks[1]
     return instrument, data_id
 
+def reverse_model(fit_problem):
+    """
+        Reverse a layer model
+    """
+    front_name = fit_problem.reflectivity_model.front_name
+    front_sld = fit_problem.reflectivity_model.front_sld
+    front_sld_is_fixed = fit_problem.reflectivity_model.front_sld_is_fixed
+    front_sld_min = fit_problem.reflectivity_model.front_sld_min
+    front_sld_max = fit_problem.reflectivity_model.front_sld_max
+    front_sld_error = fit_problem.reflectivity_model.front_sld_error
+
+    fit_problem.reflectivity_model.front_name = fit_problem.reflectivity_model.back_name
+    fit_problem.reflectivity_model.front_sld = fit_problem.reflectivity_model.back_sld
+    fit_problem.reflectivity_model.front_sld_is_fixed = fit_problem.reflectivity_model.back_sld_is_fixed
+    fit_problem.reflectivity_model.front_sld_min = fit_problem.reflectivity_model.back_sld_min
+    fit_problem.reflectivity_model.front_sld_max = fit_problem.reflectivity_model.back_sld_max
+    fit_problem.reflectivity_model.front_sld_error = fit_problem.reflectivity_model.back_sld_error
+
+    fit_problem.reflectivity_model.back_name = front_name
+    fit_problem.reflectivity_model.back_sld = front_sld
+    fit_problem.reflectivity_model.back_sld_is_fixed = front_sld_is_fixed
+    fit_problem.reflectivity_model.back_sld_min = front_sld_min
+    fit_problem.reflectivity_model.back_sld_max = front_sld_max
+    fit_problem.reflectivity_model.back_sld_error = front_sld_error
+
+    layers = [l.id for l in fit_problem.layers.all().order_by('layer_number')]
+    count = fit_problem.layers.all().count()
+
+    if count > 0:
+        _roughness = fit_problem.reflectivity_model.back_roughness
+        _roughness_is_fixed = fit_problem.reflectivity_model.back_roughness_is_fixed
+        _roughness_min = fit_problem.reflectivity_model.back_roughness_min
+        _roughness_max = fit_problem.reflectivity_model.back_roughness_max
+        _roughness_error = fit_problem.reflectivity_model.back_roughness_error
+
+        layer = ReflectivityLayer.objects.get(id=layers[0])
+        fit_problem.reflectivity_model.back_roughness = layer.roughness
+        fit_problem.reflectivity_model.back_roughness_is_fixed = layer.roughness_is_fixed
+        fit_problem.reflectivity_model.back_roughness_min = layer.roughness_min
+        fit_problem.reflectivity_model.back_roughness_max = layer.roughness_max
+        fit_problem.reflectivity_model.back_roughness_error = layer.roughness_error
+
+    fit_problem.reflectivity_model.save()
+
+    # Reorder the layers
+    for i in range(count):
+        layer = ReflectivityLayer.objects.get(id=layers[i])
+        layer.layer_number = count - i
+        if i == count-1:
+            layer.roughness = _roughness
+            layer.roughness_is_fixed = _roughness_is_fixed
+            layer.roughness_min = _roughness_min
+            layer.roughness_max = _roughness_max
+            layer.roughness_error = _roughness_error
+        else:
+            prev_layer = ReflectivityLayer.objects.get(id=layers[i+1])
+            layer.roughness = prev_layer.roughness
+            layer.roughness_is_fixed = prev_layer.roughness_is_fixed
+            layer.roughness_min = prev_layer.roughness_min
+            layer.roughness_max = prev_layer.roughness_max
+            layer.roughness_error = prev_layer.roughness_error
+        layer.save()

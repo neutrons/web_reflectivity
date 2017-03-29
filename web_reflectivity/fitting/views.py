@@ -175,6 +175,19 @@ def download_model(request, instrument, data_id):
     response['Content-Disposition'] = 'attachment; filename=%s_%s_model.txt' % (instrument.upper(), data_id)
     return response
 
+@login_required
+def reverse_model(request, instrument, data_id):
+    """
+        Download reduced data and fit data from latest fit
+        @param request: http request object
+        @param instrument: instrument name
+        @param run_id: run number
+    """
+    _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+    if fit_problem is not None:
+        view_util.reverse_model(fit_problem)
+    return redirect(reverse('fitting:fit', args=(instrument, data_id)))
+
 @method_decorator(login_required, name='dispatch')
 class FitListView(ListView):
     """
