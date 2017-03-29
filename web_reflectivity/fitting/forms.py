@@ -3,7 +3,7 @@
     Forms for web reflectivity
 """
 import logging
-
+import re
 from django import forms
 from django.forms import ModelForm
 
@@ -49,6 +49,21 @@ class ReflectivityFittingModelForm(ModelForm):
             'data_path': forms.TextInput(attrs={'class' : 'font_resize'}),
         }
 
+    def clean_back_name(self):
+        """
+            Refl1D doesn't like layer names that look like equations.
+        """
+        if re.match('^[a-zA-Z0-9]+$', self.cleaned_data['back_name']) is None:
+            raise forms.ValidationError("Only alphanumeric characters are allowed")
+        return self.cleaned_data['back_name']
+
+    def clean_front_name(self):
+        """
+            Refl1D doesn't like layer names that look like equations.
+        """
+        if re.match('^[a-zA-Z0-9]+$', self.cleaned_data['front_name']) is None:
+            raise forms.ValidationError("Only alphanumeric characters are allowed")
+        return self.cleaned_data['front_name']
 
 class ReflectivityFittingForm(ReflectivityFittingModelForm):
     """
@@ -146,6 +161,14 @@ class LayerModelForm(ModelForm):
                   'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
                   'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error',
                   ]
+    def clean_name(self):
+        """
+            Refl1D doesn't like layer names that look like equations.
+        """
+        if re.match('^[a-zA-Z0-9]+$', self.cleaned_data['name']) is None:
+            raise forms.ValidationError("Only alphanumeric characters are allowed")
+        return self.cleaned_data['name']
+
 
 class LayerForm(LayerModelForm):
     """
