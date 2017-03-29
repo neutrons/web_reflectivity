@@ -409,6 +409,7 @@ def save_fit_problem(data_form, layers_form, job_object, user):
     ref_model = data_form.save()
     fit_problem_list = FitProblem.objects.filter(user=user,
                                                  reflectivity_model__data_path=data_form.cleaned_data['data_path'])
+    fit_created = False
     if len(fit_problem_list) > 0:
         fit_problem = fit_problem_list.latest('timestamp')
         # Replace foreign keys
@@ -421,12 +422,19 @@ def save_fit_problem(data_form, layers_form, job_object, user):
     else:
         fit_problem = FitProblem(user=user, reflectivity_model=ref_model,
                                  remote_job=job_object)
+        fit_created = True
     fit_problem.save()
     fit_problem.layers.clear()
 
     # Save the layer parameters
     for layer in layers_form:
         if 'remove' in layer.cleaned_data and layer.cleaned_data['remove'] is False:
+            # The object ID is part of the form, so if we changed the dataset
+            # while submitting (if we had to create a new FitProblem), then
+            # we need to copy the layers, not update them.
+            # TODO: We also need to copy over any existing constraint.
+            if fit_created:
+                layer.pk = None
             l_object = layer.save()
             fit_problem.layers.add(l_object)
 
