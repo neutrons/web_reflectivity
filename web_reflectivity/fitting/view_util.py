@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate, too-many-arguments, too-many-locals, too-many-branches
+#pylint: disable=bare-except, invalid-name, too-many-statements, too-many-nested-blocks, unused-argument, line-too-long, consider-using-enumerate, too-many-arguments, too-many-locals, too-many-branches
 """
     Utilities for modeling application
 """
@@ -642,6 +642,8 @@ def reverse_model(fit_problem):
         fit_problem.reflectivity_model.back_roughness_error = layer.roughness_error
 
     fit_problem.reflectivity_model.save()
+    fit_problem.remote_job = None
+    fit_problem.save()
 
     # Reorder the layers
     for i in range(count):
