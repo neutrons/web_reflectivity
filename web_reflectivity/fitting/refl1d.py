@@ -96,6 +96,25 @@ def extract_data_from_log(log_content):
     data_str = '\n'.join(data_content)
     return data_str
 
+def extract_sld_from_log(log_content):
+    """
+        @param log_content: string buffer of the job log
+    """
+    # Parse out the portion we need
+    data_started = False
+    data_content = []
+    for line in log_content.split('\n'):
+        if line.startswith("SLD_START"):
+            data_started = True
+        elif line.startswith("SLD_END"):
+            data_started = False
+        elif data_started is True:
+            data_content.append(line)
+    if len(data_content) == 0:
+        return None
+    data_str = '\n'.join(data_content)
+    return data_str
+
 def parse_single_param(line):
     """
         Parse a line of the refl1d output log

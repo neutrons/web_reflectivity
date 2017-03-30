@@ -194,7 +194,7 @@ LOGIN_URL ='/users/login'
 LANDING_VIEW = 'fitting:modeling'
 
 # Fitting options
-REFL1D_PATH = '/SNS/users/m2d/anaconda/bin'
+REFL1D_PATH = '/usr/bin'
 REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'

@@ -324,7 +324,21 @@ def assemble_plot(html_data, log_object, rq4=False):
     y_title=u"Reflectivity"
     if rq4 is True:
         y_title += u" x Q<sup>4</sup> (1/\u212b<sup>4</sup>)"
-    return plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
+
+    # Make SLD profile
+    sld_plot = None
+    if log_object is not None:
+        data_log = refl1d.extract_sld_from_log(log_object.content)
+        if data_log is not None:
+            data_str = io.StringIO(data_log)
+            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['z','rho','irho'])
+            sld_plot = plot1d([raw_data['z'], raw_data['rho']], x_log=False, y_log=False,
+                              data_names=['SLD'], x_title=u"Z (\u212b)", y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+
+    r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
+    if sld_plot is not None:
+        return "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
+    return r_plot
 
 def is_fittable(data_form, layers_form):
     """
