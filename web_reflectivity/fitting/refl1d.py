@@ -118,8 +118,11 @@ def extract_sld_from_log(log_content):
 def parse_single_param(line):
     """
         Parse a line of the refl1d output log
+        1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
+        2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
+
     """
-    result = re.search(r'^\d (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+) ', line.strip())
+    result = re.search(r'^\d (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+)(e?[\d-]*) ', line.strip())
     value_float = None
     error_float = None
     par_name = None
@@ -128,7 +131,7 @@ def parse_single_param(line):
         exponent = result.group(4)
         mean_value = "%s%s" % (result.group(2), exponent)
         error = "%s%s" % (result.group(3), exponent)
-        best_value = "%s%s" % (result.group(5), exponent)
+        best_value = "%s%s" % (result.group(5), result.group(6))
 
         # Error string does not have a .
         err_digits = len(error)

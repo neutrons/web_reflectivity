@@ -45,11 +45,15 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
         template = fd.read()
         model_template = string.Template(template)
 
+        # Fitting engine
+        engine = options.get('engine', 'dream')
+
         # Determine number of steps for refl1d
         default_value = 1000 if fit else 1
         if fit is False:
             steps = default_value
             burn = default_value
+            engine = 'lm'
         else:
             steps = options.get('steps', default_value)
             burn = options.get('burn', default_value)
@@ -60,6 +64,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            MATERIALS=materials,
                                            SAMPLE=sample,
                                            RANGES=ranges,
+                                           ENGINE=engine,
                                            ASCII_DATA=ascii_data,
                                            OUTPUT_DIR=output_dir,
                                            REFL1D_PATH=settings.REFL1D_PATH,

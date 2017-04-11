@@ -145,13 +145,18 @@ def download_reduced_data(request, instrument, data_id):
     return response
 
 @login_required
-def download_fit_data(request, instrument, data_id):
+def download_fit_data(request, instrument, data_id, include_model=False):
     """
         Download reduced data and fit data from latest fit
         @param request: http request object
         @param instrument: instrument name
         @param run_id: run number
     """
+    #TODO: Downloading data with the extra fit column is not really useful if you can loading in
+    # another fit application. Eventually let the user choose whether they want the fit data.
+    if not include_model:
+        return download_reduced_data(request, instrument, data_id)
+
     ascii_data = view_util.get_fit_data(request, instrument, data_id)
     if ascii_data is None:
         return download_reduced_data(request, instrument, data_id)
@@ -341,7 +346,7 @@ class FitView(View):
                 output = {}
                 if task in ["evaluate", "fit"]:
                     if task == "evaluate" or view_util.is_fittable(data_form, layers_form):
-                        output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user)
+                        output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user, run_info=run_info)
                         if 'job_id' in output:
                             job_id = output['job_id']
                             request.session['job_id'] = job_id

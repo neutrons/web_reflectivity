@@ -351,18 +351,18 @@ def is_fittable(data_form, layers_form):
         has_free = has_free or layer.has_free_parameter()
     return has_free
 
-def evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+def evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_info=None):
     """
         Protected version of the call to refl1d
     """
     try:
-        return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user)
+        return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user, run_info=run_info)
     except:
         traceback.print_exc()
         logging.error("Problem evaluating model: %s", sys.exc_value)
         return {'error': "Problem evaluating model: %s" % sys.exc_value}
 
-def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
+def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_info=None):
     """
         Refl1d fitting job
     """
@@ -375,9 +375,13 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None):
     except:
         base_name = data_form.cleaned_data['data_path']
 
+    fit_dir = 'reflectivity_fits'
+    if run_info is not None and 'proposal' in run_info:
+        fit_dir = os.path.join(fit_dir, run_info['proposal'])
+
     ascii_data = extract_ascii_from_div(html_data)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username)
-    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, 'reflectivity_fits', base_name)
+    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, fit_dir, base_name)
     # Get fitter options
     options = {}
     if user is not None:
