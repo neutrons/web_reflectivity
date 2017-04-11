@@ -129,6 +129,15 @@ class FitterOptions(models.Model):
     """
         Reflectivity model
     """
+    ENGINE_CHOICES = (('dream', 'DREAM algorithm'),
+                      ('amoeba', 'Amoeba / Nelder-Mead algorithm'),
+                      ('lm', 'Levenberg-Marquardt algorithm'))
+
+    engine = models.CharField(
+        max_length=15,
+        choices=ENGINE_CHOICES,
+        default='dream',
+    )
     user = models.ForeignKey(User, models.CASCADE)
     steps = models.IntegerField(default=1000, help_text='Number of fitter steps')
     burn = models.IntegerField(default=1000, help_text='Number of fitter burn steps')
@@ -140,7 +149,7 @@ class FitterOptions(models.Model):
         """
             Return an options dictionary
         """
-        return dict(steps=self.steps, burn=self.burn)
+        return dict(steps=self.steps, burn=self.burn, engine=self.engine)
 
 
 class Constraint(models.Model):

@@ -82,6 +82,17 @@ problem = FitProblem(expt)
         print(sys.exc_value)
 
     try:
+        with open(os.path.join(output_dir, '__model.par'), 'r') as out_params:
+            model_params = out_params.read()
+            fd.write(model_params)
+            print("MODEL_BEST_VALUES_START")
+            print(model_params)
+            print("MODEL_BEST_VALUES_END")
+    except:
+        fd.write("Error: could not process fit results\n")
+        print(sys.exc_value)
+
+    try:
         with open(os.path.join(output_dir, '__model-profile.dat'), 'r') as out_sld:
             sld_profile = out_sld.read()
             print("SLD_START")

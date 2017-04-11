@@ -30,7 +30,7 @@ class FitterOptionsUpdate(UpdateView):
         View to update the refl1d options
     """
     model = FitterOptions
-    fields = ['steps', 'burn']
+    fields = ['steps', 'burn', 'engine']
     template_name_suffix = '_update_form'
 
     def get(self, request, **kwargs):
