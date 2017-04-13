@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Reflectivity Models{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" media="all" href="/static/thirdparty/dynatable/jquery.dynatable.css" />
+<script type='text/javascript' src='/static/thirdparty/dynatable/jquery.dynatable.js'></script>
+<script>
+    var records = {% autoescape off %}{{ json_list }}{% endautoescape %};
+    var dynatable = null;
+    $(document).ready( function() {
+     $('#data_table').dynatable({dataset: {records: records,
+                                           perPageOptions: [25, 50, 100],
+                                           perPageDefault: 25},
+                                 features: {pushState: false}
+     });
+     dynatable = $('#data_table').data('dynatable');
+     dynatable.sorts.add('timestamp', -1)
+     dynatable.process();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="error">{{ message }}</div>
+
+<h2>Available models</h2>
+
+<p>
+<div class='data_manager' >
+<table id='data_table'>
+  <thead>
+    <tr>
+      <th data-dynatable-column="id">ID</th>
+      <th data-dynatable-column="title">Name</th>
+      <th data-dynatable-column="layers">Layers</th>
+      <th data-dynatable-column="notes">Notes</th>
+      <th data-dynatable-column="created_on" data-dynatable-sorts="timestamp" >Time</th>
+      <th data-dynatable-column="actions">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+{% endblock %}
+
+{% block right_side_links %}
+  <span style="float:right">
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a>
+  </span>
+{% endblock %}

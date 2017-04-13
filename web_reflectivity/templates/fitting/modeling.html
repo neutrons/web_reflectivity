@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}Reflectivity Fitting - {{ instrument }} {{ data_id }}{% endblock %}
 
 {% block header %}
 <script>
@@ -27,6 +28,24 @@
       $(fix_id+'_range').show();
     }
   }
+
+  function save_model() {
+    $.ajax({
+        type: "GET",
+        url: "{% url 'fitting:save_model' instrument data_id %}",
+        success: function(data) {
+    $( "#dialog-confirm" ).dialog({
+        resizable: false,
+        modal: true,
+        buttons: {"OK": function() {$( this ).dialog( "close" );}}
+        });
+        },
+        dataType: "json",
+        statusCode: { 401: function() { new_alert("Your session expired. Please log in again"); show_alert(); }},
+        statusCode: { 404: function() { new_alert("There was an error saving your model"); show_alert(); }},
+        timeout: 2000
+    })
+  }
 </script>
 <script type="text/javascript" async
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
@@ -35,13 +54,16 @@
 
 
 {% block content %}
+<div id="dialog-confirm" title="Model saved" style="display:none">
+   <p>Your model was saved.
+</div>
 <h2>{{ run_title }}</h2>
   <div class="error">{{ message }}</div>
 
   <div id="graph">{{ html_data|safe }}</div>
 
 <h2>Layer model</h2>
-Checked parameters will be kept fixed during the fitting procedure.
+Checked parameters will be kept fixed during the fitting procedure. You can also <a href="{% url 'fitting:show_models' %}?apply_to={{ instrument }}/{{ data_id }}">choose a model</a> from your saved models.
 
 <form action="" method="POST">{% csrf_token %}
   <table class="property_table  fixed_table" >
@@ -223,6 +245,6 @@ set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 {% block right_side_links %}
   <span style="float:right">
     <a href="{% url 'fitting:options' %}" target='_blank'>settings</a> | 
-    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | <a href="{% url 'fitting:download_model' instrument data_id %}" target="_blank">download model</a> | <a href="reverse">reverse model</a> | {% if rq4 %}<a href="?rq4=0">plot R vs Q</a>{% else %}<a href="?rq4=1">plot RQ<sup>4</sup> vs Q</a>{% endif %}
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | <a href="{% url 'fitting:download_model' instrument data_id %}" target="_blank">download model</a> | <a href="{% url 'fitting:show_models' %}">show models</a> | <a href="reverse">reverse model</a> | <a href='javascript:void(0);' onClick="save_model();">save model</a> | {% if rq4 %}<a href="?rq4=0">plot R vs Q</a>{% else %}<a href="?rq4=1">plot RQ<sup>4</sup> vs Q</a>{% endif %}
   </span>
 {% endblock %}

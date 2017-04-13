@@ -117,34 +117,6 @@ def extract_ascii_from_div(html_data):
         logging.debug("Unable to extract data from <div>: %s", sys.exc_value)
     return None
 
-def update_session(request, data_form, layers_form):
-    """
-        #TODO: clean this up
-        Update the session information with the latest fit
-    """
-    if not data_form.is_valid() or not layers_form.is_valid():
-        logging.error("update_session: Forms are invalid: cannot update session information")
-        return
-    request.session['data_form_values'] = data_form.cleaned_data
-    layers = []
-
-    for item in layers_form.cleaned_data:
-        if 'remove' in item and item['remove'] is False:
-            layers.append(item)
-
-    if len(layers) == 0:
-        request.session['layers_form_values'] = []
-    else:
-        if 'layer_number' in layers[0]:
-            sorted_layers = sorted(layers, key=lambda l: l['layer_number'])
-        else:
-            sorted_layers = layers
-
-        for i in range(len(sorted_layers)):
-            sorted_layers[i]['layer_number'] = i+1
-
-        request.session['layers_form_values'] = sorted_layers
-
 def check_permissions(request, run_id, instrument):
     """
         Verify that the user has the permissions to access the data
@@ -475,6 +447,55 @@ def save_fit_problem(data_form, layers_form, job_object, user):
 
     fit_problem.save()
     return fit_problem
+
+def apply_model(fit_problem, saved_model):
+    """
+        Apply a saved model to a fit problem
+    """
+    # Make a copy of the ReflectivityModel object
+    ref_model = saved_model.fit_problem.reflectivity_model
+    ref_model.pk = None
+    ref_model.data_path = fit_problem.reflectivity_model.data_path
+    ref_model.save()
+
+    fit_problem.reflectivity_model.delete()
+    fit_problem.reflectivity_model = ref_model
+    fit_problem.save()
+
+    # Copy over the layers
+    fit_problem.layers.clear()
+    for layer in saved_model.fit_problem.layers.all().order_by('layer_number'):
+        layer.id = None
+        layer.pk = None
+        layer.save()
+        fit_problem.layers.add(layer)
+
+    fit_problem.save()
+    return fit_problem
+
+def copy_fit_problem(fit_problem, user):
+    """
+        Make a duplicate copy of a FitProblem object
+    """
+    # Make a copy of the ReflectivityModel object
+    ref_model = fit_problem.reflectivity_model
+    ref_model.pk = None
+    ref_model.data_path = "saved"
+    ref_model.save()
+
+    # Create a new FitProblem object
+    fit_problem_copy = FitProblem(user=user, reflectivity_model=ref_model)
+    fit_problem_copy.save()
+
+    # Copy over the layers
+    for layer in fit_problem.layers.all().order_by('layer_number'):
+        layer.id = None
+        layer.pk = None
+        layer.save()
+        fit_problem_copy.layers.add(layer)
+
+    fit_problem_copy.save()
+    return fit_problem_copy
 
 def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):

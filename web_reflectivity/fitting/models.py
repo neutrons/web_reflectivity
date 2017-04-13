@@ -125,6 +125,15 @@ class FitProblem(models.Model):
     def __unicode__(self):
         return u"%s" % self.reflectivity_model
 
+class SavedModelInfo(models.Model):
+    """
+        Additional information attached to a saved model
+    """
+    user = models.ForeignKey(User, models.CASCADE)
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    title = models.CharField(max_length=64, blank=True, default='')
+    notes = models.TextField(blank=True, default='')
+
 class FitterOptions(models.Model):
     """
         Reflectivity model

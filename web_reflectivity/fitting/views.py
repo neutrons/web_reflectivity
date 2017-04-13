@@ -14,13 +14,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseNotFound
 from django.views.generic.base import View
 from django.views.generic.list import ListView
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, DeleteView
 from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo
 from . import view_util
 import users.view_util
 
@@ -193,6 +193,44 @@ def reverse_model(request, instrument, data_id):
         view_util.reverse_model(fit_problem)
     return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
+@login_required
+def apply_model(request, instrument, data_id, pk):
+    """
+        Download reduced data and fit data from latest fit
+        @param request: http request object
+        @param instrument: instrument name
+        @param data_id: run number
+        @param pk: primary key of model to apply
+    """
+    _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+    if fit_problem is not None:
+        saved_model = get_object_or_404(SavedModelInfo, pk=pk)
+        view_util.apply_model(fit_problem, saved_model)
+    return redirect(reverse('fitting:fit', args=(instrument, data_id)))
+
+@login_required
+def save_model(request, instrument, data_id):
+    """
+        AJAX call to save a model
+
+        #TODO: Save constraints too.
+
+        @param request: http request object
+        @param instrument: instrument name
+        @param run_id: run number
+    """
+    return_value = {'status': ''}
+    _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+    if fit_problem is None:
+        return_value['status'] = "Could not find model for %s/%s"  % (instrument, data_id)
+
+    model = view_util.copy_fit_problem(fit_problem, request.user)
+    model_info = SavedModelInfo(user=request.user, fit_problem=model)
+    model_info.save()
+    return_value['status'] = "You model was saved"
+    response = HttpResponse(json.dumps(return_value), content_type="application/json")
+    return response
+
 @method_decorator(login_required, name='dispatch')
 class FitListView(ListView):
     """
@@ -357,9 +395,6 @@ class FitView(View):
                 if 'error' in output:
                     error_message.append(output['error'])
 
-                # Set the session data. This is the only thing we need
-                # when requesting task = "set_data".
-                #view_util.update_session(request, data_form, layers_form)
                 if len(error_message) == 0:
                     return redirect(reverse('fitting:fit', args=(instrument, data_id)))
             else:
@@ -500,3 +535,71 @@ class ConstraintView(View):
         template_values['constraint_form'] = constraint_form
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/constraints.html', template_values)
+
+@method_decorator(login_required, name='dispatch')
+class SaveModelUpdate(UpdateView):
+    """
+        View to update the refl1d options
+
+        #TODO: add download links for different fitting applications.
+    """
+    model = SavedModelInfo
+    fields = ['title', 'notes']
+    template_name_suffix = '_update_form'
+
+@method_decorator(login_required, name='dispatch')
+class SaveModelDelete(DeleteView):
+    """
+        View to update the refl1d options
+    """
+    model = SavedModelInfo
+
+@method_decorator(login_required, name='dispatch')
+class ModelListView(View):
+    """
+        View for data fitting
+
+        #TODO: Add option to upload a Motofit model
+    """
+    breadcrumbs = "<a href='/'>home</a> &rsaquo; models"
+
+    def get(self, request, *args, **kwargs):
+        """ Process GET """
+        # Check whether we want to apply a model to a data set
+        # If so, the actions will change
+        apply_to = request.GET.get('apply_to', None)
+        template_values = {}
+
+        model_objects = SavedModelInfo.objects.filter(user=request.user)
+        model_list = []
+        for item in model_objects:
+            localtime = timezone.localtime(item.fit_problem.timestamp)
+            df = dateformat.DateFormat(localtime)
+            delete_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>" % reverse('fitting:delete_model', args=(item.id,))
+            update_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-pencil'></span></a>" % reverse('fitting:update_model', args=(item.id,))
+            actions = "%s %s" % (update_url, delete_url)
+
+            if apply_to is not None:
+                # Check that the fit problem exists
+                fit_problem = None
+                toks = apply_to.split('/')
+                if len(toks) == 2:
+                    instrument = toks[0].lower().strip()
+                    data_id = toks[1].lower().strip()
+                    _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+
+                    if fit_problem is None:
+                        template_values['user_alert'] = ["Could not find a fit for %s" % apply_to]
+                    else:
+                        actions = "<a href='%s'>apply</a>" % reverse('fitting:apply_model', args=(instrument, data_id, item.id))
+
+            model_list.append({'id': item.id, 'layers': item.fit_problem.show_layers(),
+                               'title': item.title, 'notes': item.notes,
+                               'actions': actions,
+                               'timestamp': item.fit_problem.timestamp.isoformat(),
+                               'created_on': df.format(settings.DATETIME_FORMAT)})
+        template_values['json_list'] = json.dumps(model_list)
+        if len(model_list) == 0:
+            template_values['user_alert'] = ["You have no saved models"]
+        template_values = users.view_util.fill_template_values(request, **template_values)
+        return render(request, 'fitting/model_list.html', template_values)
