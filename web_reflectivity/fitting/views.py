@@ -579,17 +579,11 @@ class ModelListView(View):
             actions = "%s %s" % (update_url, delete_url)
 
             if apply_to is not None:
-                # Check that the fit problem exists
-                fit_problem = None
                 toks = apply_to.split('/')
                 if len(toks) == 2:
                     instrument = toks[0].lower().strip()
                     data_id = toks[1].lower().strip()
-                    _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
                     actions = "<a href='%s'>apply</a>" % reverse('fitting:apply_model', args=(instrument, data_id, item.id))
-
-                    if fit_problem is None:
-                        template_values['user_alert'] = ["Could not find a fit for %s" % apply_to]
 
             model_list.append({'id': item.id, 'layers': item.fit_problem.show_layers(),
                                'title': item.title, 'notes': item.notes,
