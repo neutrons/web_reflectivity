@@ -249,6 +249,9 @@ class FitListView(ListView):
             errors.append("No fit found")
         fit_list = []
         for item in context['fit_list']:
+            # Skip saved models
+            if len(item.reflectivity_model.data_path) == 0 or item.reflectivity_model.data_path == 'saved':
+                continue
             localtime = timezone.localtime(item.timestamp)
             df = dateformat.DateFormat(localtime)
             fit_list.append({'id': item.id, 'layers': item.show_layers(), 'data': item.reflectivity_model.data_path,
