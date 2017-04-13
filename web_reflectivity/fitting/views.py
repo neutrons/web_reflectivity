@@ -203,9 +203,8 @@ def apply_model(request, instrument, data_id, pk):
         @param pk: primary key of model to apply
     """
     _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
-    if fit_problem is not None:
-        saved_model = get_object_or_404(SavedModelInfo, pk=pk)
-        view_util.apply_model(fit_problem, saved_model)
+    saved_model = get_object_or_404(SavedModelInfo, pk=pk)
+    view_util.apply_model(fit_problem, saved_model, instrument, data_id)
     return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @login_required
@@ -587,11 +586,10 @@ class ModelListView(View):
                     instrument = toks[0].lower().strip()
                     data_id = toks[1].lower().strip()
                     _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+                    actions = "<a href='%s'>apply</a>" % reverse('fitting:apply_model', args=(instrument, data_id, item.id))
 
                     if fit_problem is None:
                         template_values['user_alert'] = ["Could not find a fit for %s" % apply_to]
-                    else:
-                        actions = "<a href='%s'>apply</a>" % reverse('fitting:apply_model', args=(instrument, data_id, item.id))
 
             model_list.append({'id': item.id, 'layers': item.fit_problem.show_layers(),
                                'title': item.title, 'notes': item.notes,

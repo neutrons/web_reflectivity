@@ -448,18 +448,25 @@ def save_fit_problem(data_form, layers_form, job_object, user):
     fit_problem.save()
     return fit_problem
 
-def apply_model(fit_problem, saved_model):
+def apply_model(fit_problem, saved_model, instrument, data_id):
     """
         Apply a saved model to a fit problem
     """
+    data_path = "%s/%s" % (instrument.lower().strip(), data_id.lower().strip())
+    if fit_problem is not None:
+        data_path = fit_problem.reflectivity_model.data_path
+
     # Make a copy of the ReflectivityModel object
     ref_model = saved_model.fit_problem.reflectivity_model
     ref_model.pk = None
-    ref_model.data_path = fit_problem.reflectivity_model.data_path
+    ref_model.data_path = data_path
     ref_model.save()
 
-    fit_problem.reflectivity_model.delete()
-    fit_problem.reflectivity_model = ref_model
+    if fit_problem is not None:
+        fit_problem.reflectivity_model.delete()
+        fit_problem.reflectivity_model = ref_model
+    else:
+        fit_problem = FitProblem(user=saved_model.user, reflectivity_model=ref_model)
     fit_problem.save()
 
     # Copy over the layers
