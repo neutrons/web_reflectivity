@@ -53,7 +53,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
         if fit is False:
             steps = default_value
             burn = default_value
-            engine = 'lm'
+            engine = 'amoeba'
         else:
             steps = options.get('steps', default_value)
             burn = options.get('burn', default_value)
