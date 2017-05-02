@@ -3,7 +3,7 @@
     Admin views for models
 """
 from django.contrib import admin
-from fitting.models import ReflectivityModel, FitProblem, ReflectivityLayer, FitterOptions, Constraint
+from fitting.models import ReflectivityModel, FitProblem, ReflectivityLayer, FitterOptions, Constraint, SavedModelInfo
 
 class FitProblemAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'reflectivity_model', 'show_layers', 'remote_job', 'timestamp')
@@ -25,8 +25,13 @@ class ConstraintAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'fit_problem', 'layer', 'parameter', 'variables')
     list_filter = ('user', 'fit_problem')
 
+class SavedModelInfoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'fit_problem', 'title')
+    list_filter = ('user',)
+
 admin.site.register(ReflectivityModel, ReflectivityModelAdmin)
 admin.site.register(FitProblem, FitProblemAdmin)
 admin.site.register(ReflectivityLayer, ReflectivityLayerAdmin)
 admin.site.register(Constraint, ConstraintAdmin)
 admin.site.register(FitterOptions, FitterOptionsAdmin)
+admin.site.register(SavedModelInfo, SavedModelInfoAdmin)
