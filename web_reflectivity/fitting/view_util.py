@@ -465,6 +465,7 @@ def apply_model(fit_problem, saved_model, instrument, data_id):
     if fit_problem is not None:
         fit_problem.reflectivity_model.delete()
         fit_problem.reflectivity_model = ref_model
+        fit_problem.remote_job = None
     else:
         fit_problem = FitProblem(user=saved_model.user, reflectivity_model=ref_model)
     fit_problem.save()
