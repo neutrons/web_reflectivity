@@ -262,6 +262,7 @@ class FitListView(ListView):
         context['json_list'] = json.dumps(fit_list)
         context['user_alert'] = errors
         context['breadcrumbs'] = "<a href='/'>home</a> &rsaquo; recent fits"
+        context = users.view_util.fill_template_values(self.request, **context)
         return context
 
 @method_decorator(login_required, name='dispatch')
