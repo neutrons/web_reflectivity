@@ -17,11 +17,25 @@
      dynatable.sorts.add('timestamp', -1)
      dynatable.process();
     });
+
+    function save_model(url) {
+        $( "#dialog-confirm" ).dialog({
+            resizable: true,
+            modal: true,
+            width: 450,
+            buttons: {"OK": function() {$( this ).dialog( "close" );}},
+            open: function(){
+               $("#contentholder").replaceWith('<p id="contentholder">To shared this model, copy and paste the following link: <a href="'+url+'">'+url+'</a></p>')
+            }
+        });
+    }
 </script>
+
 {% endblock %}
 
 {% block content %}
 <div class="error">{{ message }}</div>
+<div id="dialog-confirm" title="Share model" style="display:none"><p id="contentholder">empty</p></div>
 
 <h2>Available models</h2>
 

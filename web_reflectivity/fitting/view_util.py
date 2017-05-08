@@ -481,6 +481,14 @@ def apply_model(fit_problem, saved_model, instrument, data_id):
     fit_problem.save()
     return fit_problem
 
+def model_hash(fit_problem):
+    """
+        Return a secret hash for a given fit problem
+    """
+    h = hashlib.sha1()
+    h.update("%s%s%s" % (fit_problem.id, fit_problem.reflectivity_model.id, fit_problem.user))
+    return h.hexdigest()
+
 def copy_fit_problem(fit_problem, user):
     """
         Make a duplicate copy of a FitProblem object

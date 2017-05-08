@@ -11,7 +11,7 @@ from django.forms.formsets import formset_factory
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.views.generic.base import View
 from django.views.generic.list import ListView
 from django.views.generic.edit import UpdateView, DeleteView
@@ -550,12 +550,34 @@ class SaveModelUpdate(UpdateView):
     fields = ['title', 'notes']
     template_name_suffix = '_update_form'
 
+    def get_object(self, queryset=None):
+        """ Ensure that the object is owned by the user. """
+        obj = super(SaveModelUpdate, self).get_object()
+        if obj.user == self.request.user:
+            return obj
+        else:
+            # If the user has a valid hash, create a copy and use that.
+            hash_in = self.request.GET.get('s', None)
+            hash_check = view_util.model_hash(obj.fit_problem)
+            if hash_in == hash_check:
+                model = view_util.copy_fit_problem(obj.fit_problem, self.request.user)
+                model_info = SavedModelInfo(user=self.request.user, fit_problem=model)
+                model_info.save()
+                return model_info
+        raise Http404
+
 @method_decorator(login_required, name='dispatch')
 class SaveModelDelete(DeleteView):
     """
         View to update the refl1d options
     """
     model = SavedModelInfo
+    def get_object(self, queryset=None):
+        """ Ensure that the object is owned by the user. """
+        obj = super(SaveModelDelete, self).get_object()
+        if not obj.user == self.request.user:
+            raise Http404
+        return obj
 
 @method_decorator(login_required, name='dispatch')
 class ModelListView(View):
@@ -580,7 +602,11 @@ class ModelListView(View):
             df = dateformat.DateFormat(localtime)
             delete_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>" % reverse('fitting:delete_model', args=(item.id,))
             update_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-pencil'></span></a>" % reverse('fitting:update_model', args=(item.id,))
-            actions = "%s %s" % (update_url, delete_url)
+
+            model_url = reverse('fitting:update_model', args=(item.id,))
+            model_hash = view_util.model_hash(item.fit_problem)
+            email_url = "<a href='javascript:void(0);' onClick='save_model(\"%s%s?s=%s\");'><span style='display:inline-block' class='ui-icon ui-icon-mail-closed'></span></a>" % (request.get_host(), model_url, model_hash)
+            actions = "%s %s %s" % (update_url, delete_url, email_url)
 
             if apply_to is not None:
                 toks = apply_to.split('/')
