@@ -143,14 +143,6 @@ def get_fit_problem(request, instrument, data_id):
     if len(fit_problem_list) > 0:
         fit_problem = fit_problem_list.latest('timestamp')
 
-        # Cleanup
-        #TODO: make sure we can remove the following block of code
-        #job_id = request.session.get('job_id', None)
-        #for item in fit_problem_list:
-        #    if not item == fit_problem and not item.id == job_id:
-        #        logging.debug("Cleaning old FitProblem %s [curr: %s]", item.id, fit_problem.id)
-        #        delete_problem(item)
-
         return data_path, fit_problem
     return data_path, None
 
@@ -196,30 +188,6 @@ def get_model_as_csv(request, instrument, data_id):
                                                        model_dict['back_roughness'])
 
     return ascii_data
-
-def delete_problem(fit_problem):
-    """
-        Remove a FitProblem and all its related entries from the database
-        @param fit_problem: FitProblem ojbect
-    """
-    # Only delete jobs that are not active
-    try:
-        if fit_problem.remote_job.status not in [fit_problem.remote_job.STATUS.success,
-                                                 fit_problem.remote_job.STATUS.failure]:
-            return
-
-        # Delete the reflectivity model objects
-        for item in fit_problem.layers.all():
-            #fit_problem.layers.remove(item)
-            item.delete()
-
-        fit_problem.reflectivity_model.delete()
-
-        # Delete the job
-        fit_problem.remote_job.delete()
-    except:
-        logging.error("Could not retrieve object: %s", sys.exc_value)
-        return
 
 def get_results(request, fit_problem):
     """

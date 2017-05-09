@@ -97,6 +97,17 @@ class FitProblem(models.Model):
     remote_job = models.ForeignKey(Job, models.SET_NULL, null=True)
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
+    def delete(self, *args, **kwargs):
+        """
+            Delete method to clean up related objects
+        """
+        logging.error(self.layers.all())
+        logging.error(self.layers.all().delete())
+        self.reflectivity_model.delete()
+        if self.remote_job is not None:
+            self.remote_job.delete()
+        super(FitProblem, self).delete(*args, **kwargs)
+
     def model_to_dicts(self):
         """ Return a dict with all the data values """
         refl_model_dict = model_to_dict(self.reflectivity_model)

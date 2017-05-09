@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^private/$',                                            views.private,                  name='private'),
     url(r'^files/$',                                              views.FileView.as_view(),       name='show_files'),
     url(r'^models/$',                                             views.ModelListView.as_view(),  name='show_models'),
+    url(r'^problem/(?P<pk>[\w-]+)/delete/$',                      views.FitProblemDelete.as_view(success_url='/fit/list'), name='delete_problem'),
     url(r'^model/(?P<pk>[\w-]+)/delete/$',                        views.SaveModelDelete.as_view(success_url='/fit/models'), name='delete_model'),
     url(r'^model/(?P<pk>[\w-]+)/$',                               views.SaveModelUpdate.as_view(success_url='/fit/models'), name='update_model'),
     url(r'^list/$',                                               views.FitListView.as_view(),    name='show_fits'),

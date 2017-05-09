@@ -254,9 +254,11 @@ class FitListView(ListView):
                 continue
             localtime = timezone.localtime(item.timestamp)
             df = dateformat.DateFormat(localtime)
+            actions = "<a href='%s%s' target='_blank'>click to fit</a> " % (reverse('fitting:modeling'),
+                                                                            item.reflectivity_model.data_path)
+            actions += " | <a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>" % reverse('fitting:delete_problem', args=(item.id,))
             fit_list.append({'id': item.id, 'layers': item.show_layers(), 'data': item.reflectivity_model.data_path,
-                             'url': "<a href='%s%s' target='_blank'>click to fit</a>" % (reverse('fitting:modeling'),
-                                                                                         item.reflectivity_model.data_path),
+                             'url': actions,
                              'timestamp': item.timestamp.isoformat(),
                              'created_on': df.format(settings.DATETIME_FORMAT)})
         context['json_list'] = json.dumps(fit_list)
@@ -580,6 +582,19 @@ class SaveModelDelete(DeleteView):
         return obj
 
 @method_decorator(login_required, name='dispatch')
+class FitProblemDelete(DeleteView):
+    """
+        View to update the refl1d options
+    """
+    model = FitProblem
+    def get_object(self, queryset=None):
+        """ Ensure that the object is owned by the user. """
+        obj = super(FitProblemDelete, self).get_object()
+        if not obj.user == self.request.user:
+            raise Http404
+        return obj
+
+@method_decorator(login_required, name='dispatch')
 class ModelListView(View):
     """
         View for data fitting
@@ -593,7 +608,7 @@ class ModelListView(View):
         # Check whether we want to apply a model to a data set
         # If so, the actions will change
         apply_to = request.GET.get('apply_to', None)
-        template_values = {}
+        template_values = {'breadcrumbs': self.breadcrumbs}
 
         model_objects = SavedModelInfo.objects.filter(user=request.user)
         model_list = []

@@ -31,7 +31,7 @@ The following are your latest fits:
     <tr>
       <th data-dynatable-column="data">Data</th>
       <th data-dynatable-column="layers">Layers</th>
-      <th data-dynatable-column="url">URL</th>
+      <th data-dynatable-column="url">Actions</th>
       <th data-dynatable-column="created_on" data-dynatable-sorts="timestamp" >Time</th>
     </tr>
   </thead>
@@ -43,6 +43,6 @@ The following are your latest fits:
 
 {% block right_side_links %}
   <span style="float:right">
-    <a href="{% url 'fitting:show_files' %}">show files</a>
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_models' %}">saved models</a>
   </span>
 {% endblock %}
