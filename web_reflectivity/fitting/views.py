@@ -620,7 +620,8 @@ class ModelListView(View):
 
             model_url = reverse('fitting:update_model', args=(item.id,))
             model_hash = view_util.model_hash(item.fit_problem)
-            email_url = "<a href='javascript:void(0);' onClick='save_model(\"%s?s=%s\");'><span style='display:inline-block' class='ui-icon ui-icon-mail-closed'></span></a>" % (model_url, model_hash)
+            abs_url = request.build_absolute_uri("%s?s=%s" % (model_url, model_hash))
+            email_url = "<a href='javascript:void(0);' onClick='save_model(\"%s\");'><span style='display:inline-block' class='ui-icon ui-icon-mail-closed'></span></a>" % abs_url
             actions = "%s %s %s" % (update_url, delete_url, email_url)
 
             if apply_to is not None:
