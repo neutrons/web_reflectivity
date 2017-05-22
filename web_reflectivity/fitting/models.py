@@ -156,7 +156,7 @@ class FitterOptions(models.Model):
     engine = models.CharField(
         max_length=15,
         choices=ENGINE_CHOICES,
-        default='dream',
+        default='amoeba',
     )
     user = models.ForeignKey(User, models.CASCADE)
     steps = models.IntegerField(default=1000, help_text='Number of fitter steps')
