@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Capacity and SLD calculator</h2>
+<ul>
+<li>Enter the composition of the electrode and its geometry to get its capacity.</li>
+<li>The charge packing ratio refers, for instance, to the maximum <i>x</i> in <i>Li<sub>x</sub>:Si</i>.</li>
+<li>The oxidation state change refers to the change in oxidation state of the charge carrier ion.</li>
+<li>If using a compound, enter your electrode material density </li>
+</ul>
+
+<form action="" method="POST">{% csrf_token %}
+<table>
+{{ form.as_table }}
+</table>
+
+<input class="ui-button ui-widget ui-corner-all" type="submit" value="calculate"/>
+</form>
+<p>
+{% if capacity %}
+<h2>
+Capacity = <b>{{ capacity }} &#956;Ah</b>
+</h2>
+<table style="width:80%;">
+  <tr>
+    <td>C/1 = <b>{{ capacity }} &#956;A</b></td>
+    <td>C/3 = <b>{{ c_over_3 }} &#956;A</b></td>
+    <td>C/5 = <b>{{ c_over_5 }} &#956;A</b></td>
+  </tr>
+</table>
+<h2>
+Neutron SLD = <b>{{ sld }} x10<sup>-6</sup>/&#8491;<sup>2</sup></b>
+</h2>
+<table style="width:80%;">
+  <tr>
+    <td>Im(SLD) = <b>{{ im_sld }} x10<sup>-6</sup>/&#8491;<sup>2</sup></b></td>
+    <td>Incoherent SLD = <b>{{ incoherent }} x10<sup>-6</sup>/&#8491;<sup>2</sup></b></td>
+    <td>Density = <b>{{ density }} g/cm<sup>3</sup></b></td>
+  </tr>
+</table>
+
+{% endif %}
+{% endblock %}

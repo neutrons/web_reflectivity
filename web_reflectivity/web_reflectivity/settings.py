@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django_remote_submission',
     'django_celery_results',
     'fitting',
+    'tools',
     'users',
 ]
 
