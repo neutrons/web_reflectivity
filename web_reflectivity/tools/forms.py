@@ -3,6 +3,7 @@
     Forms for web reflectivity
 """
 import periodictable as pt
+import periodictable.nsf as nsf
 from django import forms
 from django.utils.safestring import mark_safe
 
@@ -52,7 +53,7 @@ class ChargeRateForm(forms.Form):
 
         # Scattering length density
         # sld, imaginary sld, incoherent
-        sld, im_sld, incoh = electrode_material.neutron_sld(wavelength=6.0)
+        sld, im_sld, incoh = nsf.neutron_sld(compound=self.cleaned_data['material_formula'], wavelength=6.0, density=density)
 
         # Return value in muAh
         return dict(capacity='%6.3g' % capacity, sld='%6.3f' % sld,
