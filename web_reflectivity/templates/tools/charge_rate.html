@@ -3,7 +3,7 @@
 {% block content %}
 <h2>Capacity and SLD calculator</h2>
 <ul>
-<li>To compute the SLD, enter the material composition and density</li>
+<li>To compute the SLD, enter the material composition and density.</li>
 <li>To compute capacity, also enter the electrode geometry.</li>
 <li>The stoichiometry refers, for instance, to the maximum <i>x</i> in <i>Li<sub>x</sub>:Si</i>.</li>
 <li>The oxidation state change refers to the change in oxidation state in the redox process.</li>
@@ -13,13 +13,13 @@
 <table>
 <tr><th>{{ form.material_formula.label_tag }}</th><td>{{ form.material_formula }}</td></tr>
 <tr><th>{{ form.electrode_density.label_tag }}</th><td>{{ form.electrode_density }}</td></tr>
-<tr><td colspan=2><br>The following fields only need to be changed when computing capacity:</td></tr>
+<tr><td colspan=2><br>The following fields only need to be changed when computing capacity:<br><br></td></tr>
 <tr><th>{{ form.electrode_radius.label_tag }}</th><td>{{ form.electrode_radius }}</td></tr>
 <tr><th>{{ form.electrode_thickness.label_tag }}</th><td>{{ form.electrode_thickness }}</td></tr>
 <tr><th>{{ form.ion_packing.label_tag }}</th><td>{{ form.ion_packing }}</td></tr>
 <tr><th>{{ form.valence_change.label_tag }}</th><td>{{ form.valence_change }}</td></tr>
 </table>
-<input class="ui-button ui-widget ui-corner-all" type="submit" value="calculate"/>
+<br><input class="ui-button ui-widget ui-corner-all" type="submit" value="calculate"/>
 </form>
 <p>
 {% if capacity %}
