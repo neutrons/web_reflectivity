@@ -11,12 +11,12 @@ class ChargeRateForm(forms.Form):
     """
         Input form for the capacity calculator
     """
-    material_formula = forms.CharField(label='Electrode material', max_length=100, initial='Si')
+    material_formula = forms.CharField(label='Material', max_length=100, initial='Si')
     electrode_radius = forms.FloatField(label='Electrode radius [cm]', initial=2)
     electrode_thickness = forms.FloatField(label='Electrode thickness [nm]', initial=75)
-    ion_packing = forms.FloatField(label="Charge packing ratio", initial=3.75)
+    ion_packing = forms.FloatField(label="Stoichiometry", initial=3.75)
     valence_change = forms.IntegerField(label="Oxidation state change", initial=1)
-    electrode_density = forms.FloatField(label=mark_safe("Electrode density [g/cm<sup>3</sup>]"), required=False)
+    electrode_density = forms.FloatField(label=mark_safe("Material density [g/cm<sup>3</sup>]"), required=False)
 
     def capacity(self):
         """
