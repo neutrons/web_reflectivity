@@ -601,6 +601,7 @@ def get_user_files(request):
     data_list = []
     for item in user_data:
         update_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-pencil'></span></a>" % reverse('fitting:data_info', args=(str(request.user), item.file_id))
+        delete_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>" % reverse('fitting:data_delete', args=(item.id,))
         fit_url = "<a href='%s' target='_blank'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item.file_id))
 
         localtime = timezone.localtime(item.timestamp)
@@ -611,7 +612,7 @@ def get_user_files(request):
                          run_id=item.file_name,
                          timestamp=item.timestamp.isoformat(),
                          created_on=df.format(settings.DATETIME_FORMAT),
-                         url="%s %s" % (fit_url, update_url),
+                         url="%s | %s %s" % (fit_url, update_url, delete_url),
                          tags=item.tags)
         data_list.append(data_item)
 

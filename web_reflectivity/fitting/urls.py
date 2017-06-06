@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^list/$',                                               views.FitListView.as_view(),    name='show_fits'),
     url(r'^options/$',                                            views.FitterOptionsUpdate.as_view(success_url='/fit/options'), name='options'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/info/$',        views.UpdateUserDataView.as_view(), name='data_info'),
+    url(r'^files/(?P<pk>[\w-]+)/delete/$',                        views.UserDataDelete.as_view(success_url='/fit/files'), name='data_delete'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/$',             views.FitView.as_view(),        name='fit'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/model/$',       views.download_model,           name='download_model'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/apply/(?P<pk>[\w-]+)/$', views.apply_model,     name='apply_model'),

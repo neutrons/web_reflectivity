@@ -145,7 +145,7 @@ class UpdateUserDataView(View):
         """
             Show current information about a user file
         """
-        user_data, _ = UserData.objects.get_or_create(user=request.user, file_id=data_id)
+        user_data = get_object_or_404(UserData, user=request.user, file_id=data_id)
         form = UserDataUpdateForm(instance=user_data)
 
         template_values = self._get_template_values(request, instrument, data_id, user_data)
@@ -156,7 +156,7 @@ class UpdateUserDataView(View):
         """
             Update information
         """
-        user_data, _ = UserData.objects.get_or_create(user=request.user, file_id=data_id)
+        user_data = get_object_or_404(UserData, user=request.user, file_id=data_id)
         form = UserDataUpdateForm(request.POST, instance=user_data)
         if form.is_valid():
             form.save()
@@ -630,6 +630,19 @@ class FitProblemDelete(DeleteView):
     def get_object(self, queryset=None):
         """ Ensure that the object is owned by the user. """
         obj = super(FitProblemDelete, self).get_object()
+        if not obj.user == self.request.user:
+            raise Http404
+        return obj
+
+@method_decorator(login_required, name='dispatch')
+class UserDataDelete(DeleteView):
+    """
+        View to delete user data
+    """
+    model = UserData
+    def get_object(self, queryset=None):
+        """ Ensure that the object is owned by the user. """
+        obj = super(UserDataDelete, self).get_object()
         if not obj.user == self.request.user:
             raise Http404
         return obj
