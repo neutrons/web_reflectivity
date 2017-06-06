@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if user_data.file_name %}
+<h2>{{ user_data.file_name }}</h2>
+{% else %}
+Unique ID: {{ user_data.file_id }}
+{% endif %}
+<p>
+Enter tags to help sort your data.
+
+<form action="" method="POST">{% csrf_token %}
+{{ form.as_p }}
+  <input class="ui-button ui-widget ui-corner-all" title="Click to save your data information" type="submit" value="update"/>
+</form>
+<p>
+{% endblock %}

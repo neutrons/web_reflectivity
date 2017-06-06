@@ -16,6 +16,7 @@ import pandas
 import requests
 import string
 from django.conf import settings
+from django.utils import dateparse, dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
@@ -26,7 +27,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData
 
 import users.view_util
 
@@ -484,7 +485,6 @@ def copy_fit_problem(fit_problem, user):
 def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):
     """
-        #TODO: no connecting line for data
         Produce a 1D plot
         @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
         @param data_names: name for each trace, for the legend
@@ -579,6 +579,7 @@ def parse_ascii_file(request, file_name, raw_content):
         http_request = requests.post(live_data_url, data=monitor_user, files=files, verify=True)
 
         if http_request.status_code == 200:
+            get_user_files_from_server(request, filter_file_name=file_name)
             return True, ""
         else:
             logging.error("Return code %s for %s:", http_request.status_code, live_data_url)
@@ -589,7 +590,38 @@ def parse_ascii_file(request, file_name, raw_content):
 
 def get_user_files(request):
     """
+        Get list of uploaded files
+    """
+    user_data = UserData.objects.filter(user=request.user)
+    if len(user_data) == 0:
+        logging.warning("Syncing files for user %s", request.user)
+        get_user_files_from_server(request)
+        user_data = UserData.objects.filter(user=request.user)
+
+    data_list = []
+    for item in user_data:
+        update_url = "<a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-pencil'></span></a>" % reverse('fitting:data_info', args=(str(request.user), item.file_id))
+        fit_url = "<a href='%s' target='_blank'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item.file_id))
+
+        localtime = timezone.localtime(item.timestamp)
+        df = dateformat.DateFormat(localtime)
+
+        data_item = dict(id=item.file_id,
+                         run_number=item.file_id,
+                         run_id=item.file_name,
+                         timestamp=item.timestamp.isoformat(),
+                         created_on=df.format(settings.DATETIME_FORMAT),
+                         url="%s %s" % (fit_url, update_url),
+                         tags=item.tags)
+        data_list.append(data_item)
+
+    return json.dumps(data_list)
+
+def get_user_files_from_server(request, filter_file_name=None):
+    """
         Get a list of the user's data on the live data server
+        @param request: request object
+        @param filter_file_name: If this parameter is not None, we will only update the entry with that file name
     """
     try:
         # Upload plot to live data server
@@ -602,11 +634,15 @@ def get_user_files(request):
 
         data_list = json.loads(http_request.content)
         for item in data_list:
-            item['url'] = "<a href='%s' target='_blank'>click to fit</a>" % reverse('fitting:fit', args=(str(request.user), item['run_number']))
-        return json.dumps(data_list)
+            if filter_file_name and not item['run_id'] == filter_file_name:
+                continue
+            user_data, created = UserData.objects.get_or_create(user=request.user, file_id=item['run_number'], defaults={'timestamp': timezone.now()})
+            if created:
+                user_data.file_name = item['run_id']
+                user_data.timestamp = dateparse.parse_datetime(item['timestamp'])
+                user_data.save()
     except:
         logging.error("Could not retrieve user files: %s", sys.exc_value)
-        return None
 
 def parse_data_path(data_path):
     """

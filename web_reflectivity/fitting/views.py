@@ -19,8 +19,8 @@ from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData
 from . import view_util
 import users.view_util
 
@@ -124,6 +124,46 @@ class FileView(View):
                 errors.append("The uploaded file is too big.")
         template_values['form'] = form
         template_values['user_alert'] = errors
+        return render(request, self.template_name, template_values)
+
+@method_decorator(login_required, name='dispatch')
+class UpdateUserDataView(View):
+    """
+        View for modifying the information about an uploaded data file.
+    """
+    template_name = "fitting/user_data_update.html"
+
+    def _get_template_values(self, request, instrument, data_id, user_data): #pylint: disable=no-self-use
+        """ Return template dict """
+        breadcrumbs = "<a href='/'>home</a> &rsaquo; <a href='%s'>data files</a>" % reverse('fitting:show_files')
+        template_values = dict(breadcrumbs="%s &rsaquo; %s" % (breadcrumbs, data_id),
+                               user_data = user_data)
+        template_values = users.view_util.fill_template_values(request, **template_values)
+        return template_values
+
+    def get(self, request, instrument, data_id, *args, **kwargs):
+        """
+            Show current information about a user file
+        """
+        user_data, _ = UserData.objects.get_or_create(user=request.user, file_id=data_id)
+        form = UserDataUpdateForm(instance=user_data)
+
+        template_values = self._get_template_values(request, instrument, data_id, user_data)
+        template_values['form'] = form
+        return render(request, self.template_name, template_values)
+
+    def post(self, request, instrument, data_id, *args, **kwargs):
+        """
+            Update information
+        """
+        user_data, _ = UserData.objects.get_or_create(user=request.user, file_id=data_id)
+        form = UserDataUpdateForm(request.POST, instance=user_data)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse('fitting:show_files'))
+        template_values = self._get_template_values(request, instrument, data_id, user_data)
+        template_values['form'] = form
+        template_values['user_alert'] = ['Invalid inputs were found']
         return render(request, self.template_name, template_values)
 
 @login_required
@@ -360,7 +400,7 @@ class FitView(View):
             data_id = data_id_
 
         is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
-        if is_allowed is False: 
+        if is_allowed is False:
             return redirect(reverse('fitting:private'))
 
         template_values = self._fill_template_values(request, instrument, data_id)

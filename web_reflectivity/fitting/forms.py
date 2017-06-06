@@ -7,7 +7,7 @@ import re
 from django import forms
 from django.forms import ModelForm
 
-from .models import ReflectivityModel, ReflectivityLayer
+from .models import ReflectivityModel, ReflectivityLayer, UserData
 
 class UploadFileForm(forms.Form):
     """
@@ -15,6 +15,17 @@ class UploadFileForm(forms.Form):
     """
     file = forms.FileField()
 
+class UserDataUpdateForm(ModelForm):
+    """
+        Form to update the information about an uploaded file
+    """
+    class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
+        """ Defining a form for the UserData model"""
+        model = UserData
+        fields = ['user', 'tags', 'file_id', 'file_name']
+        widgets = {'user': forms.HiddenInput(),
+                   'file_id': forms.HiddenInput(),
+                   'file_name': forms.HiddenInput()}
 
 class ConstraintForm(forms.Form):
     """
@@ -239,6 +250,7 @@ class LayerForm(LayerModelForm):
         return ranges
 
 def layer_modelformset(extra=0):
+    """ Form set for film layers """
     return forms.modelformset_factory(ReflectivityLayer, form=LayerForm, extra=extra,
                                       fields=('name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
                                               'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',

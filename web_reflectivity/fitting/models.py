@@ -1,4 +1,4 @@
-#pylint: disable=bare-except
+#pylint: disable=bare-except, wildcard-import
 """
     Data models
     #TODO: move the script generation from the forms to the models
@@ -145,6 +145,17 @@ class SavedModelInfo(models.Model):
     title = models.CharField(max_length=64, blank=True, default='')
     notes = models.TextField(blank=True, default='')
 
+class UserData(models.Model):
+    """
+        User data information
+    """
+    user = models.ForeignKey(User, models.CASCADE)
+    ## File ID is the unique number the plot server gives this run
+    file_id = models.TextField(default='')
+    file_name = models.TextField(blank=True, default='')
+    tags = models.TextField(blank=True, default='')
+    timestamp = models.DateTimeField('timestamp')
+
 class FitterOptions(models.Model):
     """
         Reflectivity model
@@ -163,6 +174,7 @@ class FitterOptions(models.Model):
     burn = models.IntegerField(default=1000, help_text='Number of fitter burn steps')
 
     class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
+        """ Special options """
         verbose_name_plural = "Fitter options"
 
     def get_dict(self):
