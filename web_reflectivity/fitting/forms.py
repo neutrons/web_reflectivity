@@ -9,6 +9,12 @@ from django.forms import ModelForm
 
 from .models import ReflectivityModel, ReflectivityLayer, UserData
 
+class SimultaneousModelForm(forms.Form):
+    """
+        For to let users specify data to overlay or fit together
+    """
+    dependent_data = forms.CharField()
+
 class UploadFileForm(forms.Form):
     """
         Simple form to select a data file on the user's machine

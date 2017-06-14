@@ -20,6 +20,7 @@ from django.utils import dateparse, dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
+from django.http import Http404
 
 import plotly.offline as py
 import plotly.graph_objs as go
@@ -27,7 +28,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel
 
 import users.view_util
 
@@ -127,11 +128,15 @@ def check_permissions(request, run_id, instrument):
         return True, {}
 
     # Get the IPTS from ICAT
-    run_info = icat.get_run_info(instrument, run_id)
-    if 'proposal' in run_info:
-        return users.view_util.is_experiment_member(request, instrument, run_info['proposal']), run_info
-    else:
-        return request.user.is_staff, {}
+    try:
+        run_info = icat.get_run_info(instrument, run_id)
+        if 'proposal' in run_info:
+            return users.view_util.is_experiment_member(request, instrument, run_info['proposal']), run_info
+        else:
+            return request.user.is_staff, {}
+    except:
+        # The data probably doesn't exist
+        return False, None
     return False, run_info
 
 def get_fit_problem(request, instrument, data_id):
@@ -231,13 +236,8 @@ def get_results(request, fit_problem):
 
     return chi2, latest, errors, can_update
 
-def assemble_plot(html_data, log_object, rq4=False):
-    """
-        @param log_object: remote job Log object
-    """
-    data_list = []
-    data_names = []
-    # Check that the latest fit really corresponds to the latest data
+def get_plot_from_html(html_data, rq4=False):
+    """ Process html data and return plot data """
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
     if rq4 is True:
@@ -246,11 +246,16 @@ def assemble_plot(html_data, log_object, rq4=False):
     else:
         r_values = current_data['r']
         dr_values = current_data['dr']
-    data_list.append([current_data['q'], r_values, dr_values])
-    data_names.append("Data")
+    return [current_data['q'], r_values, dr_values]
 
-    # Extract data from log object
+def get_plot_from_job_report(log_object, rq4=False):
+    """
+        Obtain job log and extract plot data
+    """
+    refl_plot = None
+    sld_plot = None
     if log_object is not None:
+        # Extract reflectivity
         data_log = refl1d.extract_data_from_log(log_object.content)
         if data_log is not None:
             data_str = io.StringIO(data_log)
@@ -259,27 +264,88 @@ def assemble_plot(html_data, log_object, rq4=False):
                 fit_values = raw_data['theory'] * raw_data['q']**4
             else:
                 fit_values = raw_data['theory']
-            data_list.append([raw_data['q'], fit_values])
-            data_names.append("Fit")
+            refl_plot = [raw_data['q'], fit_values]
+        # Extract SLD
+        data_log = refl1d.extract_sld_from_log(log_object.content)
+        if data_log is not None:
+            data_str = io.StringIO(data_log)
+            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['z','rho','irho'])
+            sld_plot = [raw_data['z'], raw_data['rho']]
+    return refl_plot, sld_plot
+
+def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
+    """
+        Find all that needs to be plotted for this fit problem.
+    """
+    data_list = []
+    data_names = []
+    sld_list = []
+    sld_names = []
+    r_plot = ""
+    # Find the data
+    html_data = get_plot_data_from_server(instrument, data_id)
+    # If we can't retrieve data from the plot server, then the data doesn't exist and
+    # we should return a 404.
+    if html_data is None:
+        raise Http404
+
+    data_list.append(get_plot_from_html(html_data, rq4))
+    data_names.append("Data")
+
+    # Extract data from log object
+    _, log_object, _, _ = get_results(request, fit_problem)
+    fit_plot, sld_plot = get_plot_from_job_report(log_object, rq4)
+    if fit_plot is not None:
+        data_list.append(fit_plot)
+        data_names.append("Fit")
+    if sld_plot is not None:
+        sld_list.append(sld_plot)
+        sld_names.append("SLD")
+
+    # Extra data
+    extra_data = find_overlay_data(fit_problem)
+    for extra_name, extra_html in extra_data:
+        # Add the data itself
+        data_list.append(get_plot_from_html(extra_html, rq4))
+        data_names.append(extra_name)
+        # Add fit result if it exists
+        instrument_, data_id_ = parse_data_path(extra_name)
+        _, extra_fit = get_fit_problem(request, instrument_, data_id_)
+        _, log_extra, _, _ = get_results(request, extra_fit)
+        fit_plot, sld_plot = get_plot_from_job_report(log_extra, rq4)
+        if fit_plot is not None:
+            data_list.append(fit_plot)
+            data_names.append(extra_name)
+        if sld_plot is not None:
+            sld_list.append(sld_plot)
+            sld_names.append(extra_name)
 
     y_title=u"Reflectivity"
     if rq4 is True:
         y_title += u" x Q<sup>4</sup> (1/\u212b<sup>4</sup>)"
 
-    # Make SLD profile
-    sld_plot = None
-    if log_object is not None:
-        data_log = refl1d.extract_sld_from_log(log_object.content)
-        if data_log is not None:
-            data_str = io.StringIO(data_log)
-            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['z','rho','irho'])
-            sld_plot = plot1d([raw_data['z'], raw_data['rho']], x_log=False, y_log=False,
-                              data_names=['SLD'], x_title=u"Z (\u212b)", y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+    if len(data_list) > 0:
+        r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
 
-    r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
-    if sld_plot is not None:
-        return "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
+    if len(sld_list) > 0:
+        sld_plot = plot1d(sld_list, x_log=False, y_log=False,
+                          data_names=sld_names, x_title=u"Z (\u212b)",
+                          y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+        r_plot = "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
+
     return r_plot
+
+def find_overlay_data(fit_problem):
+    """
+        Find extra data to be over-plotted for a given fit problem.
+    """
+    simult_data = []
+    for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
+        instrument_, data_id_ = parse_data_path(item.dependent_data)
+        html_data = get_plot_data_from_server(instrument_, data_id_)
+        if html_data is not None:
+            simult_data.append([item.dependent_data, html_data])
+    return simult_data
 
 def is_fittable(data_form, layers_form):
     """
@@ -489,12 +555,16 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
         @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
         @param data_names: name for each trace, for the legend
     """
+    # Skipping this nice blue pair for the nicer blue/gray 'rgb(166,206,227)', 'rgb(31,120,180)'
+    colors = ['#1f77b4', 'rgb(102,102,102)', 'rgb(178,223,138)', 'rgb(51,160,44)', 'rgb(251,154,153)', 'rgb(227,26,28)', 'rgb(253,191,111)', 'rgb(255,127,0)', 'rgb(202,178,214)', 'rgb(106,61,154)', 'rgb(255,255,153)', 'rgb(177,89,40)']
     # Create traces
     if not isinstance(data_list, list):
         raise RuntimeError("plot1d: data_list parameter is expected to be a list")
 
     # Catch the case where the list is in the format [x y]
     data = []
+    n_data = -2
+    n_fit = -1
     show_legend = False
     if len(data_list) == 2 and not isinstance(data_list[0], list):
         label = ''
@@ -511,19 +581,23 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
             err_x = {}
             err_y = {}
             if len(data_list[i]) >= 3:
-                err_y = dict(type='data', array=data_list[i][2], visible=True)
+                n_data += 2
+                err_y = dict(type='data', array=data_list[i][2], visible=True, color=colors[n_data%12])
+            else:
+                n_fit += 2
             if len(data_list[i]) >= 4:
-                err_x = dict(type='data', array=data_list[i][3], visible=True)
+                err_x = dict(type='data', array=data_list[i][3], visible=True, color=colors[n_data%12])
                 if show_dx is False:
                     err_x['thickness'] = 0
 
             if len(err_y) == 0:
                 data.append(go.Scatter(name=label, x=data_list[i][0], y=data_list[i][1],
                                        error_x=err_x, error_y=err_y,
-                                       line=dict(color="rgb(102, 102, 102)",width=2)))
+                                       line=dict(color=colors[n_fit%12],width=2)))
             else:
                 data.append(go.Scatter(name=label, x=data_list[i][0], y=data_list[i][1],
-                                       mode='markers', error_x=err_x, error_y=err_y))
+                                       mode='markers', marker=dict(color=colors[n_data%12]),
+                                       error_x=err_x, error_y=err_y))
 
 
     x_layout = dict(title=x_title, zeroline=False, exponentformat="power",
@@ -540,7 +614,7 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
     layout = go.Layout(
         showlegend=show_legend,
         autosize=True,
-        width=700,
+        width=850,
         height=400,
         margin=dict(t=40, b=40, l=80, r=40),
         hovermode='closest',
@@ -609,7 +683,7 @@ def get_user_files(request):
 
         data_item = dict(id=item.file_id,
                          run_number=item.file_id,
-                         run_id=item.file_name,
+                         run_id="<span id='%s/%s' draggable='true' ondragstart='drag(event)'>%s</span>" % (request.user, item.file_id, item.file_name),
                          timestamp=item.timestamp.isoformat(),
                          created_on=df.format(settings.DATETIME_FORMAT),
                          url="%s | %s %s" % (fit_url, update_url, delete_url),

@@ -16,6 +16,9 @@
      dynatable.sorts.add('timestamp', -1)
      dynatable.process();
     });
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
 </script>
 {% endblock %}
 
@@ -36,7 +39,7 @@ the following order: q, R, dR, dq.
 <h2>Available data</h2>
 Your current list of data sets is the following:
 <p>
-<div class='data_manager' >
+<div class='data_manager'>
 <table id='data_table'>
   <thead>
     <tr>

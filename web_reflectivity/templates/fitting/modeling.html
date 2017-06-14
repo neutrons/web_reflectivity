@@ -46,6 +46,21 @@
         timeout: 2000
     })
   }
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.textContent);
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    var data = ev.dataTransfer.getData("text");
+    document.getElementById(ev.target.id).value = data;
+}
+
 </script>
 <script type="text/javascript" async
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
@@ -58,9 +73,23 @@
    <p>Your model was saved.
 </div>
 <h2>{{ run_title }}</h2>
-  <div class="error">{{ message }}</div>
 
-  <div id="graph">{{ html_data|safe }}</div>
+<div class="floating_info">
+Overlay data:
+  {% for item in simultaneous_data %}
+    <div>{{ item.dependent_data }}
+       <a href="{% url 'fitting:remove_simultaneous_model' item.id %}?success={% url 'fitting:fit' instrument data_id %}"><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>
+    </div>
+  {% endfor %}
+  <form action="append/" method="POST">{% csrf_token %}
+    <input id="id_dependent_data" ondrop="drop(event)" ondragover="allowDrop(event)" maxlength="64" name="dependent_data" type="text" value="" title="Type or drag existing data from your file list"/>
+    <input class="ui-button ui-widget ui-corner-all" id="simult_button" title="Click to overlay data" type="submit" name="simult_choice" value="add data"/>
+  </form>
+</div>
+
+<div class="error">{{ message }}</div>
+
+<div id="graph">{{ html_data|safe }}</div>
 
 <h2>Layer model</h2>
 Checked parameters will be kept fixed during the fitting procedure. You can also <a href="{% url 'fitting:show_models' %}?apply_to={{ instrument }}/{{ data_id }}">choose a model</a> from your saved models.

@@ -19,8 +19,8 @@ from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel
 from . import view_util
 import users.view_util
 
@@ -52,7 +52,7 @@ def remove_constraint(request, instrument, data_id, const_id):
         @param data_id: data set identifier
         @param const_id: pk of the constraint object to delete
     """
-    const_obj = get_object_or_404(Constraint, id=const_id)
+    const_obj = get_object_or_404(Constraint, id=const_id, user=request.user)
     const_obj.delete()
     return redirect(reverse('fitting:constraints', args=(instrument, data_id)))
 
@@ -297,7 +297,8 @@ class FitListView(ListView):
             actions = "<a href='%s%s' target='_blank'>click to fit</a> " % (reverse('fitting:modeling'),
                                                                             item.reflectivity_model.data_path)
             actions += " | <a href='%s'><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>" % reverse('fitting:delete_problem', args=(item.id,))
-            fit_list.append({'id': item.id, 'layers': item.show_layers(), 'data': item.reflectivity_model.data_path,
+            fit_list.append({'id': item.id, 'layers': item.show_layers(),
+                             'data': "<span draggable='true' ondragstart='drag(event)'>%s</span>" % item.reflectivity_model.data_path,
                              'url': actions,
                              'timestamp': item.timestamp.isoformat(),
                              'created_on': df.format(settings.DATETIME_FORMAT)})
@@ -352,7 +353,7 @@ class FitView(View):
         error_message = []
         data_path, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
 
-        chi2, log_object, errors, can_update = view_util.get_results(request, fit_problem)
+        chi2, _, errors, can_update = view_util.get_results(request, fit_problem)
         error_message.extend(errors)
         if fit_problem is not None:
             data_form = ReflectivityFittingForm(instance=fit_problem.reflectivity_model)
@@ -363,20 +364,15 @@ class FitView(View):
         LayerFormSet = layer_modelformset(extra=extra)
         layers_form = LayerFormSet(queryset = fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
 
-        html_data = view_util.get_plot_data_from_server(instrument, data_id)
-        if html_data is None:
-            error_message.append("Could not find data for %s/%s" % (instrument, data_id))
-        html_data = view_util.assemble_plot(html_data, log_object, rq4=template_values['rq4'])
-
-        number_of_constraints = Constraint.objects.filter(fit_problem=fit_problem).count()
-
         job_id = request.session.get('job_id', None)
         template_values.update({'data_form': data_form,
-                                'html_data': html_data,
+                                'html_data': view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4']),
                                 'user_alert': error_message,
                                 'chi2': chi2,
                                 'extra': extra,
-                                'number_of_constraints': number_of_constraints,
+                                'simultaneous_form': SimultaneousModelForm(),
+                                'simultaneous_data': SimultaneousModel.objects.filter(fit_problem=fit_problem),
+                                'number_of_constraints': Constraint.objects.filter(fit_problem=fit_problem).count(),
                                 'job_id': job_id if can_update else None,
                                 'layers_form': layers_form})
         template_values['run_title'] = run_info.get('title', '')
@@ -459,6 +455,29 @@ class FitView(View):
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
+@method_decorator(login_required, name='dispatch')
+class FitAppend(View):
+    """
+        Append data to fit problem, usually for overlaying or simultaneous fitting.
+    """
+    def get(self, request, instrument, data_id, *args, **kwargs):
+        """ There is no get action, so just redirect to the fit list """
+        return redirect(reverse('fitting:fit', args=(instrument, data_id)))
+
+    def post(self, request, instrument, data_id, *args, **kwargs):
+        """ Add a data set to this fit problem """
+        _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        simultaneous_form = SimultaneousModelForm(request.POST)
+        if fit_problem is not None and simultaneous_form.is_valid():
+            # First, check if we have access to that data
+            instrument_, data_id_ = view_util.parse_data_path(simultaneous_form.cleaned_data['dependent_data'])
+            is_allowed, _ = view_util.check_permissions(request, data_id_, instrument_)
+            if is_allowed is False:
+                return redirect(reverse('fitting:private'))
+
+            SimultaneousModel.objects.create(fit_problem=fit_problem,
+                                             dependent_data=simultaneous_form.cleaned_data['dependent_data'])
+        return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @method_decorator(login_required, name='dispatch')
 class ConstraintView(View):
@@ -620,6 +639,20 @@ class SaveModelDelete(DeleteView):
         if not obj.user == self.request.user:
             raise Http404
         return obj
+
+@login_required
+def remove_simultaneous_model(request, pk):
+    """
+        Remove a constraint
+        @param request: request object
+        @param instrument: instrument name
+        @param data_id: data set identifier
+        @param const_id: pk of the constraint object to delete
+    """
+    success_url = request.GET.get('success', None)
+    const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
+    const_obj.delete()
+    return redirect(success_url)
 
 @method_decorator(login_required, name='dispatch')
 class FitProblemDelete(DeleteView):

@@ -136,6 +136,17 @@ class FitProblem(models.Model):
     def __unicode__(self):
         return u"%s" % self.reflectivity_model
 
+class SimultaneousModel(models.Model):
+    """
+        Data sets to be addded to a FitProblem for simultaneous fitting
+    """
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    dependent_data = models.TextField(blank=True, default='')
+    active = models.BooleanField(blank=True, default=False)
+
+    def __unicode__(self):
+        return u"%s" % self.fit_problem
+
 class SavedModelInfo(models.Model):
     """
         Additional information attached to a saved model

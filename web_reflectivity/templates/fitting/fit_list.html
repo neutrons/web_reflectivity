@@ -16,6 +16,9 @@
      dynatable.sorts.add('timestamp', -1)
      dynatable.process();
     });
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.textContent);
+    }
 </script>
 {% endblock %}
 
@@ -25,7 +28,7 @@
 <h2>Available fits</h2>
 The following are your latest fits:
 <p>
-<div class='data_manager' >
+<div class='data_manager'>
 <table id='data_table'>
   <thead>
     <tr>

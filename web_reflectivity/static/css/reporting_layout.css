@@ -117,9 +117,14 @@ img {border: 0;}
     margin-top:5px; 
 }
 
-.user_alert {
+.floating_info {
     float:right;
-    cursor: pointer;
+    margin-top:20px;
+}
+
+.user_alert {
+    position:relative;
+    /* cursor: pointer; */
     display:none;
     background: #FFEA7D;color: black;
     padding: 0px;
@@ -127,7 +132,6 @@ img {border: 0;}
     min-width:300px;
     margin-top:5px;
     margin-left: auto;
-    margin-right: auto;
     border: 1px solid #96740B;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;

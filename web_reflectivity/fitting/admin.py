@@ -3,7 +3,7 @@
     Admin views for models
 """
 from django.contrib import admin
-from fitting.models import ReflectivityModel, FitProblem, ReflectivityLayer, FitterOptions, Constraint, SavedModelInfo, UserData
+from fitting.models import ReflectivityModel, FitProblem, ReflectivityLayer, FitterOptions, Constraint, SavedModelInfo, UserData, SimultaneousModel
 
 class FitProblemAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'reflectivity_model', 'show_layers', 'remote_job', 'timestamp')
@@ -33,6 +33,9 @@ class UserDataAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'file_id', 'file_name', 'tags', 'timestamp')
     list_filter = ('user',)
 
+class SimultaneousModelAdmin(admin.ModelAdmin):
+    list_display = ('id', 'fit_problem', 'dependent_data', 'active')
+
 admin.site.register(ReflectivityModel, ReflectivityModelAdmin)
 admin.site.register(FitProblem, FitProblemAdmin)
 admin.site.register(ReflectivityLayer, ReflectivityLayerAdmin)
@@ -40,3 +43,4 @@ admin.site.register(Constraint, ConstraintAdmin)
 admin.site.register(FitterOptions, FitterOptionsAdmin)
 admin.site.register(SavedModelInfo, SavedModelInfoAdmin)
 admin.site.register(UserData, UserDataAdmin)
+admin.site.register(SimultaneousModel, SimultaneousModelAdmin)
