@@ -77,7 +77,8 @@ function drop(ev) {
 <div class="floating_info">
 Overlay data:
   {% for item in simultaneous_data %}
-    <div>{{ item.dependent_data }}
+    <div>
+       <a href="{% url 'fitting:modeling' %}{{ item.dependent_data }}" target='_blank'>{{ item.dependent_data }}</a>
        <a href="{% url 'fitting:remove_simultaneous_model' item.id %}?success={% url 'fitting:fit' instrument data_id %}"><span style='display:inline-block' class='ui-icon ui-icon-trash'></span></a>
     </div>
   {% endfor %}
