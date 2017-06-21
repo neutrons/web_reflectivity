@@ -484,6 +484,7 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
 
     data_files = []
     expt_names = []
+    data_ids = []
     # Process the parent data set
     script_models = "\n# run %s/%s #############################################################\n" % (instrument, data_id)
     script_part, data, expt_name, errors = _process_fit_problem(fit_problem, instrument, data_id, options, work_dir, output_dir)
@@ -491,6 +492,7 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     data_files.append(data)
     expt_names.append(expt_name)
     error_list.extend(errors)
+    data_ids.append(data_path)
 
     # Then the data sets appended to the parent data set
     #TODO: check is_active
@@ -503,6 +505,7 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
         data_files.append(data)
         expt_names.append(expt_name)
         error_list.extend(errors)
+        data_ids.append(item.dependent_data)
 
     # Now the constraints
     script_models += "\n# Constraints ##################################################################\n"
@@ -510,7 +513,7 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
         script_models += item.get_constraint(sample_name='sample') + '\n'
 
     data_script = job_handling.assemble_data_setup(data_files)
-    job_script = job_handling.assemble_job(script_models, data_script, expt_names, options, work_dir, output_dir)
+    job_script = job_handling.assemble_job(script_models, data_script, expt_names, data_ids, options, work_dir, output_dir)
 
     # Submit job
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]

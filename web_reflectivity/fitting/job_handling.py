@@ -92,7 +92,7 @@ def assemble_data_setup(data_list):
                                             ASCII_DATA=ascii_data)
     return script
 
-def assemble_job(model_script, data_script, expt_names, options, work_dir, output_dir='/tmp'):
+def assemble_job(model_script, data_script, expt_names, data_ids, options, work_dir, output_dir='/tmp'):
     """ Write the portion of the job script related to data files """
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     script = ''
@@ -103,7 +103,7 @@ def assemble_job(model_script, data_script, expt_names, options, work_dir, outpu
                                             MODELS=model_script,
                                             WORK_DIR=work_dir,
                                             EXPT_LIST='[%s]' % ','.join(expt_names),
-                                            EXPT_IDS = len(expt_names),
+                                            EXPT_IDS = '["%s"]' % ','.join(data_ids),
                                             ENGINE=options.get('engine', 'dream'),
                                             OUTPUT_DIR=output_dir,
                                             REFL1D_PATH=settings.REFL1D_PATH,
