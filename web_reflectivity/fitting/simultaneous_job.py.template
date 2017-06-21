@@ -35,14 +35,6 @@ problem = FitProblem(${EXPT_LIST})
     fd.write("Fit complete: %s\n" % time.ctime())
 
     try:
-        with open(os.path.join(output_dir, '__model-refl.dat'), 'r') as out_refl:
-            print("REFL_START")
-            print(out_refl.read())
-            print("REFL_END")
-    except:
-        fd.write("Error: could not read reflectivity output\n")
-        print(sys.exc_value)
-    try:
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
             model_params = out_params.read()
             fd.write(model_params)
@@ -64,16 +56,29 @@ problem = FitProblem(${EXPT_LIST})
         fd.write("Error: could not process fit results\n")
         print(sys.exc_value)
 
-    try:
-        with open(os.path.join(output_dir, '__model-profile.dat'), 'r') as out_sld:
-            sld_profile = out_sld.read()
-            print("SLD_START")
-            print(sld_profile)
-            print("SLD_END")
-    except:
-        fd.write("Error: could not process SLD profile\n")
-        print(sys.exc_value)
+    i_model = 0
+    for i in ${EXPT_LIST}:
+        i_model += 1
+        print("EXPT_START %s" % i)
+        try:
+            with open(os.path.join(output_dir, '__model-%d-refl.dat' % i_model), 'r') as out_refl:
+                print("REFL_START")
+                print(out_refl.read())
+                print("REFL_END")
+        except:
+            fd.write("Error: could not read reflectivity output\n")
+            print(sys.exc_value)
 
+        try:
+            with open(os.path.join(output_dir, '__model-%d-profile.dat' % i_model), 'r') as out_sld:
+                sld_profile = out_sld.read()
+                print("SLD_START")
+                print(sld_profile)
+                print("SLD_END")
+        except:
+            fd.write("Error: could not process SLD profile\n")
+            print(sys.exc_value)
+        print("EXPT_END %s" % i)
     fd.close()
 
 if __name__ == '__main__':
