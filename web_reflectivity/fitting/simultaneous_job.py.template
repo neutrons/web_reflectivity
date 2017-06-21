@@ -34,7 +34,7 @@ problem = FitProblem(${EXPT_LIST})
     output_code = subprocess.call(cmd, stdout=fd, stderr=fd, shell=True)
     fd.write("Fit complete: %s\n" % time.ctime())
 
-    print("SIMULTANEOUS ${EXPT_IDS}")
+    print("SIMULTANEOUS %s" % ${EXPT_IDS})
     try:
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
             model_params = out_params.read()
