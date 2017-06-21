@@ -408,6 +408,7 @@ class SimultaneousConstraint(models.Model):
         """ Retrieve name and id of an encoded parameter """
         dependent_name = ''
         problem_id = ''
+        parameter_name = par_name
         if 'back' in par_name or 'front' in par_name:
             try:
                 refl_model = ReflectivityModel.objects.get(id=obj_id)
@@ -416,8 +417,10 @@ class SimultaneousConstraint(models.Model):
                 problem_id = fit_problem.id
                 if 'back' in par_name:
                     dependent_name = refl_model.back_name
+                    parameter_name = par_name.replace('back_', '')
                 else:
                     dependent_name = refl_model.front_name
+                    parameter_name = par_name.replace('front_', '')
             except:
                 logging.error("Could not retrieve ReflectivityModel id=%s", obj_id)
         else:
@@ -430,7 +433,7 @@ class SimultaneousConstraint(models.Model):
             except:
                 logging.error(sys.exc_value)
                 logging.error("Could not retrieve layer id=%s", obj_id)
-        return dependent_name, problem_id
+        return dependent_name, parameter_name, problem_id
 
     def get_constraint(self, sample_name='sample'):
         """
@@ -438,17 +441,16 @@ class SimultaneousConstraint(models.Model):
 
             Example: sample123['SiOx'].material.rho = sample345['SiOx'].material.rho
         """
-        dep_layer_parameter = Constraint.LAYER_PARAMETER.get(self.dependent_parameter,
-                                                             self.dependent_parameter)
-        var_layer_parameter = Constraint.LAYER_PARAMETER.get(self.variable_parameter,
-                                                             self.variable_parameter)
-
         # Fish out the name of the layer
-        dep_layer, dep_prob_id = self._retrieve_info(self.dependent_id, self.dependent_parameter)
-        var_layer, var_prob_id = self._retrieve_info(self.variable_id, self.variable_parameter)
+        dep_layer, dep_par, dep_prob_id = self._retrieve_info(self.dependent_id, self.dependent_parameter)
+        var_layer, var_par, var_prob_id = self._retrieve_info(self.variable_id, self.variable_parameter)
+
+        dep_layer_parameter = Constraint.LAYER_PARAMETER.get(dep_par, dep_par)
+        var_layer_parameter = Constraint.LAYER_PARAMETER.get(var_par, var_par)
 
         constraint = "%s%s['%s'].%s = %s%s['%s'].%s" % (sample_name, dep_prob_id,
                                                         dep_layer, dep_layer_parameter,
                                                         sample_name, var_prob_id,
                                                         var_layer, var_layer_parameter)
+        logging.error(constraint)
         return constraint
