@@ -103,6 +103,7 @@ def assemble_job(model_script, data_script, expt_names, options, work_dir, outpu
                                             MODELS=model_script,
                                             WORK_DIR=work_dir,
                                             EXPT_LIST='[%s]' % ','.join(expt_names),
+                                            EXPT_IDS = '["%s"]' % ','.join(expt_names),
                                             ENGINE=options.get('engine', 'dream'),
                                             OUTPUT_DIR=output_dir,
                                             REFL1D_PATH=settings.REFL1D_PATH,

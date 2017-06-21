@@ -57,7 +57,7 @@ problem = FitProblem(${EXPT_LIST})
         print(sys.exc_value)
 
     i_model = 0
-    for i in ${EXPT_LIST}:
+    for i in ${EXPT_IDS}:
         i_model += 1
         print("EXPT_START %s" % i)
         try:
