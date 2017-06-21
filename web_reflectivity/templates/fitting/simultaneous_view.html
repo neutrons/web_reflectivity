@@ -54,7 +54,7 @@ function revert(id, value, text_value) {
       <td>Front</td>
       <td>{{ data_form.front_name }}</td><td>-</td>
       <td id="container_id_front_sld_{{ data_form.id }}"><span id="id_front_sld_{{ data_form.id }}" revert="{{ data_form.front_sld }}" tiedparam="{{data_form.data_path}} {{data_form.front_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.front_sld }}</span></td>
-      <td>-</td><td></td>
+      <td>-</td>
     </tr>
   {% for form in layers_form %}
     <tr class="short_input">
@@ -69,7 +69,6 @@ function revert(id, value, text_value) {
       <td>{{ data_form.back_name }}</td><td>-</td>
       <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld }}</span></td>
       <td id="container_id_back_roughness_{{ data_form.id }}"><span id="id_back_roughness_{{ data_form.id }}" revert="{{ data_form.back_roughness }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} roughness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_roughness }}</span></td>
-      <td></td>
     </tr>
   </tbody>
 </table>

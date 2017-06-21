@@ -56,10 +56,10 @@ problem = FitProblem(${EXPT_LIST})
         fd.write("Error: could not process fit results\n")
         print(sys.exc_value)
 
-    for i in range(1, ${EXPT_IDS}+1):
+    for i in range(1, ${EXPT_IDS}):
         print("EXPT_START %s" % i)
         try:
-            with open(os.path.join(output_dir, '__model-%d-refl.dat' % i), 'r') as out_refl:
+            with open(os.path.join(output_dir, '__model-%d-refl.dat' % (i+1)), 'r') as out_refl:
                 print("REFL_START")
                 print(out_refl.read())
                 print("REFL_END")
@@ -68,7 +68,7 @@ problem = FitProblem(${EXPT_LIST})
             print(sys.exc_value)
 
         try:
-            with open(os.path.join(output_dir, '__model-%d-profile.dat' % i), 'r') as out_sld:
+            with open(os.path.join(output_dir, '__model-%d-profile.dat' % (i+1)), 'r') as out_sld:
                 sld_profile = out_sld.read()
                 print("SLD_START")
                 print(sld_profile)
