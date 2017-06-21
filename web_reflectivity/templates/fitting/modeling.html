@@ -156,14 +156,14 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
   Q range: {{ data_form.q_min }} to {{ data_form.q_max }} 1/&#8491;
   {% if number_of_constraints == 0 %}
   <p>
-  There is no <a href='{% url 'fitting:constraints' instrument data_id %}'>constraint</a> on this model.
+  There is no <a href='{% url 'fitting:constraints' instrument data_id %}' target='_blank'>constraint</a> on this model.
    {% elif number_of_constraints == 1 %}
   <p>
-  There is {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}'>constraint</a> on this model.
+  There is {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}' target='_blank'>constraint</a> on this model.
   Constraints take precedence over the fitting options below.
   {% elif number_of_constraints > 1 %}
   <p>
-  There are {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}'>constraints</a> on this model.
+  There are {{number_of_constraints}} <a href='{% url 'fitting:constraints' instrument data_id %}' target='_blank'>constraints</a> on this model.
   Constraints take precedence over the fitting options below.
   {% endif %}
   <p>

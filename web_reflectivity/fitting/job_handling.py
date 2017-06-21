@@ -7,7 +7,9 @@ import string
 import os
 from django.conf import settings
 
-def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp', fit=True, options={}, constraints=[]):
+def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp',
+                      fit=True, options={}, constraints=[], template='reflectivity_model.py.template',
+                      sample_name='sample', probe_name='probe', expt_name='expt'):
     """
         Create a refl1d model file from a template
         #TODO: rewrite this to take a fit_problem object
@@ -22,26 +24,26 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
             materials += "%s\n" % form.get_materials()
             layer_list.append(form.get_layer())
             if fit is True:
-                ranges += form.get_ranges(sample_name='sample')
+                ranges += form.get_ranges(sample_name=sample_name)
 
     # Add constraints
     ranges += '\n'
     for item in constraints:
-        ranges += item.get_ranges(sample_name='sample', probe_name='probe')
+        ranges += item.get_ranges(sample_name=sample_name, probe_name=probe_name)
 
     layer_list.reverse()
     _layers = ' | '.join(layer_list)
     if len(layer_list) > 0:
         _layers += ' | '
     sample_template = data_form.get_sample_template()
-    sample = "sample = " + sample_template % _layers
+    sample = "%s = " % sample_name + sample_template % _layers
     if fit is True:
-        sample_ranges = data_form.get_ranges(sample_name='sample', probe_name='probe')
+        sample_ranges = data_form.get_ranges(sample_name=sample_name, probe_name=probe_name)
     else:
-        sample_ranges = data_form.get_predefined_intensity_range(probe_name='probe')
+        sample_ranges = data_form.get_predefined_intensity_range(probe_name=probe_name)
 
     template_dir, _ = os.path.split(os.path.abspath(__file__))
-    with open(os.path.join(template_dir, 'reflectivity_model.py.template'), 'r') as fd:
+    with open(os.path.join(template_dir, template), 'r') as fd:
         template = fd.read()
         model_template = string.Template(template)
 
@@ -63,6 +65,9 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            Q_MAX=data_form.cleaned_data['q_max'],
                                            MATERIALS=materials,
                                            SAMPLE=sample,
+                                           SAMPLE_NAME=sample_name,
+                                           PROBE_NAME=probe_name,
+                                           EXPT_NAME=expt_name,
                                            RANGES=ranges,
                                            ENGINE=engine,
                                            ASCII_DATA=ascii_data,
@@ -72,6 +77,37 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            REFL1D_BURN=burn,
                                            SAMPLE_RANGES=sample_ranges)
 
+    return script
+
+def assemble_data_setup(data_list):
+    """ Write the portion of the job script related to data files """
+    template_dir, _ = os.path.split(os.path.abspath(__file__))
+    script = ''
+    with open(os.path.join(template_dir, 'simultaneous_data.py.template'), 'r') as fd:
+        template = fd.read()
+        model_template = string.Template(template)
+
+    for data_file, ascii_data in data_list:
+        script += model_template.substitute(REDUCED_FILE=data_file,
+                                            ASCII_DATA=ascii_data)
+    return script
+
+def assemble_job(model_script, data_script, expt_names, options, work_dir, output_dir='/tmp'):
+    """ Write the portion of the job script related to data files """
+    template_dir, _ = os.path.split(os.path.abspath(__file__))
+    script = ''
+    with open(os.path.join(template_dir, 'simultaneous_job.py.template'), 'r') as fd:
+        template = fd.read()
+        model_template = string.Template(template)
+        script += model_template.substitute(PROCESS_DATA=data_script,
+                                            MODELS=model_script,
+                                            WORK_DIR=work_dir,
+                                            EXPT_LIST='[%s]' % ','.join(expt_names),
+                                            ENGINE=options.get('engine', 'dream'),
+                                            OUTPUT_DIR=output_dir,
+                                            REFL1D_PATH=settings.REFL1D_PATH,
+                                            REFL1D_STEPS=options.get('steps', 1000),
+                                            REFL1D_BURN=options.get('burn', 1000))
     return script
 
 def write_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_max=0.2, output_dir='/tmp'):

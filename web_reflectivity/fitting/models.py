@@ -6,6 +6,7 @@
 from __future__ import unicode_literals
 import sys
 import logging
+import re
 from math import *
 from django.db import models
 from django.contrib.auth.models import User
@@ -332,3 +333,122 @@ class Constraint(models.Model):
             is_valid = False
         return is_valid, comments
 
+class SimultaneousConstraint(models.Model):
+    """
+        Constraint to tie parameters from two data sets in a simultaneous fit.
+        #TODO: rewrite and merge this with Constraint when we are ready to write it as functions.
+    """
+    user = models.ForeignKey(User, models.CASCADE)
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    dependent_id = models.IntegerField()
+    dependent_parameter = models.CharField(max_length=64)
+    variable_id = models.IntegerField()
+    variable_parameter = models.CharField(max_length=64)
+
+    @classmethod
+    def create_from_encoded(cls, fit_problem, par_to, par_from, user):
+        """ Create a simultaneous constraint from encoded parameters """
+        try:
+            search = re.search(r"^id_([a-zA-Z_]*)_(\d*)", par_to)
+            dep_par = search.group(1)
+            dep_id = int(search.group(2))
+
+            search = re.search(r"^id_([a-zA-Z_]*)_(\d*)", par_from)
+            var_par = search.group(1)
+            var_id = int(search.group(2))
+            obj, _ = SimultaneousConstraint.objects.get_or_create(user=user,
+                                                         fit_problem=fit_problem,
+                                                         dependent_id=dep_id,
+                                                         dependent_parameter=dep_par,
+                                                         variable_id=var_id,
+                                                         variable_parameter=var_par)
+            return obj
+        except:
+            logging.error("Could not parse coded parameters: %s %s", par_to, par_from)
+        return None
+
+    def encode(self):
+        """ Encode an object into info that can be passed to a template """
+        par_to = 'id_%s_%s' % (self.dependent_parameter, self.dependent_id)
+        par_from = 'id_%s_%s' % (self.variable_parameter, self.variable_id)
+        return par_to, par_from
+
+    def _select_valid_problem(self, fp_list):
+        """
+            This method is only needed because of the rare case where a layer or
+            a reflectivity model object is linked to more than more fit problem.
+            This should never happen, but was possible in very early versions
+            of this web application.
+            @param fp_list: list of FitProblem objects
+        """
+        # Report on corrupted data
+        if len(fp_list) == 1:
+            return fp_list[0]
+        else:
+            logging.error("DB corruption: >1 FitProblems found")
+            for fitp in fp_list:
+                logging.error("  FitProblem [%s] [ReflModel %s] %s %s",
+                              fitp.id, fitp.reflectivity_model.id,
+                              fitp.reflectivity_model.data_path, fitp.timestamp)
+
+        # If the FitProblem this simultaneous fit is based on is in the list,
+        # use that one.
+        if self.fit_problem in fp_list:
+            return self.fit_problem
+
+        # If we have multiple FitProblems, find the first one with the same data
+        simul_models = SimultaneousModel.objects.filter(fit_problem=self.fit_problem)
+        data_list = [s_mod.dependent_data for s_mod in simul_models]
+        for fitp in fp_list:
+            if fitp.reflectivity_model.data_path in data_list:
+                return fitp
+        return None
+
+    def _retrieve_info(self, obj_id, par_name):
+        """ Retrieve name and id of an encoded parameter """
+        dependent_name = ''
+        problem_id = ''
+        if 'back' in par_name or 'front' in par_name:
+            try:
+                refl_model = ReflectivityModel.objects.get(id=obj_id)
+                fit_problem_list = FitProblem.objects.filter(reflectivity_model=refl_model).order_by('-id')
+                fit_problem = self._select_valid_problem(fit_problem_list)
+                problem_id = fit_problem.id
+                if 'back' in par_name:
+                    dependent_name = refl_model.back_name
+                else:
+                    dependent_name = refl_model.front_name
+            except:
+                logging.error("Could not retrieve ReflectivityModel id=%s", obj_id)
+        else:
+            try:
+                layer = ReflectivityLayer.objects.get(id=obj_id)
+                fit_problem_list = FitProblem.objects.filter(layers__id=layer.id).order_by('-id')
+                fit_problem = self._select_valid_problem(fit_problem_list)
+                problem_id = fit_problem.id
+                dependent_name = layer.name
+            except:
+                logging.error(sys.exc_value)
+                logging.error("Could not retrieve layer id=%s", obj_id)
+        return dependent_name, problem_id
+
+    def get_constraint(self, sample_name='sample'):
+        """
+            Return the constraint code for the refl1d script
+
+            Example: sample123['SiOx'].material.rho = sample345['SiOx'].material.rho
+        """
+        dep_layer_parameter = Constraint.LAYER_PARAMETER.get(self.dependent_parameter,
+                                                             self.dependent_parameter)
+        var_layer_parameter = Constraint.LAYER_PARAMETER.get(self.variable_parameter,
+                                                             self.variable_parameter)
+
+        # Fish out the name of the layer
+        dep_layer, dep_prob_id = self._retrieve_info(self.dependent_id, self.dependent_parameter)
+        var_layer, var_prob_id = self._retrieve_info(self.variable_id, self.variable_parameter)
+
+        constraint = "%s%s['%s'].%s = %s%s['%s'].%s" % (sample_name, dep_prob_id,
+                                                        dep_layer, dep_layer_parameter,
+                                                        sample_name, var_prob_id,
+                                                        var_layer, var_layer_parameter)
+        return constraint

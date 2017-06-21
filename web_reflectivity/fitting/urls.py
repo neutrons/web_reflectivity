@@ -28,6 +28,8 @@ urlpatterns = [
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/download/$',    views.download_fit_data,        name='download_data'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/reverse/$',     views.reverse_model,            name='reverse_model'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/constraints/$', views.ConstraintView.as_view(), name='constraints'),
+    url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/simultaneous/$', views.SimultaneousView.as_view(), name='simultaneous'),
+    url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/simultaneous/update/$', views.update_simultaneous_params, name='simultaneous_update'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/constraints/(?P<const_id>\d+)/$', views.ConstraintView.as_view(), name='constraints_edit'),
     url(r'^(?P<instrument>[\w]+)/(?P<data_id>\d+)/constraints/(?P<const_id>\d+)/remove/$', views.remove_constraint, name='constraints_remove'),
 ]

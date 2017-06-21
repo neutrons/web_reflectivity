@@ -1,0 +1,4 @@
+    ascii_data = """${ASCII_DATA}"""
+    data_file = "${REDUCED_FILE}"
+    with open(data_file, 'w') as fd:
+        fd.write(ascii_data)

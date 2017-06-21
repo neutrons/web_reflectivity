@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block header %}
+<script>
+//var storage = {};
+var storage = {{ existing_constraints|safe }};
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drag(ev) {
+    ev.dataTransfer.setData("param_id", ev.target.id);
+}
+
+function process_drop(drop_to_id, drag_from_id) {
+    var data = $("#"+drag_from_id).attr('tiedparam');
+    var revert_value = $("#"+drop_to_id).attr('revert');
+    var text_value = $("#"+drop_to_id).attr('tiedparam');
+    storage[drop_to_id] = drag_from_id;
+    $("#container_"+drop_to_id).html('<a href="javascript:void(0);" draggable="false" onclick="revert(\''+drop_to_id+'\','+revert_value+',\''+text_value+'\');">'+data+'</a>');
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    param_id = ev.dataTransfer.getData('param_id');
+    process_drop(ev.target.id, param_id);
+    $.post( "{% url 'fitting:simultaneous_update' instrument data_id %}", storage).fail(function() {new_alert("There was an error processing your request. Refresh the page."); show_alert();});
+}
+
+function revert(id, value, text_value) {
+    var reverted = '<span id="'+id+'" revert="'+value+'" tiedparam="'+text_value+'" draggable="true" ondragstart="drag(event)" ondrop="drop(event)" ondragover="allowDrop(event)">'+value+'</span>';
+    $("#container_"+id).html(reverted);
+    delete storage[id];
+    $.post( "{% url 'fitting:simultaneous_update' instrument data_id %}", storage).fail(function() {new_alert("There was an error processing your request. Refresh the page."); show_alert();});
+}
+</script>
+{% endblock %}
+
+{% block content %}
+  <div class="error">{{ message }}</div>
+
+{% if model_list %}
+<h2>Simultaneous fitting constraints</h2>
+<div class='data_manager'>
+{% for data_form,layers_form in model_list %}
+<h3>Run <a href="{% url 'fitting:modeling' %}{{ data_form.data_path }}" target='_blank'>{{ data_form.data_path }}</a></h3>
+<table>
+  <thead>
+    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
+  </thead>
+  <tbody>
+    <tr class="short_input">
+      <td>Front</td>
+      <td>{{ data_form.front_name }}</td><td>-</td>
+      <td id="container_id_front_sld_{{ data_form.id }}"><span id="id_front_sld_{{ data_form.id }}" revert="{{ data_form.front_sld }}" tiedparam="{{data_form.data_path}} {{data_form.front_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.front_sld }}</span></td>
+      <td>-</td><td></td>
+    </tr>
+  {% for form in layers_form %}
+    <tr class="short_input">
+      <td >{{ form.layer_number}}</td>
+      <td>{{ form.name }}</td>
+      <td id="container_id_thickness_{{ form.id }}"><span id="id_thickness_{{ form.id }}" revert="{{ form.thickness }}" tiedparam="{{data_form.data_path}} {{form.name}} thickness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.thickness }}</span></td>
+      <td id="container_id_sld_{{ form.id }}"><span id="id_sld_{{ form.id }}" revert="{{ form.sld }}" tiedparam="{{data_form.data_path}} {{form.name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.sld }}</span></td>
+      <td id="container_id_roughness_{{ form.id }}"><span id="id_roughness_{{ form.id }}" revert="{{ form.roughness }}" tiedparam="{{data_form.data_path}} {{form.name}} roughness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.roughness }}</span></td>
+    </tr>{% endfor %}
+    <tr class="short_input">
+      <td>Back</td>
+      <td>{{ data_form.back_name }}</td><td>-</td>
+      <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld }}</span></td>
+      <td id="container_id_back_roughness_{{ data_form.id }}"><span id="id_back_roughness_{{ data_form.id }}" revert="{{ data_form.back_roughness }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} roughness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_roughness }}</span></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+<p>
+{% endfor %}
+</div>
+<div>
+  <form action="{% url 'fitting:simultaneous' instrument data_id %}" method="POST">{% csrf_token %}
+    <input class="ui-button ui-widget ui-corner-all" title="Click to perform simultaneous fit" type="submit" name="fit" value="perform fit"/>
+  </form>
+</div>
+<script>
+for (id in storage) { process_drop(id, storage[id]); }
+</script>
+{% endif %}
+{% endblock %}
+
+{% block right_side_links %}
+  <span style="float:right">
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | <a href='{% url 'fitting:fit' instrument data_id %}'>fit data</a>
+  </span>
+{% endblock %}

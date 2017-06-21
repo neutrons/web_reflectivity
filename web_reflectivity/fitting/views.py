@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
+#pylint: disable=bare-except, no-self-use, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
 """
     Definition of views
 """
@@ -17,10 +17,11 @@ from django.views.generic.list import ListView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.utils import dateformat, timezone
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
 from . import view_util
 import users.view_util
 
@@ -444,9 +445,8 @@ class FitView(View):
             logging.error("Could not fit data: %s", sys.exc_value)
             error_message.append("Could not fit data")
 
-        html_data = view_util.assemble_plot(html_data, None)
         template_values.update({'data_form': data_form,
-                                'html_data': html_data,
+                                'html_data': view_util.assemble_plots(request, instrument, data_id, None, rq4=template_values['rq4']),
                                 'user_alert': error_message,
                                 'instrument': instrument,
                                 'data_id': data_id,
@@ -653,6 +653,79 @@ def remove_simultaneous_model(request, pk):
     const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
     const_obj.delete()
     return redirect(success_url)
+
+@method_decorator(login_required, name='dispatch')
+class SimultaneousView(View):
+    """ Set up the correlated parameters between two data sets for simultaneous fitting """
+    def get(self, request, instrument, data_id, *args, **kwargs):
+        """ Process GET request """
+        data_list = []
+        # Find the base fit problem
+        _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        if fit_problem is None or not fit_problem.user == request.user:
+            raise Http404
+
+        data_list.append(fit_problem)
+
+        # Find the extra data sets to fit together
+        for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
+            instrument_, data_id_ = view_util.parse_data_path(item.dependent_data)
+            _, extra_fit = view_util.get_fit_problem(request, instrument_, data_id_)
+            data_list.append(extra_fit)
+
+        # Assemble the models to display
+        model_list = []
+        for item in data_list:
+            model_list.append(item.model_to_dicts())
+
+        # List of existing constraints
+        constraints = {}
+        for item in SimultaneousConstraint.objects.filter(fit_problem=fit_problem, user=request.user):
+            drop_to, drag_from = item.encode()
+            constraints[drop_to] = drag_from
+        breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
+        template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, existing_constraints=json.dumps(constraints),
+                               data_id=data_id, model_list=model_list, user_alert=[])
+
+        template_values = users.view_util.fill_template_values(request, **template_values)
+        return render(request, 'fitting/simultaneous_view.html', template_values)
+
+    def post(self, request, instrument, data_id, *args, **kwargs):
+        """ Process POST request """
+        error_list = []
+        is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
+        if not is_allowed:
+            raise Http404
+        try:
+            error_list = view_util.evaluate_simultaneous_fit(request, instrument, data_id, run_info=run_info)
+        except:
+            error_list = ["There was a problem performing your fit:<br>refresh your page.", str(sys.exc_value)]
+        if len(error_list) > 0:
+            breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
+            template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument,
+                                   data_id=data_id, user_alert=error_list)
+            template_values = users.view_util.fill_template_values(request, **template_values)
+            return render(request, 'fitting/simultaneous_view.html', template_values)
+
+        return redirect(reverse('fitting:simultaneous', args=(instrument, data_id)))
+
+@login_required
+@csrf_exempt
+def update_simultaneous_params(request, instrument, data_id):
+    """ Ajax call to process simultaneous fit model updates """
+    if request.method == 'POST':
+        constraint_list = []
+        _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        if fit_problem is None or not fit_problem.user == request.user:
+            raise Http404
+        for drop_to, drag_from in request.POST.items():
+            obj = SimultaneousConstraint.create_from_encoded(fit_problem, drop_to, drag_from, request.user)
+            constraint_list.append(obj.id)
+        # Clean up constraints that are no longer needed
+        for item in SimultaneousConstraint.objects.filter(fit_problem=fit_problem, user=request.user):
+            if item.id not in constraint_list:
+                item.delete()
+    return HttpResponse()
 
 @method_decorator(login_required, name='dispatch')
 class FitProblemDelete(DeleteView):

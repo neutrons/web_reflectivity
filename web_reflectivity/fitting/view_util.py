@@ -28,8 +28,8 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel
-
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint
+from .forms import ReflectivityFittingForm, LayerForm
 import users.view_util
 
 def generate_key(instrument, run_id):
@@ -148,6 +148,11 @@ def get_fit_problem(request, instrument, data_id):
                                                  reflectivity_model__data_path=data_path)
     if len(fit_problem_list) > 0:
         fit_problem = fit_problem_list.latest('timestamp')
+        if len(fit_problem_list) > 1:
+            logging.error("DB corruption: >1 FitProblems for %s/%s", instrument, data_id)
+            for fitp in fit_problem_list:
+                logging.error("  FitProblem [%s] [ReflModel %s] %s",
+                              fitp.id, fitp.reflectivity_model.id, fitp.timestamp)
 
         return data_path, fit_problem
     return data_path, None
@@ -417,6 +422,115 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         job_pk=job.pk,
         password='',
         username=user.username,
+        log_policy=LogPolicy.LOG_TOTAL,
+        store_results=''
+    )
+
+    # Update the remote job info
+    fit_problem.remote_job = job
+    fit_problem.save()
+    return {'job_id': job.pk}
+
+def _process_fit_problem(fit_problem, instrument, data_id, options, work_dir, output_dir):
+    """ Utility method to get all the info from a fit problem """
+    # First the parent data set
+    initial_values, initial_layers = fit_problem.model_to_dicts()
+    layers_form = []
+    errors = []
+    for layer in initial_layers:
+        layer_form = LayerForm(layer)
+        if layer_form.is_valid():
+            layers_form.append(layer_form)
+        else:
+            errors.append("Layer %s was invalid" % layer['layer_number'])
+
+    data_form = ReflectivityFittingForm(initial_values)
+    constraint_list = Constraint.objects.filter(fit_problem=fit_problem)
+
+    html_data = get_plot_data_from_server(instrument, data_id)
+    ascii_data = extract_ascii_from_div(html_data)
+
+    script = ''
+    if data_form.is_valid():
+        data_file = os.path.join(work_dir, '__data%s.txt' % fit_problem.id)
+        expt_name = 'expt%s' % fit_problem.id
+        script = job_handling.create_model_file(data_form, layers_form,
+                                                data_file=data_file, ascii_data=ascii_data,
+                                                output_dir=output_dir, fit=True, options=options, constraints=constraint_list,
+                                                template='simultaneous_model.py.template',
+                                                sample_name='sample%s' % fit_problem.id, probe_name='probe%s' % fit_problem.id,
+                                                expt_name=expt_name)
+    else:
+        errors.append("Reflectivity fitting object was invalid")
+    return script, [data_file, ascii_data], expt_name, errors
+
+def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
+    """
+        Assemble all the information for co-refinement
+    """
+    error_list = []
+    data_path, fit_problem = get_fit_problem(request, instrument, data_id)
+    # Decide on an output directory
+    try:
+        base_name = os.path.split(data_path)[1]
+    except:
+        base_name = data_path
+    fit_dir = os.path.join('reflectivity_fits', run_info['proposal'])
+    output_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username, fit_dir, base_name)
+    work_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username)
+    # Get fitter options
+    obj, _ = FitterOptions.objects.get_or_create(user=request.user)
+    options = obj.get_dict()
+
+    data_files = []
+    expt_names = []
+    # Process the parent data set
+    script_models = "\n# run %s/%s #############################################################\n" % (instrument, data_id)
+    script_part, data, expt_name, errors = _process_fit_problem(fit_problem, instrument, data_id, options, work_dir, output_dir)
+    script_models += script_part
+    data_files.append(data)
+    expt_names.append(expt_name)
+    error_list.extend(errors)
+
+    # Then the data sets appended to the parent data set
+    #TODO: check is_active
+    for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
+        instrument_, data_id_ = parse_data_path(item.dependent_data)
+        _, extra_fit = get_fit_problem(request, instrument_, data_id_)
+        script_models += "\n# run %s/%s #############################################################\n" % (instrument_, data_id_)
+        script_part, data, expt_name, errors = _process_fit_problem(extra_fit, instrument_, data_id_, options, work_dir, output_dir)
+        script_models += script_part
+        data_files.append(data)
+        expt_names.append(expt_name)
+        error_list.extend(errors)
+
+    # Now the constraints
+    script_models += "\n# Constraints ##################################################################\n"
+    for item in SimultaneousConstraint.objects.filter(fit_problem=fit_problem, user=request.user):
+        script_models += item.get_constraint(sample_name='sample') + '\n'
+
+    data_script = job_handling.assemble_data_setup(data_files)
+    job_script = job_handling.assemble_job(script_models, data_script, expt_names, options, work_dir, output_dir)
+
+    # Submit job
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
+
+    python2_interpreter = Interpreter.objects.get_or_create(name='python2',
+                                                            path=settings.JOB_HANDLING_INTERPRETER)[0]
+    server.interpreters.set([python2_interpreter,])
+
+    job = Job(title=data_path,
+              program=job_script,
+              remote_directory=work_dir,
+              remote_filename='fit_job.py',
+              owner=request.user,
+              interpreter=python2_interpreter,
+              server=server)
+    job.save()
+    submit_job_to_server.delay(
+        job_pk=job.pk,
+        password='',
+        username=request.user.username,
         log_policy=LogPolicy.LOG_TOTAL,
         store_results=''
     )

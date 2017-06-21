@@ -1,0 +1,26 @@
+# Maximum Q-value ##############################################################
+q_min = ${Q_MIN}
+q_max = ${Q_MAX}
+
+reduced_file = "${REDUCED_FILE}"
+
+Q, R, dR, dQ = numpy.loadtxt(reduced_file).T
+i_min = min([i for i in range(len(Q)) if Q[i]>q_min])
+i_max = max([i for i in range(len(Q)) if Q[i]<q_max])+1
+
+# SNS data is FWHM
+dQ_std = dQ/2.35
+${PROBE_NAME} = QProbe(Q[i_min:i_max], dQ_std[i_min:i_max], data=(R[i_min:i_max], dR[i_min:i_max]))
+
+# Materials ####################################################################
+${MATERIALS}
+
+# Film definition ##############################################################
+${SAMPLE}
+
+${RANGES}
+
+${SAMPLE_RANGES}
+################################################################################
+
+${EXPT_NAME} = Experiment(probe=${PROBE_NAME}, sample=${SAMPLE_NAME})
