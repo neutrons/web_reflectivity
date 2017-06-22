@@ -452,7 +452,6 @@ class SimultaneousConstraint(models.Model):
                                                         dep_layer, dep_layer_parameter,
                                                         sample_name, var_prob_id,
                                                         var_layer, var_layer_parameter)
-        logging.error(constraint)
         return constraint
 
 class SimultaneousFit(models.Model):
