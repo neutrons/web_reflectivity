@@ -540,12 +540,10 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
 
     # Update the remote job info
     simul_fit, _ = SimultaneousFit.objects.get_or_create(user=request.user, fit_problem=fit_problem)
-    old_job = fit_problem.remote_job
+    if simul_fit.remote_job is not None:
+        simul_fit.remote_job.delete()
     simul_fit.remote_job = job
     simul_fit.save()
-    # Clean up previous data that is now obsolete
-    if old_job is not None:
-        old_job.delete()
 
     return error_list
 
