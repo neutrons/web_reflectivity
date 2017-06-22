@@ -660,6 +660,7 @@ class SimultaneousView(View):
     def get(self, request, instrument, data_id, *args, **kwargs):
         """ Process GET request """
         data_list = []
+        error_list = []
         # Find the base fit problem
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
         if fit_problem is None or not fit_problem.user == request.user:
@@ -671,7 +672,10 @@ class SimultaneousView(View):
         for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
             instrument_, data_id_ = view_util.parse_data_path(item.dependent_data)
             _, extra_fit = view_util.get_fit_problem(request, instrument_, data_id_)
-            data_list.append(extra_fit)
+            if extra_fit is None:
+                error_list.append("No existing fit found for %s: fit it by itself first" % item.dependent_data)
+            else:
+                data_list.append(extra_fit)
 
         # Assemble the models to display
         model_list = []
@@ -686,7 +690,7 @@ class SimultaneousView(View):
         breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
         job_id = request.session.get('job_id', None)
         template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, existing_constraints=json.dumps(constraints),
-                               data_id=data_id, model_list=model_list, user_alert=[], job_id=job_id)
+                               data_id=data_id, model_list=model_list, user_alert=error_list, job_id=job_id)
 
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/simultaneous_view.html', template_values)
