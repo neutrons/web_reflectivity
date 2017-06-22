@@ -28,7 +28,7 @@ import plotly.graph_objs as go
 from . import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
 import users.view_util
 
@@ -539,8 +539,13 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     )
 
     # Update the remote job info
-    #fit_problem.remote_job = job
-    fit_problem.save()
+    simul_fit = SimultaneousFit.objects.get_or_create(user=request.user, fit_problem=fit_problem)
+    old_job = fit_problem.remote_job
+    # Clean up previous data that is now obsolete
+    if old_job is not None:
+        old_job.delete()
+    simul_fit.remote_job = job
+    simul_fit.save()
     return error_list
 
 def save_fit_problem(data_form, layers_form, job_object, user):

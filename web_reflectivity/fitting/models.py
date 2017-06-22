@@ -137,17 +137,6 @@ class FitProblem(models.Model):
     def __unicode__(self):
         return u"%s" % self.reflectivity_model
 
-class SimultaneousModel(models.Model):
-    """
-        Data sets to be addded to a FitProblem for simultaneous fitting
-    """
-    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
-    dependent_data = models.TextField(blank=True, default='')
-    active = models.BooleanField(blank=True, default=False)
-
-    def __unicode__(self):
-        return u"%s" % self.fit_problem
-
 class SavedModelInfo(models.Model):
     """
         Additional information attached to a saved model
@@ -333,6 +322,17 @@ class Constraint(models.Model):
             is_valid = False
         return is_valid, comments
 
+class SimultaneousModel(models.Model):
+    """
+        Data sets to be addded to a FitProblem for simultaneous fitting
+    """
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    dependent_data = models.TextField(blank=True, default='')
+    active = models.BooleanField(blank=True, default=False)
+
+    def __unicode__(self):
+        return u"%s" % self.fit_problem
+
 class SimultaneousConstraint(models.Model):
     """
         Constraint to tie parameters from two data sets in a simultaneous fit.
@@ -454,3 +454,16 @@ class SimultaneousConstraint(models.Model):
                                                         var_layer, var_layer_parameter)
         logging.error(constraint)
         return constraint
+
+class SimultaneousFit(models.Model):
+    """
+        Top level entry for a simultaneous fit. The FitProblem referenced here
+        is the parent problem with which we can find the related data sets.
+    """
+    user = models.ForeignKey(User, models.CASCADE)
+    fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
+    remote_job = models.ForeignKey(Job, models.SET_NULL, null=True)
+    timestamp = models.DateTimeField('timestamp', auto_now_add=True)
+
+    def __unicode__(self):
+        return u"%s" % self.fit_problem
