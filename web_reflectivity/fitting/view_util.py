@@ -545,7 +545,7 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     simul_fit.remote_job = job
     simul_fit.save()
 
-    return error_list
+    return dict(job_id=job.pk, error_list=error_list)
 
 def save_fit_problem(data_form, layers_form, job_object, user):
     """

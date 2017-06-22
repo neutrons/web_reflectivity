@@ -684,8 +684,9 @@ class SimultaneousView(View):
             drop_to, drag_from = item.encode()
             constraints[drop_to] = drag_from
         breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
+        job_id = request.session.get('job_id', None)
         template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, existing_constraints=json.dumps(constraints),
-                               data_id=data_id, model_list=model_list, user_alert=[])
+                               data_id=data_id, model_list=model_list, user_alert=[], job_id=job_id)
 
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/simultaneous_view.html', template_values)
@@ -697,7 +698,11 @@ class SimultaneousView(View):
         if not is_allowed:
             raise Http404
         try:
-            error_list = view_util.evaluate_simultaneous_fit(request, instrument, data_id, run_info=run_info)
+            output = view_util.evaluate_simultaneous_fit(request, instrument, data_id, run_info=run_info)
+            if 'error_list' in output:
+                error_list = output['error_list']
+            if 'job_id' in output:
+                request.session['job_id'] = output['job_id']
         except:
             error_list = ["There was a problem performing your fit:<br>refresh your page.", str(sys.exc_value)]
         if len(error_list) > 0:

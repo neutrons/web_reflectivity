@@ -80,8 +80,32 @@ function revert(id, value, text_value) {
     <input class="ui-button ui-widget ui-corner-all" title="Click to perform simultaneous fit" type="submit" name="fit" value="perform fit"/>
   </form>
 </div>
-<script>
-for (id in storage) { process_drop(id, storage[id]); }
+<script type="text/javascript">
+    for (id in storage) { process_drop(id, storage[id]); }
+{% if job_id %}
+    var elapsed_time = 0;
+    (function poll() {
+        setTimeout(function() {
+                elapsed_time += 2;
+                $.ajax({
+                    type: "GET",
+                    url: "{% url 'fitting:is_completed' job_id %}",
+                    success: function(data) {
+                        if (data.completed==true) {
+                            new_alert("<h1>Fit completed.<br><br><a href='{% url 'fitting:fit' instrument data_id %}'>Click here</a> to view the results.</h1>"); show_alert();
+                        } else {
+                            new_alert("Job status: " + data.status + "<br>Elapsed time: <b>" + elapsed_time + " seconds</b>"); show_alert();
+                        }
+                    },
+                    dataType: "json",
+                    complete: poll,
+                    statusCode: { 401: function() { new_alert("Your session expired. Please log in again"); show_alert(); }},
+                    statusCode: { 404: function() { new_alert("A more recent fit is now available. Please <a href='{% url 'fitting:fit' instrument data_id %}'>refresh</a> your page."); show_alert(); }},
+                    timeout: 2000
+                })
+        }, 2000);
+    })();
+{% endif %}
 </script>
 {% endif %}
 {% endblock %}
