@@ -110,14 +110,3 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
                                             REFL1D_STEPS=options.get('steps', 1000),
                                             REFL1D_BURN=options.get('burn', 1000))
     return script
-
-def write_model_file(data_form, layer_forms, data_file=None, ascii_data="", q_max=0.2, output_dir='/tmp'):
-    """
-        Write a model file to disk
-    """
-    script = create_model_file(data_form, layer_forms, data_file, ascii_data, q_max, output_dir='/tmp')
-    model_file = '%/__model.py' % output_dir
-    with open(model_file, 'w') as fd:
-        fd.write(script)
-        return model_file
-    return None
