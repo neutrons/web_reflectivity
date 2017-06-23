@@ -23,6 +23,7 @@ from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
 from . import view_util
+from .simultaneous import model_handling
 import users.view_util
 
 @method_decorator(login_required, name='dispatch')
@@ -659,28 +660,14 @@ class SimultaneousView(View):
     """ Set up the correlated parameters between two data sets for simultaneous fitting """
     def get(self, request, instrument, data_id, *args, **kwargs):
         """ Process GET request """
-        data_list = []
-        error_list = []
         # Find the base fit problem
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
         if fit_problem is None or not fit_problem.user == request.user:
             raise Http404
 
-        data_list.append(fit_problem)
-
         # Find the extra data sets to fit together
-        for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
-            instrument_, data_id_ = view_util.parse_data_path(item.dependent_data)
-            _, extra_fit = view_util.get_fit_problem(request, instrument_, data_id_)
-            if extra_fit is None:
-                error_list.append("No existing fit found for %s: fit it by itself first" % item.dependent_data)
-            else:
-                data_list.append(extra_fit)
-
-        # Assemble the models to display
-        model_list = []
-        for item in data_list:
-            model_list.append(item.model_to_dicts())
+        setup_request = request.GET.get('setup', '0')=='1'
+        model_list, error_list, chi2, results_ready = model_handling.get_simultaneous_models(request, fit_problem, setup_request)
 
         # List of existing constraints
         constraints = {}
@@ -689,7 +676,10 @@ class SimultaneousView(View):
             constraints[drop_to] = drag_from
         breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
         job_id = request.session.get('job_id', None)
-        template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, existing_constraints=json.dumps(constraints),
+        active_form = chi2 is None or setup_request
+        template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, results_ready=results_ready,
+                               existing_constraints=json.dumps(constraints), draggable=active_form,
+                               chi2=chi2,
                                data_id=data_id, model_list=model_list, user_alert=error_list, job_id=job_id)
 
         template_values = users.view_util.fill_template_values(request, **template_values)
@@ -729,7 +719,8 @@ def update_simultaneous_params(request, instrument, data_id):
             raise Http404
         for drop_to, drag_from in request.POST.items():
             obj = SimultaneousConstraint.create_from_encoded(fit_problem, drop_to, drag_from, request.user)
-            constraint_list.append(obj.id)
+            if obj is not None:
+                constraint_list.append(obj.id)
         # Clean up constraints that are no longer needed
         for item in SimultaneousConstraint.objects.filter(fit_problem=fit_problem, user=request.user):
             if item.id not in constraint_list:

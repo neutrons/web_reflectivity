@@ -25,7 +25,7 @@ from django.http import Http404
 import plotly.offline as py
 import plotly.graph_objs as go
 
-from . import refl1d
+from .parsing import refl1d
 from . import job_handling
 from . import icat_server_communication as icat
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit

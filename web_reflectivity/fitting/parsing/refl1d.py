@@ -4,6 +4,7 @@
 """
 import logging
 import re
+from .refl1d_err_model import parse_single_param
 
 def update_with_results(fit_problem, par_name, value, error):
     """
@@ -79,7 +80,7 @@ def update_model(content, fit_problem):
         # Find chi^2, which comes just before the list of parameters
         if line.startswith('[chi'):
             try:
-                result = re.search('chisq=([\d.]*)', line)
+                result = re.search(r'chisq=([\d.]*)', line)
                 chi2=result.group(1)
             except:
                 chi2="unknown"
@@ -151,40 +152,3 @@ def parse_par_file_line(line):
         value_float = float("%g" % value_float)
     return par_name, value_float
 
-def parse_single_param(line):
-    """
-        Parse a line of the refl1d output log
-        1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
-        2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
-
-    """
-    result = re.search(r'^\d+ (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+)(e?[\d-]*) ', line.strip())
-    value_float = None
-    error_float = None
-    par_name = None
-    if result is not None:
-        par_name = result.group(1).strip()
-        exponent = result.group(4)
-        mean_value = "%s%s" % (result.group(2), exponent)
-        error = "%s%s" % (result.group(3), exponent)
-        best_value = "%s%s" % (result.group(5), result.group(6))
-
-        # Error string does not have a .
-        err_digits = len(error)
-        val_digits = len(mean_value.replace('.',''))
-        err_value = ''
-        i_digit = 0
-
-        for c in mean_value: #pylint: disable=invalid-name
-            if c == '.':
-                err_value += '.'
-            else:
-                if i_digit < val_digits - err_digits:
-                    err_value += '0'
-                else:
-                    err_value += error[i_digit - val_digits + err_digits]
-                i_digit += 1
-
-        error_float = float(err_value)
-        value_float = float(best_value)
-    return par_name, value_float, error_float

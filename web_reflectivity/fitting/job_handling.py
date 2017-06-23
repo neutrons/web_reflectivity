@@ -43,7 +43,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
         sample_ranges = data_form.get_predefined_intensity_range(probe_name=probe_name)
 
     template_dir, _ = os.path.split(os.path.abspath(__file__))
-    with open(os.path.join(template_dir, template), 'r') as fd:
+    with open(os.path.join(template_dir, 'job_templates', template), 'r') as fd:
         template = fd.read()
         model_template = string.Template(template)
 
@@ -83,7 +83,7 @@ def assemble_data_setup(data_list):
     """ Write the portion of the job script related to data files """
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     script = ''
-    with open(os.path.join(template_dir, 'simultaneous_data.py.template'), 'r') as fd:
+    with open(os.path.join(template_dir, 'job_templates', 'simultaneous_data.py.template'), 'r') as fd:
         template = fd.read()
         model_template = string.Template(template)
 
@@ -96,7 +96,7 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
     """ Write the portion of the job script related to data files """
     template_dir, _ = os.path.split(os.path.abspath(__file__))
     script = ''
-    with open(os.path.join(template_dir, 'simultaneous_job.py.template'), 'r') as fd:
+    with open(os.path.join(template_dir, 'job_templates', 'simultaneous_job.py.template'), 'r') as fd:
         template = fd.read()
         model_template = string.Template(template)
         script += model_template.substitute(PROCESS_DATA=data_script,

@@ -41,10 +41,19 @@ function revert(id, value, text_value) {
   <div class="error">{{ message }}</div>
 
 {% if model_list %}
+{% if draggable %}
 <h2>Simultaneous fitting constraints</h2>
+{% if results_ready %}
+You are now viewing the constraints for this fit. Results may be available <a href="{% url 'fitting:simultaneous' instrument data_id %}">here</a>.
+{% endif %}
+{% else %}
+<h2>Simultaneous fitting results {%if chi2 %}[&#x3C7;<sup>2</sup>={{chi2}}]{% endif %}</h2>
+The following are the results of the simultaneous fit. Click <a href='?setup=1'>here</a> set up new constraints.
+{% endif %}
 <div class='data_manager'>
 {% for data_form,layers_form in model_list %}
-<h3>Run <a href="{% url 'fitting:modeling' %}{{ data_form.data_path }}" target='_blank'>{{ data_form.data_path }}</a></h3>
+<h3>Run <a href="{% url 'fitting:modeling' %}{{ data_form.data_path }}" target='_blank'>{{ data_form.data_path }}</a> {%if data_form.chi2 %}[&#x3C7;<sup>2</sup>={{data_form.chi2}}]{% endif %}</h3>
+Scale = {{ data_form.scale|safe }}, Background = {{ data_form.background|safe }}
 <table>
   <thead>
     <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
@@ -53,22 +62,22 @@ function revert(id, value, text_value) {
     <tr class="short_input">
       <td>Front</td>
       <td>{{ data_form.front_name }}</td><td>-</td>
-      <td id="container_id_front_sld_{{ data_form.id }}"><span id="id_front_sld_{{ data_form.id }}" revert="{{ data_form.front_sld }}" tiedparam="{{data_form.data_path}} {{data_form.front_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.front_sld }}</span></td>
+      <td id="container_id_front_sld_{{ data_form.id }}"><span id="id_front_sld_{{ data_form.id }}" revert="{{ data_form.front_sld }}" tiedparam="{{data_form.data_path}} {{data_form.front_name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.front_sld|safe }}</span></td>
       <td>-</td>
     </tr>
   {% for form in layers_form %}
     <tr class="short_input">
       <td >{{ form.layer_number}}</td>
       <td>{{ form.name }}</td>
-      <td id="container_id_thickness_{{ form.id }}"><span id="id_thickness_{{ form.id }}" revert="{{ form.thickness }}" tiedparam="{{data_form.data_path}} {{form.name}} thickness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.thickness }}</span></td>
-      <td id="container_id_sld_{{ form.id }}"><span id="id_sld_{{ form.id }}" revert="{{ form.sld }}" tiedparam="{{data_form.data_path}} {{form.name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.sld }}</span></td>
-      <td id="container_id_roughness_{{ form.id }}"><span id="id_roughness_{{ form.id }}" revert="{{ form.roughness }}" tiedparam="{{data_form.data_path}} {{form.name}} roughness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.roughness }}</span></td>
+      <td id="container_id_thickness_{{ form.id }}"><span id="id_thickness_{{ form.id }}" revert="{{ form.thickness }}" tiedparam="{{data_form.data_path}} {{form.name}} thickness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.thickness|safe }}</span></td>
+      <td id="container_id_sld_{{ form.id }}"><span id="id_sld_{{ form.id }}" revert="{{ form.sld }}" tiedparam="{{data_form.data_path}} {{form.name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.sld|safe }}</span></td>
+      <td id="container_id_roughness_{{ form.id }}"><span id="id_roughness_{{ form.id }}" revert="{{ form.roughness }}" tiedparam="{{data_form.data_path}} {{form.name}} roughness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.roughness|safe }}</span></td>
     </tr>{% endfor %}
     <tr class="short_input">
       <td>Back</td>
       <td>{{ data_form.back_name }}</td><td>-</td>
-      <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld }}</span></td>
-      <td id="container_id_back_roughness_{{ data_form.id }}"><span id="id_back_roughness_{{ data_form.id }}" revert="{{ data_form.back_roughness }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} roughness" draggable='true' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_roughness }}</span></td>
+      <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld|safe }}</span></td>
+      <td id="container_id_back_roughness_{{ data_form.id }}"><span id="id_back_roughness_{{ data_form.id }}" revert="{{ data_form.back_roughness }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} roughness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_roughness|safe }}</span></td>
     </tr>
   </tbody>
 </table>
@@ -92,7 +101,7 @@ function revert(id, value, text_value) {
                     url: "{% url 'fitting:is_completed' job_id %}",
                     success: function(data) {
                         if (data.completed==true) {
-                            new_alert("<h1>Fit completed.<br><br><a href='{% url 'fitting:fit' instrument data_id %}'>Click here</a> to view the results.</h1>"); show_alert();
+                            new_alert("<h1>Fit completed.<br><br><a href='{% url 'fitting:simultaneous' instrument data_id %}'>Click here</a> to view the results.</h1>"); show_alert();
                         } else {
                             new_alert("Job status: " + data.status + "<br>Elapsed time: <b>" + elapsed_time + " seconds</b>"); show_alert();
                         }
@@ -100,7 +109,7 @@ function revert(id, value, text_value) {
                     dataType: "json",
                     complete: poll,
                     statusCode: { 401: function() { new_alert("Your session expired. Please log in again"); show_alert(); }},
-                    statusCode: { 404: function() { new_alert("A more recent fit is now available. Please <a href='{% url 'fitting:fit' instrument data_id %}'>refresh</a> your page."); show_alert(); }},
+                    statusCode: { 404: function() { new_alert("A more recent fit is now available. Please <a href='{% url 'fitting:simultaneous' instrument data_id %}'>refresh</a> your page."); show_alert(); }},
                     timeout: 2000
                 })
         }, 2000);
