@@ -70,9 +70,14 @@ problem = FitProblem(${EXPT_LIST})
 
         try:
             with open(os.path.join(output_dir, '__model-%d-profile.dat' % (i+1)), 'r') as out_sld:
-                sld_profile = out_sld.read()
+                #sld_profile = out_sld.read()
                 print("SLD_START")
-                print(sld_profile)
+                #print(sld_profile)
+                i_count = 0
+                for line in out_sld.readlines():
+                    i_count += 1
+                    if i_count % 10 == 0:
+                        print(line.replace('\n',''))
                 print("SLD_END")
         except:
             fd.write("Error: could not process SLD profile\n")
