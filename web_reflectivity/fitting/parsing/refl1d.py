@@ -4,6 +4,7 @@
 """
 import logging
 import re
+import json
 from .refl1d_err_model import parse_single_param
 
 def update_with_results(fit_problem, par_name, value, error):
@@ -102,41 +103,84 @@ def update_model(content, fit_problem):
 
 def extract_data_from_log(log_content):
     """
+        Extract data from log.
+        @param log_content: string buffer of the job log
+    """
+    data_block_list = extract_multi_data_from_log(log_content)
+    if data_block_list is not None and len(data_block_list) > 0:
+        return data_block_list[0][1]
+    return None
+
+def extract_multi_data_from_log(log_content):
+    """
+        Extract data block from a log. For simultaneous fits, an EXPT_START tag
+        precedes every block:
+            EXPT_START 0
+            REFL_START
+
         @param log_content: string buffer of the job log
     """
     # Parse out the portion we need
     data_started = False
     data_content = []
+    data_block_list = []
+    model_names = []
+
     for line in log_content.split('\n'):
+        if line.startswith("SIMULTANEOUS"):
+            clean_str = line.replace("SIMULTANEOUS ", "")
+            model_names = json.loads(clean_str)
         if line.startswith("REFL_START"):
             data_started = True
         elif line.startswith("REFL_END"):
             data_started = False
+            if len(data_content) > 0:
+                data_path = ''
+                if len(model_names) > len(data_block_list):
+                    data_path = model_names[len(data_block_list)]
+                data_block_list.append([data_path, '\n'.join(data_content)])
+            data_content = []
         elif data_started is True:
             data_content.append(line)
-    if len(data_content) == 0:
-        return None
-    data_str = '\n'.join(data_content)
-    return data_str
+    return data_block_list
 
 def extract_sld_from_log(log_content):
+    """
+        Extract sld from log.
+        @param log_content: string buffer of the job log
+    """
+    data_block_list = extract_multi_sld_from_log(log_content)
+    if data_block_list is not None and len(data_block_list) > 0:
+        return data_block_list[0][1]
+    return None
+
+def extract_multi_sld_from_log(log_content):
     """
         @param log_content: string buffer of the job log
     """
     # Parse out the portion we need
     data_started = False
     data_content = []
+    data_block_list = []
+    model_names = []
+
     for line in log_content.split('\n'):
+        if line.startswith("SIMULTANEOUS"):
+            clean_str = line.replace("SIMULTANEOUS ", "")
+            model_names = json.loads(clean_str)
         if line.startswith("SLD_START"):
             data_started = True
         elif line.startswith("SLD_END"):
             data_started = False
+            if len(data_content) > 0:
+                data_path = ''
+                if len(model_names) > len(data_block_list):
+                    data_path = model_names[len(data_block_list)]
+                data_block_list.append([data_path, '\n'.join(data_content)])
+            data_content = []
         elif data_started is True:
             data_content.append(line)
-    if len(data_content) == 0:
-        return None
-    data_str = '\n'.join(data_content)
-    return data_str
+    return data_block_list
 
 def parse_par_file_line(line):
     """

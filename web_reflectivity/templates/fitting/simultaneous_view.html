@@ -39,6 +39,7 @@ function revert(id, value, text_value) {
 
 {% block content %}
   <div class="error">{{ message }}</div>
+<div id="graph">{{ html_data|safe }}</div>
 
 {% if model_list %}
 {% if draggable %}

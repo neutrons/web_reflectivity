@@ -678,10 +678,12 @@ class SimultaneousView(View):
         breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
         job_id = request.session.get('job_id', None)
         active_form = chi2 is None or setup_request
+        html_data = model_handling.assemble_plots(request, fit_problem)
         template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, results_ready=results_ready,
                                existing_constraints=json.dumps(constraints), draggable=active_form,
                                chi2=chi2, job_id=job_id if can_update and not setup_request else None,
-                               data_id=data_id, model_list=model_list, user_alert=error_list)
+                               data_id=data_id, model_list=model_list, user_alert=error_list,
+                               html_data=html_data)
 
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/simultaneous_view.html', template_values)
