@@ -121,6 +121,8 @@ Scale = {{ data_form.scale|safe }}, Background = {{ data_form.background|safe }}
 
 {% block right_side_links %}
   <span style="float:right">
-    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a> | <a href="{% url 'fitting:download_data' instrument data_id %}" target="_blank">download data</a> | <a href='{% url 'fitting:fit' instrument data_id %}'>fit data</a>
+    <a href="{% url 'fitting:options' %}" target='_blank'>settings</a> | 
+    <a href="{% url 'tools:capacity' %}" target='_blank'>tools</a> | 
+    <a href="{% url 'fitting:show_files' %}">show files</a> | <a href="{% url 'fitting:show_fits' %}">show fits</a>
   </span>
 {% endblock %}

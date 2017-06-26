@@ -467,6 +467,7 @@ class FitAppend(View):
 
     def post(self, request, instrument, data_id, *args, **kwargs):
         """ Add a data set to this fit problem """
+        #TODO: When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
         simultaneous_form = SimultaneousModelForm(request.POST)
         if fit_problem is not None and simultaneous_form.is_valid():

@@ -37,13 +37,11 @@ def get_run_info(instrument, run_number):
     run_info = {}
     try:
         conn = httplib.HTTPConnection(ICAT_DOMAIN,
-                                      ICAT_PORT, timeout=20.0)
+                                      ICAT_PORT, timeout=3.0)
         url = '/icat-rest-ws/dataset/SNS/%s/%s/lite' % (instrument.upper(), run_number)
         conn.request('GET', url)
         r = conn.getresponse()
         dom = xml.dom.minidom.parseString(r.read())
-
-        run_info['proposal'] = None
 
         metadata = dom.getElementsByTagName('metadata')
         if len(metadata) > 0:
