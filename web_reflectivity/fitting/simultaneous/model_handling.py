@@ -12,19 +12,21 @@ from .. import view_util
 def get_simultaneous_models(request, fit_problem, setup_request=False):
     """
         Find related models and return a list of dictionary representing them.
-        #TODO: CHI^2
     """
     error_list = []
     model_list = []
-    chi2 = 1
+    chi2 = None
 
     # Find the latest fit
     simul_list = SimultaneousFit.objects.filter(user=request.user, fit_problem=fit_problem)
-    results_ready = len(simul_list) > 0
+    fit_exists = len(simul_list) > 0
+    can_update = True
     if not setup_request and len(simul_list) > 0:
         remote_job = simul_list[0].remote_job
         if remote_job is not None:
             try:
+                can_update = remote_job.status not in [remote_job.STATUS.success,
+                                                       remote_job.STATUS.failure]
                 error_list.append("Job status: %s" % remote_job.status)
                 job_logs = Log.objects.filter(job=remote_job)
                 if len(job_logs) > 0:
@@ -55,4 +57,4 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
         for item in data_list:
             model_list.append(item.model_to_dicts())
 
-    return model_list, error_list, chi2, results_ready
+    return model_list, error_list, chi2, fit_exists, can_update
