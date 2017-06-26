@@ -680,7 +680,7 @@ class SimultaneousView(View):
         active_form = chi2 is None or setup_request
         template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument, results_ready=results_ready,
                                existing_constraints=json.dumps(constraints), draggable=active_form,
-                               chi2=chi2, job_id=job_id if can_update else None,
+                               chi2=chi2, job_id=job_id if can_update and not setup_request else None,
                                data_id=data_id, model_list=model_list, user_alert=error_list)
 
         template_values = users.view_util.fill_template_values(request, **template_values)
