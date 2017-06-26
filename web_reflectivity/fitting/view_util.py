@@ -400,7 +400,10 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         obj, _ = FitterOptions.objects.get_or_create(user=user)
         options = obj.get_dict()
 
-    script = job_handling.create_model_file(data_form, layers_form,
+    template = 'reflectivity_model.py.template'
+    if not fit:
+        template - 'reflectivity_theory_model.py.template'
+    script = job_handling.create_model_file(data_form, layers_form, template=template,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)
 
