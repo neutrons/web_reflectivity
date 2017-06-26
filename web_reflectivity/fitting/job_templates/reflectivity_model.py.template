@@ -94,9 +94,7 @@ problem = FitProblem(${EXPT_NAME})
 
     try:
         with open(os.path.join(output_dir, '__model-profile.dat'), 'r') as out_sld:
-            #sld_profile = out_sld.read()
             print("SLD_START")
-            #print(sld_profile)
             i_count = 0
             for line in out_sld.readlines():
                 i_count += 1
