@@ -9,6 +9,7 @@ import sys
 import httplib
 import xml.dom.minidom
 import logging
+from fitting.models import CatalogCache
 
 try:
     from django.conf import settings
@@ -35,6 +36,11 @@ def get_run_info(instrument, run_number):
         Get ICAT info for the specified run
     """
     run_info = {}
+    cached_entry = CatalogCache.objects.filter(data_path="%s/%s" % (instrument, run_number))
+    if len(cached_entry) > 0:
+        return dict(title=cached_entry[0].title, proposal=cached_entry[0].proposal)
+
+    # If we don't have the information, get it from ICAT
     try:
         conn = httplib.HTTPConnection(ICAT_DOMAIN,
                                       ICAT_PORT, timeout=3.0)
@@ -51,6 +57,10 @@ def get_run_info(instrument, run_number):
                     run_info['title'] = get_text_from_xml(n.childNodes)
                 if n.nodeName == 'proposal' and n.hasChildNodes():
                     run_info['proposal'] = get_text_from_xml(n.childNodes)
+        if 'title' in run_info and 'proposal' in run_info:
+            CatalogCache.objects.get_or_create(data_path="%s/%s" % (instrument, run_number),
+                                               title=run_info['title'],
+                                               proposal=run_info['proposal'])
     except:
         logging.error("Communication with ICAT server failed (%s): %s",url, sys.exc_value)
 

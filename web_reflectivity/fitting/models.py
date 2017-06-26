@@ -466,3 +466,12 @@ class SimultaneousFit(models.Model):
 
     def __unicode__(self):
         return u"%s" % self.fit_problem
+
+class CatalogCache(models.Model):
+    """
+        Cache the data catalog information
+    """
+    data_path = models.TextField(blank=True, default='')
+    title = models.TextField(blank=True, default='')
+    proposal = models.CharField(max_length=64, blank=True, default='')
+    timestamp = models.DateTimeField('timestamp', auto_now_add=True)
