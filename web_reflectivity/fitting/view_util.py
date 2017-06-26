@@ -401,8 +401,9 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         options = obj.get_dict()
 
     template = 'reflectivity_model.py.template'
-    if not fit:
-        template = 'reflectivity_theory_model.py.template'
+    #TODO: bypass fitting but retrieve all the info we need.
+    #if not fit:
+    #    template = 'reflectivity_theory_model.py.template'
     script = job_handling.create_model_file(data_form, layers_form, template=template,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)
