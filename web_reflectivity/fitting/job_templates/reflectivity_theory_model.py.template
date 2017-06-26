@@ -49,13 +49,13 @@ ${SAMPLE_RANGES}
 ################################################################################
 
 ${EXPT_NAME} = Experiment(probe=${PROBE_NAME}, sample=${SAMPLE_NAME})
-${EXPT_NAME}.save(output_dir)
+${EXPT_NAME}.save('__model')
 """
     model_path = os.path.join(data_dir, '__model.py')
     with open(model_path, 'w') as fd:
         fd.write(model_file)
 
-    cmd = "rm -f %s/*; PATH='${REFL1D_PATH}:$$PATH'; python %s" % (output_dir, model_path)
+    cmd = "cd %s; PATH='${REFL1D_PATH}:$$PATH'; python %s" % (output_dir, model_path)
     output_log = os.path.join(data_dir, 'fit.log')
     fd = open(output_log, 'w')
     fd.write("Starting fit: %s\n" % time.ctime())
