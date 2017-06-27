@@ -479,7 +479,11 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
         base_name = os.path.split(data_path)[1]
     except:
         base_name = data_path
-    fit_dir = os.path.join('reflectivity_fits', run_info['proposal'], 'simultaneous')
+    if run_info is not None and 'proposal' in run_info:
+        fit_dir = os.path.join('reflectivity_fits', run_info['proposal'], 'simultaneous')
+    else:
+        fit_dir = os.path.join('reflectivity_fits', 'simultaneous')
+
     output_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username, fit_dir, base_name)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username)
     # Get fitter options
