@@ -627,12 +627,14 @@ def apply_model(fit_problem, saved_model, instrument, data_id):
     ref_model.save()
 
     if fit_problem is not None:
-        fit_problem.reflectivity_model.delete()
+        old_model = fit_problem.reflectivity_model
         fit_problem.reflectivity_model = ref_model
         fit_problem.remote_job = None
+        fit_problem.save()
+        old_model.delete()
     else:
         fit_problem = FitProblem(user=saved_model.user, reflectivity_model=ref_model)
-    fit_problem.save()
+        fit_problem.save()
 
     # Copy over the layers
     fit_problem.layers.clear()
