@@ -24,7 +24,7 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
     # Find the latest fit
     simul_list = SimultaneousFit.objects.filter(user=request.user, fit_problem=fit_problem)
     fit_exists = len(simul_list) > 0
-    can_update = True
+    can_update = False
     if not setup_request and len(simul_list) > 0:
         remote_job = simul_list[0].remote_job
         if remote_job is not None:
