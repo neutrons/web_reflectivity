@@ -86,6 +86,10 @@ Overlay data:
     <input id="id_dependent_data" ondrop="drop(event)" ondragover="allowDrop(event)" maxlength="64" name="dependent_data" type="text" value="" title="Type or drag existing data from your file list"/>
     <input class="ui-button ui-widget ui-corner-all" id="simult_button" title="Click to overlay data" type="submit" name="simult_choice" value="add data"/>
   </form>
+  {% if simultaneous_data %}
+  <p>
+  <div class='link_button'><a class="ui-button ui-widget ui-corner-all" href="{% url 'fitting:simultaneous' instrument data_id %}">Simultaneous fit</a></div>
+  {% endif %}
 </div>
 
 <div class="error">{{ message }}</div>

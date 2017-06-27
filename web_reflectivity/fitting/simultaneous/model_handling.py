@@ -113,10 +113,12 @@ def assemble_plots(request, fit_problem):
 
     # Compute asymmetry
     if len(data_list) == 4:
-        extra_plot = view_util.plot1d([compute_asymmetry(data_list[0], data_list[2]),
-                                       compute_asymmetry(data_list[1], data_list[3])],
+        asym_data = compute_asymmetry(data_list[0], data_list[2])
+        asym_theory = compute_asymmetry(data_list[1], data_list[3])
+        chi2_asym = np.sum(np.sqrt( (asym_data[1]-asym_theory[1])**2/asym_data[2]**2 ))/len(asym_data[0])
+        extra_plot = view_util.plot1d([asym_data, asym_theory],
                                       x_log=True, y_log=False,
-                                      data_names=['(r1 - r2) / r1', 'Fit'],
+                                      data_names=[u'(r1 - r2) / r1', u'Fit [\u03a7\u00b2 = %2.2g]' % chi2_asym],
                                       x_title=u"Q (1/\u212b)", y_title=u'Asymmetry')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, extra_plot)
 
@@ -155,5 +157,5 @@ def compute_asymmetry(data_1, data_2):
                     # Bad point, skip it
                     pass
     if len(asym_errors) == len(asym_q):
-        return [asym_q, asym_values, asym_errors]
-    return [asym_q, asym_values]
+        return [np.asarray(asym_q), np.asarray(asym_values), np.asarray(asym_errors)]
+    return [np.asarray(asym_q), np.asarray(asym_values)]

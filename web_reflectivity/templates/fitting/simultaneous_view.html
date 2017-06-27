@@ -45,11 +45,13 @@ function revert(id, value, text_value) {
 {% if draggable %}
 <h2>Simultaneous fitting constraints</h2>
 {% if results_ready %}
-You are now viewing the constraints for this fit. Results may be available <a href="{% url 'fitting:simultaneous' instrument data_id %}">here</a>.
+You are now viewing the constraints for this fit.
+<div class='link_button'><a class="ui-button ui-widget ui-corner-all" href="{% url 'fitting:simultaneous' instrument data_id %}">View results</a></div>
 {% endif %}
 {% else %}
 <h2>Simultaneous fitting results {%if chi2 %}[&#x3C7;<sup>2</sup>={{chi2}}]{% endif %}</h2>
-The following are the results of the simultaneous fit. Click <a href='?setup=1'>here</a> set up new constraints.
+The following are the results of the simultaneous fit.
+<div class='link_button'><a class="ui-button ui-widget ui-corner-all" href='?setup=1'>Edit constraints</a></div>
 {% endif %}
 <div class='data_manager'>
 {% for data_form,layers_form in model_list %}

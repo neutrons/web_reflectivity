@@ -157,6 +157,12 @@ img {border: 0;}
 .ui-button:focus {outline:none;}
 .ui-button:active {background:#0a7ffb;}
 .ui-button {border-width: 1px; border-color: #2c91fc; border-style: solid; background:#3b99fc; color:white;}
+.link_button {float:right;}
+.link_button a { padding: .2em .4em;}
+.link_button a:link {color:white;}
+.link_button a:visited {color:white;}
+.link_button a:hover {color:white;}
+.link_button a:active {color:white;}
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
