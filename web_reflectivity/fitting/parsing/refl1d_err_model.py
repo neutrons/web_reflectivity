@@ -18,8 +18,15 @@ def find_error(layer_name, par_name, layer_dict, output_params):
 
         The output parameter list should be in the format: [ [parameter name, value, error], ... ]
     """
+    # Because of constraints, the parameter name we are looking for
+    # may not be in the layer dictionary. If it's not, find the right one.
     long_name = "%s %s" % (layer_name, par_name)
     long_name = long_name.strip()
+    if not long_name in layer_dict:
+        for par in layer_dict.keys():
+            if par_name in par:
+                long_name = par
+
     if output_params is None:
         return layer_dict[long_name], 0
 
@@ -62,6 +69,9 @@ def translate_model(refl_model, layers, output_params=None):
     """
         Modify a dictionary representing a refl1d model into a dictionary that
         can be mapped to a FitProblem.
+
+        Note that constrained parameter names may be mixed in the reported refl1d model.
+        See note below.
     """
     clean_layers = []
     refl_model = update_parameter('scale', '', 'intensity', refl_model, output_params, **refl_model)
@@ -69,6 +79,15 @@ def translate_model(refl_model, layers, output_params=None):
     for i in range(len(layers)):
         try:
             name = layers[i].keys()[0].split(' ')[0]
+            # Because of constraints, parameters can have the name of another layer.
+            # For instance, if we set SiOx_interface of layer A to be equal to Si_interface
+            # of layer B, we might see Si_interface in the list of parameters for layer A.
+            # To make sure the reported layer name makes sense, use the name associated
+            # with the thickness parameter if it's available.
+            for par_name in layers[i].keys():
+                if 'thickness' in par_name:
+                    name = par_name.split(' ')[0]
+
             if i == 0:
                 refl_model['back_name'] = name
                 refl_model = update_parameter('back_sld', name, 'rho', layers[i], output_params, **refl_model)
