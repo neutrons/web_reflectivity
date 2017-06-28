@@ -160,7 +160,7 @@ def parse_slabs(content):
         if l.startswith('.probe'):
             in_probe = True
         elif in_probe:
-            result = re.search(r".(\w*) = Parameter\(([\d.]+), name='(\w*)'", l)
+            result = re.search(r".(\w*) = Parameter\((.*), name='(\w*)'", l)
             if result is not None:
                 if result.group(1) == 'background':
                     refl_model['background'] = result.group(2)
@@ -178,7 +178,7 @@ def parse_slabs(content):
                 current_layer = {}
 
             for name in [r"\.interface", r"\.irho", r"\.rho", r"\.thickness"]:
-                result = re.search(r"%s = Parameter\(([\d.]+), name='([\w ]*)'" % name, l)
+                result = re.search(r"%s = Parameter\((.*), name='([\w ]*)'" % name, l)
                 if result is not None:
                     current_layer[result.group(2)] = result.group(1)
 

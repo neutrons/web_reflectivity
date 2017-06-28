@@ -11,7 +11,6 @@ from django_remote_submission.models import Log
 from ..models import SimultaneousModel, SimultaneousFit
 from ..parsing import refl1d_err_model, refl1d
 from .. import view_util
-from django.contrib.auth import password_validation
 
 def get_simultaneous_models(request, fit_problem, setup_request=False):
     """
