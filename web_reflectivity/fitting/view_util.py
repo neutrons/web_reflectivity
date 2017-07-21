@@ -15,6 +15,7 @@ import httplib
 import pandas
 import requests
 import string
+import numpy as np
 from django.conf import settings
 from django.utils import dateparse, dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
@@ -766,9 +767,13 @@ def parse_ascii_file(request, file_name, raw_content):
         @param raw_content: content of the file
     """
     try:
+        # If we don't have a fourth column, add 3% Q resolution
         current_str = io.StringIO(unicode(raw_content))
         current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
         data_set = [current_data['q'], current_data['r'], current_data['dr'], current_data['dq']]
+        for i in range(len(current_data['dq'])):
+            if np.isnan(current_data['dq'][i]):
+                current_data['dq'][i] = current_data['q'][i] * 0.03
 
         # Package the data in a plot
         plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
