@@ -10,12 +10,11 @@ make deps
 
 You will also need to install [redis-server](https://redis.io/).
 
+## Test installation
+The information below describes how one would deploy the application in production. For a simpler test deployment,
+see the instructions to [run a test server](test/README.md).
 
 ## Configuration and installation
-
-### Test installation
-The information here describes how one would deploy the application in production. For a simpler test deployment,
-see the instructions to [run a test server](test/README.md).
 
 ### Database installation
 The Django application will need a database. It was developed using PostgreSQL, but can be used with any database.
