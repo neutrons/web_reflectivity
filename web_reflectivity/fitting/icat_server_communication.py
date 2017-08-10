@@ -35,6 +35,9 @@ def get_run_info(instrument, run_number):
     """
         Get ICAT info for the specified run
     """
+    if ICAT_DOMAIN is None:
+        return {}
+
     run_info = {}
     cached_entry = CatalogCache.objects.filter(data_path="%s/%s" % (instrument, run_number))
     if len(cached_entry) > 0:
