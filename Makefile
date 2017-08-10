@@ -42,6 +42,7 @@ webapp/core:
 	cp -R $(app_dir)/web_reflectivity $(prefix)/app
 	cp -R $(app_dir)/templates $(prefix)/app
 	cp -R $(app_dir)/fitting $(prefix)/app
+	cp -R $(app_dir)/datahandler $(prefix)/app
 	cp -R $(app_dir)/users $(prefix)/app
 	cp -R $(app_dir)/tools $(prefix)/app
 	cp -R $(app_dir)/static $(prefix)/app

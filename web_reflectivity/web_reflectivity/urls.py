@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.views.generic.base import RedirectView
+from django.conf import settings
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -24,3 +25,6 @@ urlpatterns = [
     url(r'^tools/', include('tools.urls', namespace="tools")),
     url(r'^users/', include('users.urls', namespace='users')),
 ]
+
+if 'datahandler' in settings.INSTALLED_APPS:
+    urlpatterns.append(url(r'^plots/', include('datahandler.urls', namespace='datahandler')))

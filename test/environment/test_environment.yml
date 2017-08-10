@@ -1,0 +1,43 @@
+name: webrefl
+dependencies:
+- django>=1.9.5
+- numpy>=1.11.0
+- openssl>=1.0.2h
+- pip>=8.1.1
+- python==2.7.11
+- readline>=6.2
+- setuptools>=21.2.1
+- sqlite>=3.13.0
+- pip:
+  - bumps==0.7.6
+  - celery>=4.0.0
+  - cython>=0.25.1
+  - django-auth-ldap>=1.2.8
+  - django-celery-results>=1.0.1
+  - django-cors-headers>=1.1.0
+  - django-filer>=1.2.5
+  - django-model-utils>=2.6
+  - django-mptt>=0.8.6
+  - django-polymorphic>=0.8.1
+  - django-redis>=4.4.4
+  - django-remote-submission
+  - django-sslserver>=0.19
+  - easy-thumbnails>=2.3
+  - pandas>=0.19.1
+  - paramiko>=2.0.2
+  - periodictable>=1.4.1
+  - pillow>=3.4.2
+  - plotly>=1.11.0
+  - psycopg2>=2.6.1
+  - pyparsing>=2.1.9
+  - python-dateutil>=2.6.0
+  - python-ldap>=2.4.25
+  - pytz>=2016.7
+  - redis>=2.10.5
+  - asgi_redis
+  - refl1d==0.7.8
+  - requests==2.10.0
+  - scipy>=0.18.1
+  - six>=1.10.0
+  - unidecode>=0.4.19
+  - vine>=1.1.3
