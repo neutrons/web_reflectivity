@@ -1,21 +1,29 @@
-- conda env create -f test_environment.yml
-- source activate webrefl
+# Installation
+You can easily deploy and test this application using Conda environments.
 
-Make sure you can write in the installation directory, or change it at the top of the Makefile
-- ``sudo mkdir /var/www/reflectivity; sudo chown [username] /var/www/reflectivity``
-- ``make install``
+        conda env create -f webrefl_env.yml
 
-Go to the installation directory and start the server
+        source activate webrefltest
 
-- ``cd /var/www/web_reflectivity/app``
+The application depends on [redis](https://redis.io/), which you may have to install separately.
 
-Create a test user
+The default installation directory is ``/var/www/web_reflectivity``.
+Make sure you can write in the installation directory.
 
-- ``python manage.py createsuperuser --username testuser``    pw=test1test
-- ``python manage.py runserver``
+        sudo mkdir /var/www/reflectivity; sudo chown [username] /var/www/reflectivity
+
+Install the code:
+
+        make install
+
+Create a test user:
+
+        cd /var/www/web_reflectivity/app; python manage.py createsuperuser --username testuser
 
 
-Start redis and celery
+# Running the test server
+Start redis and celery, and the test server:
 
-- ``redis-server``
-- ``cd /var/www/web_reflectivity/app; celery -A fitting.celery worker --loglevel=debug``
+        redis-server
+        cd /var/www/web_reflectivity/app; celery -A fitting.celery worker --loglevel=debug
+        cd /var/www/web_reflectivity/app; python manage.py runserver

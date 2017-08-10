@@ -70,6 +70,15 @@ start:
 	/sbin/service redis restart
 	/sbin/service celery restart
 
+create_app_dir:
+	# Create deploy directory as root since it's in /var/www
+	test -d $(prefix) || sudo mkdir -m 0755 -p $(prefix); sudo chown $(shell whoami) $(prefix);
+
+start_test_server:
+	redis-server
+	cd $(prefix)/app; celery -A fitting.celery worker --loglevel=debug
+	cd $(prefix)/app; python manage.py runserver
+
 .PHONY: start
 .PHONY: check
 .PHONY: install
