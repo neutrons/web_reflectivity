@@ -30,7 +30,10 @@ logging.getLogger().setLevel(logging.INFO)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Installation directory
-INSTALLATION_DIR = '/tmp' #/var/www/'
+if 'REFL_INSTALL_DIR' in os.environ:
+    INSTALLATION_DIR = os.environ['REFL_INSTALL_DIR']
+else:
+    INSTALLATION_DIR = '/var/www/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/

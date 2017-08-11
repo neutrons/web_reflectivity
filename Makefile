@@ -45,7 +45,6 @@ webapp/core:
 	# Install application code
 	cp $(app_dir)/manage.py $(prefix)/app
 	cp -R $(app_dir)/web_reflectivity $(prefix)/app
-	echo "INSTALLATION_DIR = '$(prefix)'" >> $(prefix)/app/web_reflectivity/local_settings.py
 	cp -R $(app_dir)/templates $(prefix)/app
 	cp -R $(app_dir)/fitting $(prefix)/app
 	cp -R $(app_dir)/datahandler $(prefix)/app
