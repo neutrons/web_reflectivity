@@ -1,8 +1,9 @@
 WEB INTERFACE FOR REFLECTIVITY FITTING
 
 M. Doucet*, R. M. Ferraz Leal, T. C. Hobson
-Neutron Data Analysis and Visualization Division, Oak Ridge National Laboratory, 1 Bethel Valley Rd., Oak Ridge, TN 37831,
-USA
+
+Neutron Data Analysis and Visualization Division, Oak Ridge National Laboratory, 1 Bethel Valley Rd., Oak Ridge, TN 37831, USA
+
 *Correspondence e-mail: doucetm@ornl.gov
 
 # Abstract 
