@@ -29,6 +29,8 @@ logging.getLogger().setLevel(logging.INFO)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Installation directory
+INSTALLATION_DIR = '/var/www/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
@@ -191,7 +193,7 @@ LOGGING = {
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
 STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/web_reflectivity/static/'
+STATIC_ROOT = os.path.join(INSTALLATION_DIR, 'web_reflectivity/static/')
 
 # Celery configuration
 CELERY_RESULT_BACKEND = 'django-db'
@@ -199,7 +201,7 @@ CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 
 # The following block is only needed if we use the optional django_celery_results app
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/var/www/web_reflectivity/media'
+MEDIA_ROOT = os.path.join(INSTALLATION_DIR, 'web_reflectivity/media')
 
 LOGIN_URL ='/users/login'
 LANDING_VIEW = 'fitting:modeling'
