@@ -1,3 +1,5 @@
+<img src="https://travis-ci.org/neutrons/web_reflectivity.svg?branch=refactor">
+
 # ORNL Web Reflectivity Interface
 This application provides a user interface to generate a [REFL1D](https://github.com/reflectometry/refl1d) script and run it on a remote node.
 
