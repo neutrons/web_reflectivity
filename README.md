@@ -2,10 +2,16 @@
 This application provides a user interface to generate a `REFL1D` script and run it on a remote node.
 
 ## Introduction
-This application provides a web interface to perform modeling of reflectivity data. This Django application gives users forms to set up their model and submit fitting jobs. To do so, it generates a python script to be executed either locally or on a remote compute resource. The generated script launches [refl1d](https://github.com/reflectometry/refl1d), which does the actual minimization.
+This application provides a web interface to perform modeling of reflectivity data. This Django application gives users forms to set up their model and submit fitting jobs. To do so, it generates a python script to be executed either locally or on a remote compute resource. The generated script launches [REFL1D](https://github.com/reflectometry/refl1d), which does the actual minimization.
 
-![alt application design](https://github.com/neutrons/web_reflectivity/blob/refactor/documentation/media/app_design_400ppi.png "application design")
+Job management is done using a Django [remote submission package](https://github.com/ornl-ndav/django-remote-submission/). It manages remote jobs using the [Celery](http://www.celeryproject.org/) 
+distributed task queue and provides real-time monitoring of remote
+jobs and their associated logs. Celery uses message brokers to pass messages between the Django
+application and compute nodes. The [Cedis](https://redis.io/) in-memory data structure store is used as
+the message broker. The script executed on the compute node sets up and executes the REFL1D fit,
+then gathers the output data.
 
+![alt Overview of the application design](https://github.com/neutrons/web_reflectivity/blob/refactor/documentation/media/app_design_400ppi.png "Overview of the application design")
 
 ## Prerequisite
 Requirements for the application can be found in `requirements.txt`, which can be installed using 
@@ -27,6 +33,7 @@ The Django application will need a database. It was developed using PostgreSQL, 
 You can enter your database details in the `web_reflectivity/web_reflectivity/settings.py` file.
 
 ### Authentication
+The application supports both users local to the application or users authenticated through LDAP.
 To use LDAP, the authentication settings should be entered in `web_reflectivity/web_reflectivity/settings.py`.
 For that purpose, `openssl` should be installed.
 
