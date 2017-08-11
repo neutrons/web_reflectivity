@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     'fitting',
     'tools',
     'users',
-#    'datahandler',
+    'datahandler',
 ]
 
 MIDDLEWARE_CLASSES = [
