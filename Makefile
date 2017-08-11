@@ -1,4 +1,9 @@
-prefix := /var/www/web_reflectivity
+ifndef REFL_INSTALL_DIR
+    prefix = /var/www/web_reflectivity
+else
+    prefix = $(REFL_INSTALL_DIR)
+endif
+
 app_dir := web_reflectivity
 DJANGO_COMPATIBLE:=$(shell python -c "import django;t=0 if django.VERSION[1]<9 else 1; print t")
 DJANGO_VERSION:=$(shell python -c "import django;print django.__version__")
@@ -40,6 +45,7 @@ webapp/core:
 	# Install application code
 	cp $(app_dir)/manage.py $(prefix)/app
 	cp -R $(app_dir)/web_reflectivity $(prefix)/app
+	echo "INSTALLATION_DIR = '$(prefix)'" >> $(prefix)/app/web_reflectivity/local_settings.py
 	cp -R $(app_dir)/templates $(prefix)/app
 	cp -R $(app_dir)/fitting $(prefix)/app
 	cp -R $(app_dir)/datahandler $(prefix)/app
