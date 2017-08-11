@@ -84,9 +84,15 @@ start_test_server:
 	cd $(prefix)/app; celery -A fitting.celery worker --loglevel=debug
 	cd $(prefix)/app; python manage.py runserver
 
+test:
+	cd $(prefix)/app; python manage.py test
+
 .PHONY: start
 .PHONY: check
 .PHONY: install
 .PHONY: webapp
 .PHONY: webapp/core
 .PHONY: first_install
+.PHONY: test
+.PHONY: create_app_dir
+.PHONY: start_test_server

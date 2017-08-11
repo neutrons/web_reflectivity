@@ -7,4 +7,3 @@ python:
 # command to run tests
 script:
   - make install REFL_INSTALL_DIR=/tmp
-  - cat /tmp/app/web_reflectivity/local_settings.py
