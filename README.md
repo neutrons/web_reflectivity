@@ -1,5 +1,5 @@
 # ORNL Web Reflectivity Interface
-This application provides a user interface to generate a `REFL1D` script and run it on a remote node.
+This application provides a user interface to generate a [REFL1D](https://github.com/reflectometry/refl1d) script and run it on a remote node.
 
 ## Introduction
 This application provides a web interface to perform modeling of reflectivity data. This Django application gives users forms to set up their model and submit fitting jobs. To do so, it generates a python script to be executed either locally or on a remote compute resource. The generated script launches [REFL1D](https://github.com/reflectometry/refl1d), which does the actual minimization.
