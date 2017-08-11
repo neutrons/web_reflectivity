@@ -1,4 +1,6 @@
-<img src="https://travis-ci.org/neutrons/web_reflectivity.svg?branch=refactor">
+[![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg?branch=refactor)](https://travis-ci.org/neutrons/web_reflectivity)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.260178.svg)](https://doi.org/10.5281/zenodo.260178)
+
 
 # ORNL Web Reflectivity Interface
 This application provides a user interface to generate a [REFL1D](https://github.com/reflectometry/refl1d) script and run it on a remote node.
@@ -84,4 +86,3 @@ Please cite the following when using this software:
 - P. A. Kienzle, K. V. O'Donovan, J. F. Ankner, N. F. Berk & C. F. Majkrzak, REFL1D.
 - M. Doucet, R. M. Ferraz Leal, T. C. Hobson, ORNL Reflectivity Fitting Interface (2017). DOI: 10.5281/zenodo.260178
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.260178.svg)](https://doi.org/10.5281/zenodo.260178)
