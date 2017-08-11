@@ -8,5 +8,5 @@ python:
 script:
   - make webapp/core REFL_INSTALL_DIR=/tmp
   - ls
-  - ls web_reflectivity
-  - ls web_reflectivity/web_reflectivity
+  - ls /tmp/app/web_reflectivity
+  - cat /tmp/app/web_reflectivity/local_settings.py
