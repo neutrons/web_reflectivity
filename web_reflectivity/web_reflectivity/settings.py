@@ -30,7 +30,7 @@ logging.getLogger().setLevel(logging.INFO)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Installation directory
-INSTALLATION_DIR = '/var/www/'
+INSTALLATION_DIR = '/tmp' #/var/www/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/

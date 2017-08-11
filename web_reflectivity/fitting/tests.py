@@ -9,7 +9,7 @@ class LocalStoreTestCase(TestCase):
         user = User.objects.create_user('john', 'john@test.com', 'johnpassword')
         user.save()
 
-    def test_animals_can_speak(self):
+    def test_file_list(self):
         """Write data in the local store"""
         self.client.login(username='john', password='johnpassword')
         response = self.client.get('/fit/files/')
