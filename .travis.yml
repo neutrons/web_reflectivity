@@ -8,5 +8,5 @@ env:
 #  - pip install -r requirements.txt
 # command to run tests
 script:
-  - make install REFL_INSTALL_DIR=/tmp
-  - make test REFL_INSTALL_DIR=/tmp
+  - make install
+  - make test
