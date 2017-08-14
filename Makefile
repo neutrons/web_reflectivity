@@ -51,6 +51,8 @@ webapp/core:
 	cp -R $(app_dir)/users $(prefix)/app
 	cp -R $(app_dir)/tools $(prefix)/app
 	cp -R $(app_dir)/static $(prefix)/app
+	# Copy test data for automated build/tests
+	cp -R test/test_data.txt $(prefix)/app
 
 webapp: webapp/core
 	# Collect the static files and install them

@@ -17,7 +17,7 @@ class LocalStoreTestCase(TestCase):
         self.assertEqual(response.context['file_list'], '[]')
 
         # Upload data
-        with open('test/test_data.txt') as fp:
+        with open('test_data.txt') as fp:
             response = self.client.post('/fit/files/', {'id_file': 'test_data.txt', 'attachment': fp})
             print(response.context['file_list'])
             #self.assertEqual(response.context['file_list'], '[]')
