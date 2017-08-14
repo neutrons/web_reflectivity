@@ -65,4 +65,5 @@ class FitterOptionsTestCase(TestCase):
         option_obj = FitterOptions.objects.get(user=self.user)
         self.assertEqual(option_obj.steps, 1000)
         self.client.post('/fit/options/', {'steps': 500, 'burn':500, 'engine': 'dream' })
+        option_obj = FitterOptions.objects.get(user=self.user)
         self.assertEqual(option_obj.steps, 500)
