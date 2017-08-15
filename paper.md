@@ -11,7 +11,8 @@ authors:
  - name: Ricardo Miguel Ferraz Leal
    orcid: 0000-0002-9931-8304
    affiliation: 1
- - name: T. C. Hobson
+- name: Tanner C. Hobson
+   orcid: 0000-0002-6269-7881
    affiliation: 1
 affiliations:
  - name: Oak Ridge National Laboratory

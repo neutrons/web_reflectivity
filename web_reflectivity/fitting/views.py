@@ -652,7 +652,7 @@ def remove_simultaneous_model(request, pk):
         @param data_id: data set identifier
         @param const_id: pk of the constraint object to delete
     """
-    success_url = request.GET.get('success', None)
+    success_url = request.GET.get('success', reverse('fitting:show_files'))
     const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
     const_obj.delete()
     return redirect(success_url)

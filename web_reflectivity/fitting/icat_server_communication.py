@@ -1,6 +1,7 @@
 #pylint: disable=bare-except, invalid-name, too-many-nested-blocks, too-many-locals, too-many-branches
 """
-    Utilities to communicate with ICAT server
+    Optional utilities to communicate with ICAT server
+    ICAT is an online data catalog used internally at ORNL.
 
     @author: M. Doucet, Oak Ridge National Laboratory
     @copyright: 2015 Oak Ridge National Laboratory
