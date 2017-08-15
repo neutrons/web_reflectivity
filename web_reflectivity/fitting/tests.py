@@ -489,6 +489,9 @@ MODEL_PARAMS_START
   .thickness = stack thickness:50
 
 [chisq=108.1844(30), nllf=18012.7]
+        Parameter       mean  median    best [   68% interval] [   95% interval]
+ 1         material rho 3.99975(26) 3.999830 3.999999 [3.99953 3.99995] [3.99903 3.99999]
+ 2   material thickness  88.79(35)  88.794  88.793 [  88.45   89.14] [  88.10   89.47]
 
 MODEL_PARAMS_END
 MODEL_BEST_VALUES_START
