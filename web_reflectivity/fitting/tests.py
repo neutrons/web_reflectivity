@@ -59,7 +59,7 @@ class TestDataHandling(TestCase):
             this call will fail """
         class Dummy(object):
             user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
+        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost', LIVE_DATA_USER_UPLOAD_URL=''):
             try:
                 dh._remote_store(request=Dummy(), file_name='test_file.txt', plot='...')
             except requests.ConnectionError:
@@ -75,7 +75,7 @@ class TestDataHandling(TestCase):
             nothing since we are not connected to a remote data server """
         class Dummy(object):
             user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
+        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost', LIVE_DATA_USER_UPLOAD_URL=''):
             dh.get_user_files_from_server(Dummy())
 
 
