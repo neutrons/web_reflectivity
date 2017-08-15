@@ -23,6 +23,7 @@ from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
 from . import view_util
+from .data_server import data_handler
 from .simultaneous import model_handling
 import users.view_util
 
@@ -176,7 +177,7 @@ def download_reduced_data(request, instrument, data_id):
         @param instrument: instrument name
         @param run_id: run number
     """
-    html_data = view_util.get_plot_data_from_server(instrument, data_id)
+    html_data = data_handler.get_plot_data_from_server(instrument, data_id)
     ascii_data = view_util.extract_ascii_from_div(html_data)
     if ascii_data is None:
         error_msg = "Could not find data for %s/%s"  % (instrument, data_id)
@@ -404,7 +405,7 @@ class FitView(View):
         template_values = self._fill_template_values(request, instrument, data_id)
 
         request.session['latest_data_path'] = data_path
-        html_data = view_util.get_plot_data_from_server(instrument, data_id)
+        html_data = data_handler.get_plot_data_from_server(instrument, data_id)
         if html_data is None:
             return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
@@ -651,7 +652,7 @@ def remove_simultaneous_model(request, pk):
         @param data_id: data set identifier
         @param const_id: pk of the constraint object to delete
     """
-    success_url = request.GET.get('success', None)
+    success_url = request.GET.get('success', reverse('fitting:show_files'))
     const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
     const_obj.delete()
     return redirect(success_url)

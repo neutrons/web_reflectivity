@@ -4,7 +4,7 @@
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth import login, logout, authenticate
-from django_remote_submission.remote import RemoteWrapper, deploy_key_if_it_doesnt_exist
+from django_remote_submission.tasks import copy_key_to_server
 
 # Application-specific imports
 from django.conf import settings
@@ -20,13 +20,19 @@ def perform_login(request):
         username = request.POST["username"]
         password = request.POST["password"]
         user = authenticate(username=username, password=password)
-        if user is not None and not user.is_anonymous():
+        # Handling of local testing
+        if user is not None and settings.JOB_HANDLING_HOST == 'localhost':
+            login_failure = ["You are running locally"]
+            login(request, user)
+        elif user is not None and not user.is_anonymous():
             try:
-                wrapper = RemoteWrapper(hostname=settings.JOB_HANDLING_HOST,
-                                        username=username, port=settings.JOB_HANDLING_POST)
-                wrapper.connect(password)
-                wrapper.close()
-                login(request,user)
+                copy_key_to_server(
+                    username=username,
+                    password=password,
+                    hostname=settings.JOB_HANDLING_HOST,
+                    port=settings.JOB_HANDLING_PORT,
+                )
+                login(request, user)
             except:
                 login_failure = ["Could not connect to computing resource: it may be unavailable"]
         else:

@@ -8,6 +8,18 @@ https://docs.djangoproject.com/en/1.9/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
+
+
+DEPLOYMENT NOTES:
+
+For production deployment:
+    - Add your server host to the ALLOWED_HOSTS.
+    - [optional] To use the ICAT data catalog, set ICAT_DOMAIN to be the ICAT domain.
+    - [optional] For remote jobs, set JOB_HANDLING_HOST to be the remote host domain.
+
+For local testing:
+    - Make sure 'datahandler' to INSTALLED_APPS so you can store test data locally.
+
 """
 
 import os
@@ -17,6 +29,11 @@ logging.getLogger().setLevel(logging.INFO)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Installation directory
+if 'REFL_INSTALL_DIR' in os.environ:
+    INSTALLATION_DIR = os.environ['REFL_INSTALL_DIR']
+else:
+    INSTALLATION_DIR = '/var/www/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
@@ -25,11 +42,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'y&#94bnh&4zw3s)0h2&f$ve87_1c_t*+hxfl=2v9429^75-t03'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.4/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = [ '.ornl.gov', '.sns.gov', 'localhost']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 AUTHENTICATION_BACKENDS = (
                            'django_auth_ldap.backend.LDAPBackend',
@@ -54,6 +71,7 @@ INSTALLED_APPS = [
     'fitting',
     'tools',
     'users',
+    'datahandler',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -176,36 +194,46 @@ LOGGING = {
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-    #os.path.join(os.path.dirname(django.__file__),'contrib','admin','static'),
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
 STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/web_reflectivity/static/'
+STATIC_ROOT = os.path.join(INSTALLATION_DIR, 'web_reflectivity/static/')
 
 # Celery configuration
-#CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 
 # The following block is only needed if we use the optional django_celery_results app
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/var/www/web_reflectivity/media'
+MEDIA_ROOT = os.path.join(INSTALLATION_DIR, 'web_reflectivity/media')
 
 LOGIN_URL ='/users/login'
 LANDING_VIEW = 'fitting:modeling'
+GRAVATAR_URL = "https://www.gravatar.com/avatar/"
 
 # Fitting options
 REFL1D_PATH = '/usr/bin'
 REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'
-JOB_HANDLING_HOST = ''
-JOB_HANDLING_POST = 22
-JOB_HANDLING_PUBLIC_KEY = ''
+JOB_HANDLING_HOST = '' # replace with compute host
+JOB_HANDLING_PORT = 22
 JOB_HANDLING_INTERPRETER = '/usr/bin/python'
 DEFAULT_INSTRUMENT = 'ref_l'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'asgi_redis.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+        'ROUTING': 'web_reflectivity.routing.channel_routing',
+    },
+}
+
 HELPLINE = 'NDAV'
+ICAT_DOMAIN = None # replace this with data catalog
+ICAT_PORT = 2080
+
 # Import local settings if available
 try:
     from local_settings import *

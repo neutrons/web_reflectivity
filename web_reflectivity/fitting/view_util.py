@@ -11,13 +11,11 @@ import traceback
 import json
 import logging
 import hashlib
-import httplib
 import pandas
-import requests
-import string
+
 import numpy as np
 from django.conf import settings
-from django.utils import dateparse, dateformat, timezone
+from django.utils import dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
@@ -28,65 +26,11 @@ import plotly.graph_objs as go
 
 from .parsing import refl1d
 from . import job_handling
+from .data_server import data_handler
 from . import icat_server_communication as icat
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
 import users.view_util
-
-def generate_key(instrument, run_id):
-    """
-        Generate a secret key for a run on a given instrument
-        @param instrument: instrument name
-        @param run_id: run number
-    """
-    if not hasattr(settings, "LIVE_PLOT_SECRET_KEY"):
-        return None
-    secret_key = settings.LIVE_PLOT_SECRET_KEY
-    if len(secret_key) == 0:
-        return None
-    else:
-        h = hashlib.sha1()
-        h.update("%s%s%s" % (instrument.upper(), secret_key, run_id))
-        return h.hexdigest()
-
-def append_key(input_url, instrument, run_id):
-    """
-        Append a live data secret key to a url
-        @param input_url: url to modify
-        @param instrument: instrument name
-        @param run_id: run number
-    """
-    client_key = generate_key(instrument, run_id)
-    if client_key is None:
-        return input_url
-    # Determine whether this is the first query string argument of the url
-    delimiter = '&' if '/?' in input_url else '?'
-    return "%s%skey=%s" % (input_url, delimiter, client_key)
-
-
-def get_plot_data_from_server(instrument, run_id, data_type='html'):
-    """
-        Get json data from the live data server
-        @param instrument: instrument name
-        @param run_id: run number
-        @param data_type: data type, either 'json' or 'html'
-    """
-    json_data = None
-    try:
-        url_template = string.Template(settings.LIVE_DATA_SERVER)
-        live_data_url = url_template.substitute(instrument=instrument, run_number=run_id)
-        live_data_url += "/%s/" % data_type
-        live_data_url = append_key(live_data_url, instrument, run_id)
-        conn = httplib.HTTPSConnection(settings.LIVE_DATA_SERVER_DOMAIN, timeout=5.5)
-        conn.request('GET', live_data_url)
-        data_request = conn.getresponse()
-        if data_request.status == 200:
-            json_data = data_request.read()
-        else:
-            logging.error("Return code %s for %s:", data_request.status, live_data_url)
-    except:
-        logging.error("Could not pull data from live data server:\n%s", sys.exc_value)
-    return json_data
 
 def extract_ascii_from_div(html_data):
     """
@@ -289,7 +233,7 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     sld_names = []
     r_plot = ""
     # Find the data
-    html_data = get_plot_data_from_server(instrument, data_id)
+    html_data = data_handler.get_plot_data_from_server(instrument, data_id)
     # If we can't retrieve data from the plot server, then the data doesn't exist and
     # we should return a 404.
     if html_data is None:
@@ -348,7 +292,7 @@ def find_overlay_data(fit_problem):
     simult_data = []
     for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
         instrument_, data_id_ = parse_data_path(item.dependent_data)
-        html_data = get_plot_data_from_server(instrument_, data_id_)
+        html_data = data_handler.get_plot_data_from_server(instrument_, data_id_)
         if html_data is not None:
             simult_data.append([item.dependent_data, html_data])
     return simult_data
@@ -409,20 +353,19 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)
 
-    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_PORT)[0]
 
     python2_interpreter = Interpreter.objects.get_or_create(name='python2',
                                                             path=settings.JOB_HANDLING_INTERPRETER)[0]
     server.interpreters.set([python2_interpreter,])
 
-    job = Job(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
+    job = Job.objects.get_or_create(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
                                     program=script,
                                     remote_directory=work_dir,
                                     remote_filename='fit_job.py',
                                     owner=user,
                                     interpreter=python2_interpreter,
-                                    server=server)
-    job.save()
+                                    server=server)[0]
     submit_job_to_server.delay(
         job_pk=job.pk,
         password='',
@@ -452,7 +395,7 @@ def _process_fit_problem(fit_problem, instrument, data_id, options, work_dir, ou
     data_form = ReflectivityFittingForm(initial_values)
     constraint_list = Constraint.objects.filter(fit_problem=fit_problem)
 
-    html_data = get_plot_data_from_server(instrument, data_id)
+    html_data = data_handler.get_plot_data_from_server(instrument, data_id)
     ascii_data = extract_ascii_from_div(html_data)
 
     script = ''
@@ -525,20 +468,19 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     job_script = job_handling.assemble_job(script_models, data_script, expt_names, data_ids, options, work_dir, output_dir)
 
     # Submit job
-    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_POST)[0]
+    server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_PORT)[0]
 
     python2_interpreter = Interpreter.objects.get_or_create(name='python2',
                                                             path=settings.JOB_HANDLING_INTERPRETER)[0]
     server.interpreters.set([python2_interpreter,])
 
-    job = Job(title=data_path,
-              program=job_script,
-              remote_directory=work_dir,
-              remote_filename='fit_job.py',
-              owner=request.user,
-              interpreter=python2_interpreter,
-              server=server)
-    job.save()
+    job = Job.objects.get_or_create(title=data_path,
+                                    program=job_script,
+                                    remote_directory=work_dir,
+                                    remote_filename='fit_job.py',
+                                    owner=request.user,
+                                    interpreter=python2_interpreter,
+                                    server=server)[0]
     submit_job_to_server.delay(
         job_pk=job.pk,
         password='',
@@ -779,21 +721,7 @@ def parse_ascii_file(request, file_name, raw_content):
         plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
 
         # Upload plot to live data server
-        url_template = string.Template(settings.LIVE_DATA_USER_UPLOAD_URL)
-        live_data_url = url_template.substitute(user=str(request.user),
-                                                domain=settings.LIVE_DATA_SERVER_DOMAIN,
-                                                port=settings.LIVE_DATA_SERVER_PORT)
-        monitor_user = {'username': settings.LIVE_DATA_API_USER, 'password': settings.LIVE_DATA_API_PWD,
-                        'data_id': file_name}
-        files = {'file': plot}
-        http_request = requests.post(live_data_url, data=monitor_user, files=files, verify=True)
-
-        if http_request.status_code == 200:
-            get_user_files_from_server(request, filter_file_name=file_name)
-            return True, ""
-        else:
-            logging.error("Return code %s for %s:", http_request.status_code, live_data_url)
-            return False, "Could not send data to server"
+        return data_handler.store_user_data(request, file_name, plot)
     except:
         logging.error("Could not parse file %s: %s", file_name, sys.exc_value)
         return False, "Could not parse data file %s" % file_name
@@ -805,7 +733,7 @@ def get_user_files(request):
     user_data = UserData.objects.filter(user=request.user)
     if len(user_data) == 0:
         logging.warning("Syncing files for user %s", request.user)
-        get_user_files_from_server(request)
+        data_handler.get_user_files_from_server(request)
         user_data = UserData.objects.filter(user=request.user)
 
     data_list = []
@@ -827,33 +755,6 @@ def get_user_files(request):
         data_list.append(data_item)
 
     return json.dumps(data_list)
-
-def get_user_files_from_server(request, filter_file_name=None):
-    """
-        Get a list of the user's data on the live data server
-        @param request: request object
-        @param filter_file_name: If this parameter is not None, we will only update the entry with that file name
-    """
-    try:
-        # Upload plot to live data server
-        url_template = string.Template(settings.LIVE_DATA_USER_FILES_URL)
-        live_data_url = url_template.substitute(user=str(request.user),
-                                                domain=settings.LIVE_DATA_SERVER_DOMAIN,
-                                                port=settings.LIVE_DATA_SERVER_PORT)
-        monitor_user = {'username': settings.LIVE_DATA_API_USER, 'password': settings.LIVE_DATA_API_PWD}
-        http_request = requests.post(live_data_url, data=monitor_user, files={}, verify=True)
-
-        data_list = json.loads(http_request.content)
-        for item in data_list:
-            if filter_file_name and not item['run_id'] == filter_file_name:
-                continue
-            user_data, created = UserData.objects.get_or_create(user=request.user, file_id=item['run_number'], defaults={'timestamp': timezone.now()})
-            if created:
-                user_data.file_name = item['run_id']
-                user_data.timestamp = dateparse.parse_datetime(item['timestamp'])
-                user_data.save()
-    except:
-        logging.error("Could not retrieve user files: %s", sys.exc_value)
 
 def parse_data_path(data_path):
     """

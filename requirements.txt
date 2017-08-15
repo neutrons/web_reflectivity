@@ -10,3 +10,4 @@ django_auth_ldap
 scipy
 requests
 periodictable
+asgi_redis

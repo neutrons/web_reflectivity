@@ -1,4 +1,9 @@
-prefix := /var/www/web_reflectivity
+ifndef REFL_INSTALL_DIR
+    prefix = /var/www/web_reflectivity
+else
+    prefix = $(REFL_INSTALL_DIR)
+endif
+
 app_dir := web_reflectivity
 DJANGO_COMPATIBLE:=$(shell python -c "import django;t=0 if django.VERSION[1]<9 else 1; print t")
 DJANGO_VERSION:=$(shell python -c "import django;print django.__version__")
@@ -42,9 +47,12 @@ webapp/core:
 	cp -R $(app_dir)/web_reflectivity $(prefix)/app
 	cp -R $(app_dir)/templates $(prefix)/app
 	cp -R $(app_dir)/fitting $(prefix)/app
+	cp -R $(app_dir)/datahandler $(prefix)/app
 	cp -R $(app_dir)/users $(prefix)/app
 	cp -R $(app_dir)/tools $(prefix)/app
 	cp -R $(app_dir)/static $(prefix)/app
+	# Copy test data for automated build/tests
+	cp -R test/test_data.txt $(prefix)/app
 
 webapp: webapp/core
 	# Collect the static files and install them
@@ -69,9 +77,24 @@ start:
 	/sbin/service redis restart
 	/sbin/service celery restart
 
+create_app_dir:
+	# Create deploy directory as root since it's in /var/www
+	test -d $(prefix) || sudo mkdir -m 0755 -p $(prefix); sudo chown $(shell whoami) $(prefix);
+
+start_test_server:
+	redis-server
+	cd $(prefix)/app; celery -A fitting.celery worker --loglevel=debug
+	cd $(prefix)/app; python manage.py runserver
+
+test:
+	cd $(prefix)/app; python manage.py test
+
 .PHONY: start
 .PHONY: check
 .PHONY: install
 .PHONY: webapp
 .PHONY: webapp/core
 .PHONY: first_install
+.PHONY: test
+.PHONY: create_app_dir
+.PHONY: start_test_server
