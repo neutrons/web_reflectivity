@@ -1,4 +1,4 @@
-[![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg?branch=refactor)](https://travis-ci.org/neutrons/web_reflectivity)
+[![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg)](https://travis-ci.org/neutrons/web_reflectivity)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.260178.svg)](https://doi.org/10.5281/zenodo.260178)
 
 
