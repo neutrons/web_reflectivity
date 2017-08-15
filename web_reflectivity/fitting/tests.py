@@ -1,5 +1,5 @@
 """
-    Test cases for the fitting app
+    Test cases for the fitting application
 """
 import json
 import tempfile
@@ -54,32 +54,8 @@ class TestDataHandling(TestCase):
             url_with_key = dh.append_key('/', 'refl', 1)
             self.assertEqual(url_with_key, '/?key=3b9a06c28c5b1c0ae87c2bd05ea8603b9b9c0c31')
 
-    def _test_remote_server(self):
-        """ Test the remote data hanbdling. Since we don't have a data server
-            this call will fail """
-        class Dummy(object):
-            user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
-            try:
-                dh._remote_store(request=Dummy(), file_name='test_file.txt', plot='...')
-            except requests.ConnectionError:
-                pass
-    def _test_remote_fetch(self):
-        """ Test remote fetch, which should result in None since we are not connected to a remote server """
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
-            json_data = dh._remote_fetch('john', '1', data_type='html')
-            self.assertEqual(json_data, None)
-
-    def _test_remote_user_files(self):
-        """ Test call to update local file list from remote server. This should not crash, but also do
-            nothing since we are not connected to a remote data server """
-        class Dummy(object):
-            user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
-            dh.get_user_files_from_server(Dummy())
-
-
 class FileTestCase(TestCase):
+    """ File handling tests """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -136,6 +112,7 @@ class FileTestCase(TestCase):
         self.assertEqual(user_data.tags, "bunch of tags")
 
 class FitSubmitTestCase(TestCase):
+    """ Test submission of a model and file handling """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -147,16 +124,19 @@ class FitSubmitTestCase(TestCase):
             self.client.post('/fit/files/', {'name': 'test_data.txt', 'file': fp})
 
     def test_delete_file(self):
+        """ Delete a user data file """
         self.assertEqual(len(UserData.objects.all()), 1)
         self.client.post('/fit/files/1/delete/')
         self.assertEqual(len(UserData.objects.all()), 0)
 
     def test_download_data(self):
+        """ Download data """
         response = self.client.get('/fit/john/1/download/')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.content.startswith("# JOHN Run 1"))
 
     def test_fit_page(self):
+        """ Vuew fit page and submit a model """
         response = self.client.get('/fit/john/1/')
         self.assertEqual(response.status_code, 200)
 
@@ -181,6 +161,7 @@ class FitSubmitTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
 
 class SimultaneousViewsTestCase(TestCase):
+    """ Test simultaneous fitting """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -225,6 +206,7 @@ class SimultaneousViewsTestCase(TestCase):
         new_problem.save()
 
     def test_simultaneous_view(self):
+        """ Test simultaneous view """
         response = self.client.get('/fit/john/1/simultaneous/')
         self.assertEqual(response.status_code, 200)
         # Add a simultaneous fit constraint
@@ -232,6 +214,7 @@ class SimultaneousViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
 class FitProblemViewsTestCase(TestCase):
+    """ Test functionality related to fits """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -261,10 +244,12 @@ class FitProblemViewsTestCase(TestCase):
         self.client.post('/fit/john/1/', form_data)
 
     def test_view_fit(self):
+        """ Fit view """
         response = self.client.get('/fit/john/1/')
         self.assertEqual(response.status_code, 200)
 
     def test_scripting(self):
+        """ Generate a refl1d script """
         fit_problem = FitProblem.objects.get(user=self.user)
         data_dict = model_to_dict(fit_problem.reflectivity_model)
         layer_dict = model_to_dict(fit_problem.layers.all()[0])
@@ -282,11 +267,13 @@ class FitProblemViewsTestCase(TestCase):
         self.assertTrue("sample = (  Si(0, 5.0) | material(50.0, 1.0) | air )" in script)
 
     def test_process_single_fit(self):
+        """ Process a fit request """
         fit_problem = FitProblem.objects.get(user=self.user)
         script, _, _, _ = view_util._process_fit_problem(fit_problem, 'john', '1', {}, '/tmp', '/tmp')
         self.assertTrue("sample1 = (  Si(0, 5.0) | material(50.0, 1.0) | air )" in script)
 
     def test_constraints(self):
+        """ Test constraint requests """
         response = self.client.get('/fit/john/1/constraints/')
         self.assertEqual(response.status_code, 200)
         response = self.client.post('/fit/john/1/constraints/', {u'definition': [u'return 1'], u'layer': [u'1'],
@@ -323,6 +310,7 @@ class FitProblemViewsTestCase(TestCase):
         self.assertEqual(len(sim_list), 0)
 
     def test_save_model(self):
+        """ Save a model """
         # At this point the model should be available in the database
         response = self.client.get('/fit/john/1/save/')
         self.assertEqual(response.status_code, 200)
@@ -360,7 +348,7 @@ class FitProblemViewsTestCase(TestCase):
         self.assertEqual(len(fit_problem_list), 0)
 
     def test_download_model(self):
-        # Get the model as text
+        """ Get model as text """
         response = self.client.get('/fit/john/1/model/')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.content.startswith("# Reflectivity model"))
@@ -374,6 +362,7 @@ class FitProblemViewsTestCase(TestCase):
         self.assertEqual(len(fit_problem_list), 0)
 
     def test_reverse_model(self):
+        """ Test layer order reversal """
         fit_problem = FitProblem.objects.get(user=self.user,
                                              reflectivity_model__data_path='john/1')
         self.assertEqual(fit_problem.reflectivity_model.back_sld, 2.07)
@@ -387,6 +376,7 @@ class FitProblemViewsTestCase(TestCase):
         self.assertEqual(fit_problem.reflectivity_model.back_sld, 0)
 
 class FitterOptionsTestCase(TestCase):
+    """ Test fitter options """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -408,6 +398,7 @@ class FitterOptionsTestCase(TestCase):
         self.assertEqual(option_obj.steps, 500)
 
 class ParsingTestCase(TestCase):
+    """ Test refl1d result parsers """
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -518,18 +509,40 @@ SLD_END
 Done: 2.40629 sec
 """
     def test_sld_parse(self):
+        """ Test log parser for SLD profile """
         data = refl1d.extract_sld_from_log(self.log)
         self.assertTrue("1.80000000   2.02515965   0.00000000" in data)
 
     def test_refl_parse(self):
+        """ Test log parser for reflectivity curve """
         data = refl1d.extract_data_from_log(self.log)
         self.assertTrue("# intensity: 1.00030009" in data)
 
     def test_update_model(self):
+        """ Update model from log """
         fit_problem = FitProblem.objects.get(user=self.user)
         chi2 = refl1d.update_model(self.log, fit_problem)
         self.assertEqual(chi2, 108.1844)
 
     def test_update_from_slabs(self):
+        """ Update model from encoded slab model in the log """
         data, _ = refl1d_err_model.parse_slabs(self.log)
         self.assertEqual(data[0][0]['chi2'], '108.1844')
+
+class ToolsTestCase(TestCase):
+    """ Test the SLD and capacity tools """
+    def setUp(self):
+        # Every test needs a client.
+        self.client = Client()
+        self.user = User.objects.create_user('john', 'john@test.com', 'johnpassword')
+        self.user.save()
+        self.client.login(username='john', password='johnpassword')
+
+    def test_sld(self):
+        response = self.client.get('/tools/capacity/')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post('/tools/capacity/', {u'material_formula': u'Si', u'electrode_radius': 2,
+                                                         u'electrode_thickness': 75, u'ion_packing':3.75,
+                                                         u'valence_change':1, u'electrode_density':1})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['capacity'], '0.337')
