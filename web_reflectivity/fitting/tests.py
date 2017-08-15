@@ -54,28 +54,28 @@ class TestDataHandling(TestCase):
             url_with_key = dh.append_key('/', 'refl', 1)
             self.assertEqual(url_with_key, '/?key=3b9a06c28c5b1c0ae87c2bd05ea8603b9b9c0c31')
 
-    def test_remote_server(self):
+    def _test_remote_server(self):
         """ Test the remote data hanbdling. Since we don't have a data server
             this call will fail """
         class Dummy(object):
             user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost', LIVE_DATA_USER_UPLOAD_URL=''):
+        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
             try:
                 dh._remote_store(request=Dummy(), file_name='test_file.txt', plot='...')
             except requests.ConnectionError:
                 pass
-    def test_remote_fetch(self):
+    def _test_remote_fetch(self):
         """ Test remote fetch, which should result in None since we are not connected to a remote server """
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost', LIVE_DATA_USER_UPLOAD_URL=''):
+        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
             json_data = dh._remote_fetch('john', '1', data_type='html')
             self.assertEqual(json_data, None)
 
-    def test_remote_user_files(self):
+    def _test_remote_user_files(self):
         """ Test call to update local file list from remote server. This should not crash, but also do
             nothing since we are not connected to a remote data server """
         class Dummy(object):
             user = 'john'
-        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost', LIVE_DATA_USER_UPLOAD_URL=''):
+        with self.settings(LIVE_DATA_SERVER_DOMAIN='localhost'):
             dh.get_user_files_from_server(Dummy())
 
 
