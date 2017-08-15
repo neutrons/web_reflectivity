@@ -545,4 +545,4 @@ class ToolsTestCase(TestCase):
                                                          u'electrode_thickness': 75, u'ion_packing':3.75,
                                                          u'valence_change':1, u'electrode_density':1})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['capacity'], '0.337')
+        self.assertEqual(response.context['capacity'], ' 0.337')
