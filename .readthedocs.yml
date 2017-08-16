@@ -1,0 +1,2 @@
+conda:
+    file: test/environment/webrefl_env.yml
