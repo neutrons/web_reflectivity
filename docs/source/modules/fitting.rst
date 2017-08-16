@@ -8,8 +8,10 @@ General fitting application
    :caption: Contents:
 
    fitting_forms
-   fitting_models
    fitting_job_handling
+   fitting_models
+   fitting_parsing
+   fitting_simultaneous
    fitting_view_util
    fitting_views
 

@@ -15,6 +15,10 @@ from .. import view_util
 def get_simultaneous_models(request, fit_problem, setup_request=False):
     """
         Find related models and return a list of dictionary representing them.
+
+        :param Request request: http request object
+        :param FitProblem fit_problem: FitProblem object
+        :param bool setup_request: if True, the model will get set up from related fit problems
     """
     error_list = []
     model_list = []
@@ -74,6 +78,9 @@ def _process_rq4(request, data, tag):
 def assemble_plots(request, fit_problem):
     """
         Find all that needs to be plotted for this fit problem.
+
+        :param Request request: http request object
+        :param FitProblem fit_problem: FitProblem object
     """
     data_list = []
     data_names = []
@@ -131,7 +138,10 @@ def assemble_plots(request, fit_problem):
 
 def compute_asymmetry(data_1, data_2):
     """
-        Compute asymmetry between two data sets
+        Compute asymmetry between two data sets.
+
+        :param array data_1: data array
+        :param array data_2: data array
     """
     asym_q = []
     asym_values = []

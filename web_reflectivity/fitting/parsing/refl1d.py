@@ -9,7 +9,12 @@ from .refl1d_err_model import parse_single_param
 
 def update_with_results(fit_problem, par_name, value, error):
     """
-        Update a mode with a parameter value
+        Update a mode with a parameter value.
+
+        :param FitProblem fit_problem: fit problem object to update
+        :param str par_name: parameter name
+        :param float value: parameter value
+        :param float error: parameter error
     """
     toks = par_name.split(' ')
     # The first token is the layer name or top-level parameter name
@@ -52,10 +57,21 @@ def update_with_results(fit_problem, par_name, value, error):
 
 def update_model(content, fit_problem):
     """
-        [chisq=23.426(15), nllf=1850.62]
-                      Parameter       mean  median    best [   68% interval] [   95% interval]
-         1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
-         2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
+        Update a model described by a FitProblem object according to the contents
+        of a REFL1D log.
+
+        :param str content: log contents
+        :param FitProblem fit_problem: fit problem object to update
+
+        .. note::
+            [chisq=23.426(15), nllf=1850.62]
+
+                          Parameter       mean  median    best [   68% interval] [   95% interval]
+
+             1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
+
+             2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
+
     """
     start_err_file = False
     start_par_file = False
@@ -104,7 +120,8 @@ def update_model(content, fit_problem):
 def extract_data_from_log(log_content):
     """
         Extract data from log.
-        @param log_content: string buffer of the job log
+
+        :param log_content: string buffer of the job log
     """
     data_block_list = extract_multi_data_from_log(log_content)
     if data_block_list is not None and len(data_block_list) > 0:
@@ -115,10 +132,11 @@ def extract_multi_data_from_log(log_content):
     """
         Extract data block from a log. For simultaneous fits, an EXPT_START tag
         precedes every block:
+
             EXPT_START 0
             REFL_START
 
-        @param log_content: string buffer of the job log
+        :param str log_content: string buffer of the job log
     """
     # Parse out the portion we need
     data_started = False
@@ -146,8 +164,9 @@ def extract_multi_data_from_log(log_content):
 
 def extract_sld_from_log(log_content):
     """
-        Extract sld from log.
-        @param log_content: string buffer of the job log
+        Extract a single SLD profile from a REFL1D log.
+
+        :param str log_content: string buffer of the job log
     """
     data_block_list = extract_multi_sld_from_log(log_content)
     if data_block_list is not None and len(data_block_list) > 0:
@@ -156,7 +175,9 @@ def extract_sld_from_log(log_content):
 
 def extract_multi_sld_from_log(log_content):
     """
-        @param log_content: string buffer of the job log
+        Extract multiple SLD profiles from a simultaneous REFL1D fit.
+
+        :param str log_content: string buffer of the job log
     """
     # Parse out the portion we need
     data_started = False
@@ -185,6 +206,8 @@ def extract_multi_sld_from_log(log_content):
 def parse_par_file_line(line):
     """
         Parse a line from the __model.par file
+
+        :param str line: string to be parsed
     """
     result = re.search(r'^(.*) ([\d.-]+)(e?[\d-]*)', line.strip())
     value_float = None
