@@ -1,2 +1,4 @@
+python:
+   pip_install: true
 conda:
     file: test/environment/webrefl_env.yml
