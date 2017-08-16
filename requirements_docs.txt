@@ -1,4 +1,14 @@
--r requirements.txt
+cython
+pandas
+plotly
+celery[redis]
+django
+django-celery-results
+django_remote_submission
+scipy
+requests
+periodictable
+asgi_redis
 
 # For creating the documentation pages
 sphinx
