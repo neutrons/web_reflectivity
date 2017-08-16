@@ -9,12 +9,13 @@ from django.test import Client
 from django.contrib.auth.models import User
 from django.forms import model_to_dict
 
-from .models import FitterOptions, UserData, FitProblem, SavedModelInfo, SimultaneousModel
+from .models import FitterOptions, UserData, FitProblem, SavedModelInfo, SimultaneousModel, Constraint
 from .data_server import data_handler as dh
 from . import view_util
 from . import forms
 from . import job_handling
 from .parsing import refl1d, refl1d_err_model
+from .simultaneous import model_handling
 
 class UserTestCase(TestCase):
     def setUp(self):
@@ -205,6 +206,13 @@ class SimultaneousViewsTestCase(TestCase):
         new_problem.reflectivity_model.data_path = data_path
         new_problem.save()
 
+    def test_asymmetry(self):
+        """ Test asymmetry code """
+        d1 = [[0.1, 0.2], [0.5, 0.5], [0.1, 0.1]]
+        d2 = [[0.1, 0.2], [1.5, 1.5], [0.1, 0.1]]
+        result = model_handling.compute_asymmetry(d1, d2)
+        self.assertEqual(result[1][0], -2)
+
     def test_simultaneous_view(self):
         """ Test simultaneous view """
         response = self.client.get('/fit/john/1/simultaneous/')
@@ -248,6 +256,10 @@ class FitProblemViewsTestCase(TestCase):
         response = self.client.get('/fit/john/1/')
         self.assertEqual(response.status_code, 200)
 
+    def test_view_fit_list(self):
+        response = self.client.get('/fit/list/')
+        self.assertEqual(response.status_code, 200)
+
     def test_scripting(self):
         """ Generate a refl1d script """
         fit_problem = FitProblem.objects.get(user=self.user)
@@ -272,7 +284,7 @@ class FitProblemViewsTestCase(TestCase):
         script, _, _, _ = view_util._process_fit_problem(fit_problem, 'john', '1', {}, '/tmp', '/tmp')
         self.assertTrue("sample1 = (  Si(0, 5.0) | material(50.0, 1.0) | air )" in script)
 
-    def test_constraints(self):
+    def test_bad_constraint(self):
         """ Test constraint requests """
         response = self.client.get('/fit/john/1/constraints/')
         self.assertEqual(response.status_code, 200)
@@ -281,6 +293,25 @@ class FitProblemViewsTestCase(TestCase):
                                                                  u'button_choice': [u'submit'],
                                                                  u'parameter': [u'thickness']})
         self.assertTrue(response.context['user_alert'][0].startswith("Your constraint"))
+        self.assertEqual(len(Constraint.objects.all()), 0)
+
+
+    def test_good_constraint(self):
+        """ Test constraint requests """
+        response = self.client.get('/fit/john/1/constraints/')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post('/fit/john/1/constraints/', {u'definition': [u'return material_thickness'], u'layer': [u'1'],
+                                                                 u'variables': [u'material_thickness'],
+                                                                 u'button_choice': [u'submit'],
+                                                                 u'parameter': [u'thickness']})
+
+        self.assertEqual(len(Constraint.objects.all()), 1)
+        response = self.client.get('/fit/john/1/constraints/')
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/fit/john/1/constraints/1/remove/', follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(Constraint.objects.all()), 0)
 
     def test_append(self):
         """ Append a data set to a view so we can do simultaneous fitting """
@@ -787,3 +818,12 @@ class ToolsTestCase(TestCase):
                                                          u'valence_change':1, u'electrode_density':1})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['capacity'], ' 0.337')
+
+    def test_sld_empty_density(self):
+        response = self.client.get('/tools/capacity/')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post('/tools/capacity/', {u'material_formula': u'Si', u'electrode_radius': 2,
+                                                         u'electrode_thickness': 75, u'ion_packing':3.75,
+                                                         u'valence_change':1, u'electrode_density':''})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['capacity'], ' 0.786')
