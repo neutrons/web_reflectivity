@@ -36,7 +36,8 @@ def extract_ascii_from_div(html_data):
     """
         Extract data from a plot <div>.
         Only returns the first one it finds.
-        @param html_data: <div> string
+
+        :param str html_data: <div> string
     """
     try:
         result = re.search(r"newPlot\((.*)\)</script>", html_data)
@@ -67,6 +68,9 @@ def extract_ascii_from_div(html_data):
 def check_permissions(request, run_id, instrument):
     """
         Verify that the user has the permissions to access the data
+
+        :param str run_id: run identifier (usually a number)
+        :param str instrument: instrument name, or user name
     """
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
@@ -87,6 +91,9 @@ def check_permissions(request, run_id, instrument):
 def get_fit_problem(request, instrument, data_id):
     """
         Get the latest FitProblem object for an instrument/data pair
+
+        :param str data_id: run identifier (usually a number)
+        :param str instrument: instrument name, or user name
     """
     data_path = "%s/%s" % (instrument, data_id)
     fit_problem_list = FitProblem.objects.filter(user=request.user,
@@ -105,6 +112,9 @@ def get_fit_problem(request, instrument, data_id):
 def get_fit_data(request, instrument, data_id):
     """
         Get the latest ascii data from
+
+        :param str data_id: run identifier (usually a number)
+        :param str instrument: instrument name, or user name
     """
     ascii_data = None
     _, fit_problem = get_fit_problem(request, instrument, data_id)
@@ -119,6 +129,9 @@ def get_model_as_csv(request, instrument, data_id):
     """
         Return an ASCII block with model information to be loaded
         in third party applications.
+
+        :param str data_id: run identifier (usually a number)
+        :param str instrument: instrument name, or user name
     """
     ascii_data = None
     _, fit_problem = get_fit_problem(request, instrument, data_id)
@@ -148,6 +161,8 @@ def get_model_as_csv(request, instrument, data_id):
 def get_results(request, fit_problem):
     """
         Get the model parameters for a given fit problem
+
+        :param FitProblem fit_problem: FitProblem object
     """
     errors = []
     chi2 = None
@@ -187,7 +202,12 @@ def get_results(request, fit_problem):
     return chi2, latest, errors, can_update
 
 def get_plot_from_html(html_data, rq4=False):
-    """ Process html data and return plot data """
+    """
+        Process html data and return plot data
+
+        :param str html_data: stored json for plotted data
+        :param bool rq4: if True, the plot will be in R*Q^4
+    """
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
     if rq4 is True:
@@ -201,6 +221,9 @@ def get_plot_from_html(html_data, rq4=False):
 def get_plot_from_job_report(log_object, rq4=False):
     """
         Obtain job log and extract plot data
+
+        :param Log log_object: Log object for a given remote job
+        :param bool rq4: if True, the plot will be in R*Q^4
     """
     refl_plot = None
     sld_plot = None
@@ -226,6 +249,11 @@ def get_plot_from_job_report(log_object, rq4=False):
 def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     """
         Find all that needs to be plotted for this fit problem.
+
+        :param str instrument: instrument name, or user name
+        :param str data_id: run identifier (usually a number)
+        :param FitProblem fit_problem: FitProblem object
+        :param bool rq4: if True, the plot will be in R*Q^4
     """
     data_list = []
     data_names = []
@@ -288,6 +316,8 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
 def find_overlay_data(fit_problem):
     """
         Find extra data to be over-plotted for a given fit problem.
+
+        :param FitProblem fit_problem: FitProblem object
     """
     simult_data = []
     for item in SimultaneousModel.objects.filter(fit_problem=fit_problem):
@@ -626,8 +656,8 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
            x_log=True, y_log=True, show_dx=False):
     """
         Produce a 1D plot
-        @param data_list: list of traces [ [x1, y1], [x2, y2], ...]
-        @param data_names: name for each trace, for the legend
+        :param data_list: list of traces [ [x1, y1], [x2, y2], ...]
+        :param data_names: name for each trace, for the legend
     """
     # Skipping this nice blue pair for the nicer blue/gray 'rgb(166,206,227)', 'rgb(31,120,180)'
     colors = ['#1f77b4', 'rgb(102,102,102)', 'rgb(178,223,138)', 'rgb(51,160,44)', 'rgb(251,154,153)', 'rgb(227,26,28)', 'rgb(253,191,111)', 'rgb(255,127,0)', 'rgb(202,178,214)', 'rgb(106,61,154)', 'rgb(255,255,153)', 'rgb(177,89,40)']
@@ -704,9 +734,9 @@ def plot1d(data_list, data_names=None, x_title='', y_title='',
 def parse_ascii_file(request, file_name, raw_content):
     """
         Process an uploaded data file
-        @param request: http request object
-        @param file_name: name of the uploaded file
-        @param raw_content: content of the file
+        :param Request request: http request object
+        :param str file_name: name of the uploaded file
+        :param str raw_content: content of the file
     """
     try:
         # If we don't have a fourth column, add 3% Q resolution
@@ -729,6 +759,8 @@ def parse_ascii_file(request, file_name, raw_content):
 def get_user_files(request):
     """
         Get list of uploaded files
+
+        :param Request request: http request object
     """
     user_data = UserData.objects.filter(user=request.user)
     if len(user_data) == 0:

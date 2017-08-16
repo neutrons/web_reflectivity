@@ -12,8 +12,8 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                       sample_name='sample', probe_name='probe', expt_name='expt'):
     """
         Create a refl1d model file from a template
-        #TODO: rewrite this to take a fit_problem object
     """
+    #TODO: rewrite this to take a fit_problem object
     if data_file is None:
         data_file = data_form.cleaned_data['data_path']
     materials = data_form.get_materials()

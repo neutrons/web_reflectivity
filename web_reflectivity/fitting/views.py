@@ -50,10 +50,10 @@ class FitterOptionsUpdate(UpdateView):
 def remove_constraint(request, instrument, data_id, const_id):
     """
         Remove a constraint
-        @param request: request object
-        @param instrument: instrument name
-        @param data_id: data set identifier
-        @param const_id: pk of the constraint object to delete
+        :param request: request object
+        :param instrument: instrument name
+        :param data_id: data set identifier
+        :param const_id: pk of the constraint object to delete
     """
     const_obj = get_object_or_404(Constraint, id=const_id, user=request.user)
     const_obj.delete()
@@ -71,7 +71,7 @@ def private(request):
 def is_completed(request, job_id):
     """
         AJAX call to know whether a job is complete.
-        @param job_id: pk of the Job object
+        :param job_id: pk of the Job object
     """
     job_object = get_object_or_404(Job, pk=job_id)
     return_value = {'status': job_object.status,
@@ -173,9 +173,9 @@ class UpdateUserDataView(View):
 def download_reduced_data(request, instrument, data_id):
     """
         Download reduced data from live data server
-        @param request: http request object
-        @param instrument: instrument name
-        @param run_id: run number
+        :param request: http request object
+        :param instrument: instrument name
+        :param run_id: run number
     """
     html_data = data_handler.get_plot_data_from_server(instrument, data_id)
     ascii_data = view_util.extract_ascii_from_div(html_data)
@@ -191,9 +191,9 @@ def download_reduced_data(request, instrument, data_id):
 def download_fit_data(request, instrument, data_id, include_model=False):
     """
         Download reduced data and fit data from latest fit
-        @param request: http request object
-        @param instrument: instrument name
-        @param run_id: run number
+        :param request: http request object
+        :param instrument: instrument name
+        :param run_id: run number
     """
     #TODO: Downloading data with the extra fit column is not really useful if you can loading in
     # another fit application. Eventually let the user choose whether they want the fit data.
@@ -212,9 +212,9 @@ def download_fit_data(request, instrument, data_id, include_model=False):
 def download_model(request, instrument, data_id):
     """
         Download reduced data and fit data from latest fit
-        @param request: http request object
-        @param instrument: instrument name
-        @param run_id: run number
+        :param request: http request object
+        :param instrument: instrument name
+        :param run_id: run number
     """
     ascii_data = view_util.get_model_as_csv(request, instrument, data_id)
     if ascii_data is None:
@@ -227,9 +227,9 @@ def download_model(request, instrument, data_id):
 def reverse_model(request, instrument, data_id):
     """
         Download reduced data and fit data from latest fit
-        @param request: http request object
-        @param instrument: instrument name
-        @param run_id: run number
+        :param request: http request object
+        :param instrument: instrument name
+        :param run_id: run number
     """
     _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
     if fit_problem is not None:
@@ -240,10 +240,10 @@ def reverse_model(request, instrument, data_id):
 def apply_model(request, instrument, data_id, pk):
     """
         Download reduced data and fit data from latest fit
-        @param request: http request object
-        @param instrument: instrument name
-        @param data_id: run number
-        @param pk: primary key of model to apply
+        :param request: http request object
+        :param instrument: instrument name
+        :param data_id: run number
+        :param pk: primary key of model to apply
     """
     _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
     saved_model = get_object_or_404(SavedModelInfo, pk=pk)
@@ -257,9 +257,9 @@ def save_model(request, instrument, data_id):
 
         #TODO: Save constraints too.
 
-        @param request: http request object
-        @param instrument: instrument name
-        @param run_id: run number
+        :param request: http request object
+        :param instrument: instrument name
+        :param run_id: run number
     """
     return_value = {'status': ''}
     _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
@@ -336,9 +336,9 @@ class FitView(View):
     def get(self, request, instrument, data_id, *args, **kwargs):
         """
             Process GET
-            @param request: request object
-            @param instrument: instrument name
-            @param data_id: data set identifier
+            :param request: request object
+            :param instrument: instrument name
+            :param data_id: data set identifier
         """
         is_allowed, run_info = view_util.check_permissions(request, data_id, instrument)
         if is_allowed is False:
@@ -385,9 +385,9 @@ class FitView(View):
     def post(self, request, instrument, data_id, *args, **kwargs):
         """
             Process POST
-            @param request: request object
-            @param instrument: instrument name
-            @param data_id: data set identifier
+            :param request: request object
+            :param instrument: instrument name
+            :param data_id: data set identifier
         """
         error_message = []
         # Check whether we need to redirect because the user changes the data path
@@ -607,9 +607,8 @@ class ConstraintView(View):
 class SaveModelUpdate(UpdateView):
     """
         View to update the refl1d options
-
-        #TODO: add download links for different fitting applications.
     """
+    #TODO: add download links for different fitting applications.
     model = SavedModelInfo
     fields = ['title', 'notes']
     template_name_suffix = '_update_form'
@@ -647,10 +646,10 @@ class SaveModelDelete(DeleteView):
 def remove_simultaneous_model(request, pk):
     """
         Remove a constraint
-        @param request: request object
-        @param instrument: instrument name
-        @param data_id: data set identifier
-        @param const_id: pk of the constraint object to delete
+        :param request: request object
+        :param instrument: instrument name
+        :param data_id: data set identifier
+        :param const_id: pk of the constraint object to delete
     """
     success_url = request.GET.get('success', reverse('fitting:show_files'))
     const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)

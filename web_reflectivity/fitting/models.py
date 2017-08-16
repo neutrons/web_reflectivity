@@ -1,8 +1,8 @@
 #pylint: disable=bare-except, wildcard-import
 """
     Data models
-    #TODO: move the script generation from the forms to the models
 """
+#TODO: move the script generation from the forms to the models
 from __future__ import unicode_literals
 import sys
 import logging
