@@ -490,8 +490,12 @@ MODEL_PARAMS_START
 
 [chisq=108.1844(30), nllf=18012.7]
         Parameter       mean  median    best [   68% interval] [   95% interval]
- 1         material rho 3.99975(26) 3.999830 3.999999 [3.99953 3.99995] [3.99903 3.99999]
- 2   material thickness  88.79(35)  88.794  88.793 [  88.45   89.14] [  88.10   89.47]
+ 1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
+ 2            background  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
+ 3         material rho 3.99975(26) 3.999830 3.999999 [3.99953 3.99995] [3.99903 3.99999]
+ 4   material thickness  88.79(35)  88.794  88.793 [  88.45   89.14] [  88.10   89.47]
+ 5   material interface  88.79(35)  88.794  88.793 [  88.45   89.14] [  88.10   89.47]
+ 6   Si interface  88.79(35)  88.794  88.793 [  88.45   89.14] [  88.10   89.47]
 
 MODEL_PARAMS_END
 MODEL_BEST_VALUES_START
@@ -531,6 +535,240 @@ Done: 2.40629 sec
         """ Update model from encoded slab model in the log """
         data, _ = refl1d_err_model.parse_slabs(self.log)
         self.assertEqual(data[0][0]['chi2'], '108.1844')
+
+class SimultaneousParsingTestCase(TestCase):
+    """ Test refl1d result parsers for simultaneous fits"""
+    def setUp(self):
+        self.log = """SIMULTANEOUS ["ref_l/154461","ref_l/154461","ref_l/157294"]
+MODEL_PARAMS_START
+-- Model 0 None
+.probe
+  .back_absorption = Parameter(1, name='back_absorption')
+  .background = Parameter(1.03506e-06, name='background', bounds=(0,1e-05))
+  .intensity = Parameter(0.900023, name='intensity', bounds=(0.9,1.1))
+  .theta_offset = theta_offset
+.sample
+  .layers
+    [0]
+      .interface = Parameter(27.4311, name='electrolyte interface', bounds=(1,65))
+      .material
+        .irho = Parameter(0, name='electrolyte irho')
+        .rho = Parameter(1.42365, name='electrolyte rho', bounds=(0,2))
+      .thickness = Parameter(0, name='electrolyte thickness')
+    [1]
+      .interface = Parameter(21.6022, name='silicate interface', bounds=(1,55))
+      .material
+        .irho = Parameter(0, name='silicate irho')
+        .rho = Parameter(2.56156, name='silicate rho', bounds=(1,4))
+      .thickness = Parameter(373.1, name='silicate thickness', bounds=(250,1000))
+    [2]
+      .interface = Parameter(23.7308, name='aSi interface', bounds=(1,35))
+      .material
+        .irho = Parameter(0, name='aSi irho')
+        .rho = Parameter(2.09996, name='aSi rho', bounds=(1.8,2.1))
+      .thickness = Parameter(496.203, name='aSi thickness', bounds=(400,1000))
+    [3]
+      .interface = Parameter(4.99994, name='Cu interface', bounds=(1,5))
+      .material
+        .irho = Parameter(0, name='Cu irho')
+        .rho = Parameter(6.40677, name='Cu rho', bounds=(6.4,6.8))
+      .thickness = Parameter(246.306, name='Cu thickness', bounds=(150,250))
+    [4]
+      .interface = Parameter(4.07152, name='SiOx interface', bounds=(1,5))
+      .material
+        .irho = Parameter(0, name='SiOx irho')
+        .rho = Parameter(1.97449, name='SiOx rho', bounds=(1,4))
+      .thickness = Parameter(18.4523, name='SiOx thickness', bounds=(10,30))
+    [5]
+      .interface = Parameter(0, name='Si interface')
+      .material
+        .irho = Parameter(0, name='Si irho')
+        .rho = Parameter(2.07, name='Si rho')
+      .thickness = Parameter(0, name='Si thickness')
+  .thickness = stack thickness:1134.06
+
+[chisq=15.89(11), nllf=1271.09]
+-- Model 1 None
+.probe
+  .back_absorption = Parameter(1, name='back_absorption')
+  .background = Parameter(1.03506e-06, name='background', bounds=(0,1e-05))
+  .intensity = Parameter(0.900023, name='intensity', bounds=(0.9,1.1))
+  .theta_offset = theta_offset
+.sample
+  .layers
+    [0]
+      .interface = Parameter(27.4311, name='electrolyte interface', bounds=(1,65))
+      .material
+        .irho = Parameter(0, name='electrolyte irho')
+        .rho = Parameter(1.42365, name='electrolyte rho', bounds=(0,2))
+      .thickness = Parameter(0, name='electrolyte thickness')
+    [1]
+      .interface = Parameter(21.6022, name='silicate interface', bounds=(1,55))
+      .material
+        .irho = Parameter(0, name='silicate irho')
+        .rho = Parameter(2.56156, name='silicate rho', bounds=(1,4))
+      .thickness = Parameter(373.1, name='silicate thickness', bounds=(250,1000))
+    [2]
+      .interface = Parameter(23.7308, name='aSi interface', bounds=(1,35))
+      .material
+        .irho = Parameter(0, name='aSi irho')
+        .rho = Parameter(2.09996, name='aSi rho', bounds=(1.8,2.1))
+      .thickness = Parameter(496.203, name='aSi thickness', bounds=(400,1000))
+    [3]
+      .interface = Parameter(4.99994, name='Cu interface', bounds=(1,5))
+      .material
+        .irho = Parameter(0, name='Cu irho')
+        .rho = Parameter(6.40677, name='Cu rho', bounds=(6.4,6.8))
+      .thickness = Parameter(246.306, name='Cu thickness', bounds=(150,250))
+    [4]
+      .interface = Parameter(4.07152, name='SiOx interface', bounds=(1,5))
+      .material
+        .irho = Parameter(0, name='SiOx irho')
+        .rho = Parameter(1.97449, name='SiOx rho', bounds=(1,4))
+      .thickness = Parameter(18.4523, name='SiOx thickness', bounds=(10,30))
+    [5]
+      .interface = Parameter(0, name='Si interface')
+      .material
+        .irho = Parameter(0, name='Si irho')
+        .rho = Parameter(2.07, name='Si rho')
+      .thickness = Parameter(0, name='Si thickness')
+  .thickness = stack thickness:1134.06
+
+[chisq=15.89(11), nllf=1271.09]
+-- Model 2 None
+.probe
+  .back_absorption = Parameter(1, name='back_absorption')
+  .background = Parameter(9.73296e-07, name='background', bounds=(0,5e-06))
+  .intensity = Parameter(1, name='normalization')
+  .theta_offset = theta_offset
+.sample
+  .layers
+    [0]
+      .interface = Parameter(15.0266, name='PC interface', bounds=(1,25))
+      .material
+        .irho = Parameter(0, name='PC irho')
+        .rho = Parameter(5.9018, name='PC rho')
+      .thickness = Parameter(0, name='PC thickness')
+    [1]
+      .interface = Parameter(54.8788, name='oxy interface', bounds=(2,55))
+      .material
+        .irho = Parameter(0, name='oxy irho')
+        .rho = Parameter(4.37687, name='oxy rho', bounds=(1.2,5))
+      .thickness = Parameter(99.5173, name='oxy thickness', bounds=(10,300))
+    [2]
+      .interface = Parameter(18.0588, name='Ge interface', bounds=(1,35))
+      .material
+        .irho = Parameter(0, name='Ge irho')
+        .rho = Parameter(3.4267, name='Ge rho', bounds=(3,3.55))
+      .thickness = Parameter(257.185, name='Ge thickness', bounds=(250,450))
+    [3]
+      .interface = Parameter(1.108, name='Cu interface')
+      .material
+        .irho = Parameter(0, name='Cu irho')
+        .rho = Parameter(6.6773, name='Cu rho')
+      .thickness = Parameter(99.117, name='Cu thickness')
+    [4]
+      .interface = Parameter(1.379, name='SiOx interface')
+      .material
+        .irho = Parameter(0, name='SiOx irho')
+        .rho = Parameter(2.651, name='SiOx rho')
+      .thickness = Parameter(21.716, name='SiOx thickness')
+    [5]
+      .interface = Parameter(0, name='Si interface')
+      .material
+        .irho = Parameter(0, name='Si irho')
+        .rho = Parameter(2.0649, name='Si rho')
+      .thickness = Parameter(0, name='Si thickness')
+  .thickness = stack thickness:477.536
+
+[chisq=1.686(58), nllf=134.86]
+[overall chisq=11.741(59), nllf=2677.04]
+
+MODEL_PARAMS_END
+MODEL_BEST_VALUES_START
+background 1.03505540166325e-06
+intensity 0.900022651589221
+electrolyte interface 27.4310881356407
+electrolyte rho 1.42365286811703
+silicate interface 21.602217625566
+silicate rho 2.56156491610497
+silicate thickness 373.099532344799
+aSi interface 23.7307599037164
+aSi rho 2.09996200877021
+aSi thickness 496.203014608982
+Cu interface 4.99993566248069
+Cu rho 6.40677324961631
+Cu thickness 246.305564933279
+SiOx interface 4.07151622062367
+SiOx rho 1.97448945578209
+SiOx thickness 18.4523106339436
+background 9.73295637100827e-07
+PC interface 15.0265655211584
+oxy interface 54.8787742858312
+oxy rho 4.37687209566682
+oxy thickness 99.5172696142951
+Ge interface 18.0587506467274
+Ge rho 3.42669755016813
+Ge thickness 257.185290226391
+
+MODEL_BEST_VALUES_END
+EXPT_START 0
+REFL_START
+# intensity: 0.900022651589221
+# background: 1.03505540166325e-06
+#           Q (1/A)             dQ (1/A)                    R                   dR               theory              fresnel
+           0.0103014 0.000271035319148936             0.417362            0.0369575    0.728242647754449   0.0044453041591313
+           0.0105075 0.000273051914893617             0.442497            0.0353783    0.712857543062051  0.00414688075083677
+           0.0107176 0.000275108510638298             0.456046            0.0339778    0.694971134319048  0.00386743512655457
+REFL_END
+SLD_START
+  0.50673559   2.00099446   0.00000000
+  1.50673559   2.01753155   0.00000000
+  2.50673559   2.03403557   0.00000000
+SLD_END
+EXPT_END 0
+EXPT_START 1
+REFL_START
+# intensity: 0.900022651589221
+# background: 1.03505540166325e-06
+#           Q (1/A)             dQ (1/A)                    R                   dR               theory              fresnel
+          0.00933032 0.000261530638297872             0.569889            0.0304425    0.774396797227444  0.00626003382226123
+          0.00951693 0.000263357021276596             0.522858            0.0270741    0.768592154819365  0.00584980677112973
+          0.00970727           0.00026522             0.511766            0.0224388    0.761257713002612  0.00546452495571829
+REFL_END
+SLD_START
+  0.50673559   2.00099446   0.00000000
+  1.50673559   2.01753155   0.00000000
+  2.50673559   2.03403557   0.00000000
+SLD_END
+EXPT_END 1
+EXPT_START 2
+REFL_START
+# intensity: 1
+# background: 9.73295637100827e-07
+#           Q (1/A)             dQ (1/A)                    R                   dR               theory              fresnel
+          0.00828506 0.000251300425531915             0.841288            0.0698717     1.00000097329564                    1
+          0.00845076 0.000252922553191489             0.933339            0.0673631     1.00000097329564                    1
+          0.00861978 0.000254576595744681             0.949315             0.060806     1.00000097329564                    1
+REFL_END
+SLD_START
+  0.72030344   5.07606602   0.00000000
+  1.72030344   5.03433233   0.00000000
+  2.72030344   4.99285891   0.00000000
+SLD_END
+EXPT_END 2
+Done: 15.7372 sec
+"""
+    def test_sld_parsing(self):
+        """ Test that we can parse several SLD profiles in a log """
+        data = refl1d.extract_multi_sld_from_log(self.log)
+        self.assertEqual(len(data), 3)
+
+    def test_data_parsing(self):
+        """ Test that we can parse several refl profiles in a log """
+        data = refl1d.extract_multi_data_from_log(self.log)
+        self.assertEqual(len(data), 3)
+
 
 class ToolsTestCase(TestCase):
     """ Test the SLD and capacity tools """
