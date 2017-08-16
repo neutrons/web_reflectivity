@@ -16,7 +16,7 @@ application and compute nodes. The [Cedis](https://redis.io/) in-memory data str
 the message broker. The script executed on the compute node sets up and executes the REFL1D fit,
 then gathers the output data.
 
-<img src="documentation/media/app_design_400ppi.png" width="600">
+<img src="docs/media/app_design_400ppi.png" width="600">
 
 ## Prerequisite
 Requirements for the application can be found in `requirements.txt`, which can be installed using 
