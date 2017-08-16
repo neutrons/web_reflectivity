@@ -9,7 +9,7 @@ from django.test import Client
 from django.contrib.auth.models import User
 from django.forms import model_to_dict
 
-from .models import FitterOptions, UserData, FitProblem, SavedModelInfo, SimultaneousModel, Constraint
+from .models import FitterOptions, UserData, FitProblem, SavedModelInfo, SimultaneousModel, Constraint, SimultaneousConstraint
 from .data_server import data_handler as dh
 from . import view_util
 from . import forms
@@ -226,6 +226,10 @@ class SimultaneousViewsTestCase(TestCase):
         # Add a simultaneous fit constraint
         response = self.client.post('/fit/john/1/simultaneous/update/', {u'id_sld_1': [u'id_sld_2']})
         self.assertEqual(response.status_code, 200)
+        items = SimultaneousConstraint.objects.all()
+        self.assertEqual(len(items), 1)
+        script = items[0].get_constraint(sample_name='sample')
+        self.assertEqual(script, "sample1['material'].material.rho = sample2['material'].material.rho")
 
 class FitProblemViewsTestCase(TestCase):
     """ Test functionality related to fits """
@@ -315,6 +319,14 @@ class FitProblemViewsTestCase(TestCase):
         response = self.client.get('/fit/john/1/constraints/')
         self.assertEqual(response.status_code, 200)
 
+        # Apply the constraint
+        fit_problem = FitProblem.objects.get(user=self.user)
+        constraint = Constraint.objects.get(fit_problem=fit_problem)
+        constraint.apply_constraint(fit_problem)
+        script = constraint.get_ranges()
+        self.assertTrue("sample['material'].thickness = constraint_thickness(sample['material'].thickness)" in script)
+
+        # Delete the constraint
         response = self.client.get('/fit/john/1/constraints/1/remove/', follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(Constraint.objects.all()), 0)
