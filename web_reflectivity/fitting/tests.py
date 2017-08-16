@@ -206,6 +206,12 @@ class SimultaneousViewsTestCase(TestCase):
         new_problem.reflectivity_model.data_path = data_path
         new_problem.save()
 
+    def test_script(self):
+        """ Test that we can generate a simultaneous fitting script """
+        data_script = job_handling.assemble_data_setup([['john/1', ['0.01, 1., 0.1']], ['john/2', ['0.01, 1., 0.1']]])
+        script = job_handling.assemble_job('# test', data_script, ['exp1', 'exp2'], ['john/1','john/2'], {}, '/tmp', '/tmp')
+        self.assertTrue("problem = FitProblem([exp1,exp2])" in script)
+
     def test_asymmetry(self):
         """ Test asymmetry code """
         d1 = [[0.1, 0.2], [0.5, 0.5], [0.1, 0.1]]
