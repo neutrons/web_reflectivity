@@ -201,6 +201,8 @@ STATIC_ROOT = os.path.join(INSTALLATION_DIR, 'web_reflectivity/static/')
 # Celery configuration
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_TASK_SERIALIZER = "pickle"
+CELERY_ACCEPT_CONTENT = ['pickle']
 
 # The following block is only needed if we use the optional django_celery_results app
 MEDIA_URL = '/media/'
@@ -215,7 +217,7 @@ REFL1D_PATH = '/usr/bin'
 REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
 REFL1D_JOB_DIR = '/SNS/users'
-JOB_HANDLING_HOST = '' # replace with compute host
+JOB_HANDLING_HOST = 'localhost' # replace with compute host
 JOB_HANDLING_PORT = 22
 JOB_HANDLING_INTERPRETER = '/usr/bin/python'
 DEFAULT_INSTRUMENT = 'ref_l'

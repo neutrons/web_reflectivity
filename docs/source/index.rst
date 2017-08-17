@@ -35,6 +35,7 @@ Developer Documentation
 
    installation
    testing
+   settings
 
 .. toctree::
    :maxdepth: 2
