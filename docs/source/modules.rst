@@ -3,3 +3,6 @@
    :caption: Contents:
 
    modules/fitting
+   modules/data_handler
+   modules/tools
+   modules/users

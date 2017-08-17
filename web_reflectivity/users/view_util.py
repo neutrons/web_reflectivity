@@ -46,9 +46,9 @@ def is_experiment_member(request, instrument, experiment):
     """
         Determine whether a user is part of the given experiment.
 
-        @param request: request object
-        @param instrument: Instrument name
-        @param experiment: IPTS name
+        :param Requestrequest: request object
+        :param str instrument: Instrument name
+        :param str experiment: IPTS name
     """
     if hasattr(settings, 'HIDE_RUN_DETAILS') and settings.HIDE_RUN_DETAILS is False:
         return True

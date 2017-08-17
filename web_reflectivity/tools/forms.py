@@ -26,11 +26,11 @@ class ChargeRateForm(forms.Form):
 
             To test: Li_15 Si_4 -> 3579 mAh
 
-            @param electrode: electrode composition [string]
-            @param radius: electrode radius [cm]
-            @param thickness: electrode thickness [nm]
-            @param packing: charge packing
-            @param valence_change: change in oxidation state of the carrier
+            :param electrode: electrode composition [string]
+            :param radius: electrode radius [cm]
+            :param thickness: electrode thickness [nm]
+            :param packing: charge packing
+            :param valence_change: change in oxidation state of the carrier
         """
         N_a = 6.022*10**23
         # Charge unit in Coulombs

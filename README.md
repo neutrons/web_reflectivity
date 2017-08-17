@@ -12,7 +12,7 @@ This application provides a web interface to perform modeling of reflectivity da
 Job management is done using a Django [remote submission package](https://github.com/ornl-ndav/django-remote-submission/). It manages remote jobs using the [Celery](http://www.celeryproject.org/) 
 distributed task queue and provides real-time monitoring of remote
 jobs and their associated logs. Celery uses message brokers to pass messages between the Django
-application and compute nodes. The [Cedis](https://redis.io/) in-memory data structure store is used as
+application and compute nodes. The [Redis](https://redis.io/) in-memory data structure store is used as
 the message broker. The script executed on the compute node sets up and executes the REFL1D fit,
 then gathers the output data.
 

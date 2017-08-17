@@ -18,8 +18,9 @@ from ..models import UserData
 def generate_key(instrument, run_id):
     """
         Generate a secret key for a run on a given instrument
-        @param instrument: instrument name
-        @param run_id: run number
+
+        :param str instrument: instrument name
+        :param int run_id: run number
     """
     if not hasattr(settings, "LIVE_PLOT_SECRET_KEY"):
         return None
@@ -34,9 +35,10 @@ def generate_key(instrument, run_id):
 def append_key(input_url, instrument, run_id):
     """
         Append a live data secret key to a url
-        @param input_url: url to modify
-        @param instrument: instrument name
-        @param run_id: run number
+
+        :param str input_url: url to modify
+        :param str instrument: instrument name
+        :param int run_id: run number
     """
     client_key = generate_key(instrument, run_id)
     if client_key is None:
@@ -48,9 +50,10 @@ def append_key(input_url, instrument, run_id):
 def store_user_data(request, file_name, plot):
     """
         Store user data
-        @param request: Django request object
-        @param file_name: name of the uploaded file
-        @param plot: user data, as a plotly json object
+
+        :param Request request: Django request object
+        :param str file_name: name of the uploaded file
+        :param str plot: user data, as a plotly json object
     """
     if 'datahandler' in settings.INSTALLED_APPS:
         return _local_store(request, file_name, plot)
@@ -60,9 +63,10 @@ def store_user_data(request, file_name, plot):
 def _local_store(request, file_name, plot):
     """
         Store user data locally
-        @param request: Django request object
-        @param file_name: name of the uploaded file
-        @param plot: user data, as a plotly json object
+
+        :param Request request: Django request object
+        :param str file_name: name of the uploaded file
+        :param str plot: user data, as a plotly json object
     """
     from datahandler.models import Instrument, DataRun, PlotData
 
@@ -108,9 +112,10 @@ def _local_store(request, file_name, plot):
 def _remote_store(request, file_name, plot):
     """
         Store user data in a remove data server
-        @param request: Django request object
-        @param file_name: name of the uploaded file
-        @param plot: user data, as a plotly json object
+
+        :param Request request: Django request object
+        :param str file_name: name of the uploaded file
+        :param str plot: user data, as a plotly json object
     """
     # Upload plot to live data server
     url_template = string.Template(settings.LIVE_DATA_USER_UPLOAD_URL)
@@ -132,9 +137,10 @@ def _remote_store(request, file_name, plot):
 def get_plot_data_from_server(instrument, run_id, data_type='html'):
     """
         Retrieve data
-        @param instrument: instrument or user name
-        @param run_id: run id, usually the run number
-        @param data_type: type of data, always HTML but kept here for API compatibility
+
+        :param str instrument: instrument or user name
+        :param int run_id: run id, usually the run number
+        :param str data_type: type of data, always HTML but kept here for API compatibility
     """
     if 'datahandler' in settings.INSTALLED_APPS:
         return _local_fetch(instrument, run_id, data_type)
@@ -144,9 +150,10 @@ def get_plot_data_from_server(instrument, run_id, data_type='html'):
 def _local_fetch(instrument, run_id, data_type='html'):
     """
         Retrieve data locally
-        @param instrument: instrument or user name
-        @param run_id: run id, usually the run number
-        @param data_type: type of data, always HTML but kept here for API compatibility
+
+        :param str instrument: instrument or user name
+        :param int run_id: run id, usually the run number
+        :param str data_type: type of data, always HTML but kept here for API compatibility
     """
     # Get or create the instrument
     from datahandler.models import Instrument, DataRun, PlotData
@@ -166,9 +173,10 @@ def _local_fetch(instrument, run_id, data_type='html'):
 def _remote_fetch(instrument, run_id, data_type='html'):
     """
         Get json data from the live data server
-        @param instrument: instrument name
-        @param run_id: run number
-        @param data_type: data type, either 'json' or 'html'
+
+        :param str instrument: instrument name
+        :param int run_id: run number
+        :param str data_type: data type, either 'json' or 'html'
     """
     json_data = None
     try:
@@ -190,8 +198,9 @@ def _remote_fetch(instrument, run_id, data_type='html'):
 def get_user_files_from_server(request, filter_file_name=None):
     """
         Get a list of the user's data on the live data server and update the local database
-        @param request: request object
-        @param filter_file_name: If this parameter is not None, we will only update the entry with that file name
+
+        :param Request request: request object
+        :param str filter_file_name: If this parameter is not None, we will only update the entry with that file name
     """
     # If we are running locally, we have all the data we need
     if 'datahandler' in settings.INSTALLED_APPS:

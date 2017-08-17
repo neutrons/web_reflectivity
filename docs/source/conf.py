@@ -42,6 +42,7 @@ settings.configure(
         "django.contrib.sites",
         "django_remote_submission",
         "fitting",
+        "datahandler",
     ],
     SITE_ID=1,
     MIDDLEWARE_CLASSES=(),
@@ -134,7 +135,7 @@ html_static_path = ['_static']
 html_sidebars = {
     '**': [
         'about.html',
-        'navigation.html',
+#        'navigation.html',
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
         'donate.html',

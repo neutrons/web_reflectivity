@@ -1,4 +1,4 @@
-Fitting
+fitting
 =======
 
 General fitting application
@@ -14,5 +14,4 @@ General fitting application
    fitting_simultaneous
    fitting_view_util
    fitting_views
-
-
+   fitting_data_server
