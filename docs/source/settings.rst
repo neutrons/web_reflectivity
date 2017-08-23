@@ -5,11 +5,12 @@ The following are the important Django settings to consider when deploying or te
 
 * REFL1D_PATH
 
-    If REFL1D is not installed in ``/usr/bin``, you may modify its location.
+    If REFL1D is not installed in ``/usr/bin``, you may modify its location. When running locally,
+    the application will find the REFL1D installation that is part of your environment.
 
 * REFL1D_JOB_DIR
 
-    This is the directory in which job data will be stored.
+    This is the working directory where the job will be executed. **The supplied directory needs to be writable by the user.**
 
 * JOB_HANDLING_HOST and JOB_HANDLING_POST
 
@@ -18,7 +19,8 @@ The following are the important Django settings to consider when deploying or te
 
 * JOB_HANDLING_INTERPRETER
 
-    This allows you to specify the python interpreter to use to execute the job script.
+    This allows you to specify the python interpreter to use to execute the job script. When running locally,
+    the python interpreter from the environment the server is running in will be used.
 
 * CELERY_*
 

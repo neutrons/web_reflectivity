@@ -5,6 +5,7 @@
 from __future__ import absolute_import, division, print_function
 import string
 import os
+import sys
 from django.conf import settings
 
 def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp',
@@ -60,6 +61,11 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
             steps = options.get('steps', default_value)
             burn = options.get('burn', default_value)
 
+        # If we are running locally, find the environment's REFL1D
+        refl1d_path = settings.REFL1D_PATH
+        if settings.JOB_HANDLING_HOST == 'localhost':
+            refl1d_path = os.path.split(sys.executable)[0]
+
         script = model_template.substitute(REDUCED_FILE=data_file,
                                            Q_MIN=data_form.cleaned_data['q_min'],
                                            Q_MAX=data_form.cleaned_data['q_max'],
@@ -72,7 +78,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
                                            ENGINE=engine,
                                            ASCII_DATA=ascii_data,
                                            OUTPUT_DIR=output_dir,
-                                           REFL1D_PATH=settings.REFL1D_PATH,
+                                           REFL1D_PATH=refl1d_path,
                                            REFL1D_STEPS=steps,
                                            REFL1D_BURN=burn,
                                            SAMPLE_RANGES=sample_ranges)
@@ -99,6 +105,10 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
     with open(os.path.join(template_dir, 'job_templates', 'simultaneous_job.py.template'), 'r') as fd:
         template = fd.read()
         model_template = string.Template(template)
+        # If we are running locally, find the environment's REFL1D
+        refl1d_path = settings.REFL1D_PATH
+        if settings.JOB_HANDLING_HOST == 'localhost':
+            refl1d_path = os.path.split(sys.executable)[0]
         script += model_template.substitute(PROCESS_DATA=data_script,
                                             MODELS=model_script,
                                             WORK_DIR=work_dir,
@@ -106,7 +116,7 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
                                             EXPT_IDS = '[%s]' % ','.join(['\"%s\"' % d for d in data_ids]),
                                             ENGINE=options.get('engine', 'dream'),
                                             OUTPUT_DIR=output_dir,
-                                            REFL1D_PATH=settings.REFL1D_PATH,
+                                            REFL1D_PATH=refl1d_path,
                                             REFL1D_STEPS=options.get('steps', 1000),
                                             REFL1D_BURN=options.get('burn', 1000))
     return script

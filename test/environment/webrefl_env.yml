@@ -11,10 +11,11 @@ dependencies:
   - celery>=4.1.0
   - redis>=2.10.5
   - django-celery-results>=1.0.1
-  - django-remote-submission>=0.13.0
+  - django-remote-submission>=1.1.5
   - django-auth-ldap>=1.2.8
   - scipy>=0.18.1
   - requests==2.10.0
   - periodictable>=1.4.1
   - asgi_redis
   - refl1d==0.7.8
+  - matplotlib

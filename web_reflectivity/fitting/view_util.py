@@ -368,7 +368,7 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
 
     ascii_data = extract_ascii_from_div(html_data)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username)
-    output_dir = os.path.join(settings.REFL1D_JOB_DIR, user.username, fit_dir, base_name)
+    output_dir = os.path.join(work_dir, fit_dir, base_name)
     # Get fitter options
     options = {}
     if user is not None:
@@ -385,8 +385,10 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
 
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_PORT)[0]
 
-    python2_interpreter = Interpreter.objects.get_or_create(name='python2',
-                                                            path=settings.JOB_HANDLING_INTERPRETER)[0]
+    python_path = settings.JOB_HANDLING_INTERPRETER
+    if settings.JOB_HANDLING_HOST == 'localhost':
+        python_path = sys.executable
+    python2_interpreter = Interpreter.objects.get_or_create(name='python2', path=python_path)[0]
     server.interpreters.set([python2_interpreter,])
 
     job = Job.objects.get_or_create(title=data_form.cleaned_data['data_path'], #'Reflectivity fit %s' % time.time(),
@@ -401,7 +403,8 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         password='',
         username=user.username,
         log_policy=LogPolicy.LOG_TOTAL,
-        store_results=''
+        store_results='',
+        remote = not settings.JOB_HANDLING_HOST == 'localhost'
     )
 
     # Update the remote job info
@@ -458,8 +461,8 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     else:
         fit_dir = os.path.join('reflectivity_fits', 'simultaneous')
 
-    output_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username, fit_dir, base_name)
     work_dir = os.path.join(settings.REFL1D_JOB_DIR, request.user.username)
+    output_dir = os.path.join(work_dir, fit_dir, base_name)
     # Get fitter options
     obj, _ = FitterOptions.objects.get_or_create(user=request.user)
     options = obj.get_dict()
@@ -500,8 +503,10 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
     # Submit job
     server = Server.objects.get_or_create(title='Analysis', hostname=settings.JOB_HANDLING_HOST, port=settings.JOB_HANDLING_PORT)[0]
 
-    python2_interpreter = Interpreter.objects.get_or_create(name='python2',
-                                                            path=settings.JOB_HANDLING_INTERPRETER)[0]
+    python_path = settings.JOB_HANDLING_INTERPRETER
+    if settings.JOB_HANDLING_HOST == 'localhost':
+        python_path = sys.executable
+    python2_interpreter = Interpreter.objects.get_or_create(name='python2', path=python_path)[0]
     server.interpreters.set([python2_interpreter,])
 
     job = Job.objects.get_or_create(title=data_path,
@@ -516,7 +521,8 @@ def evaluate_simultaneous_fit(request, instrument, data_id, run_info):
         password='',
         username=request.user.username,
         log_policy=LogPolicy.LOG_TOTAL,
-        store_results=''
+        store_results='',
+        remote = not settings.JOB_HANDLING_HOST == 'localhost'
     )
 
     # Update the remote job info
