@@ -42,7 +42,7 @@ else:
 SECRET_KEY = 'y&#94bnh&4zw3s)0h2&f$ve87_1c_t*+hxfl=2v9429^75-t03'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.4/ref/settings/#allowed-hosts
@@ -216,7 +216,7 @@ GRAVATAR_URL = "https://www.gravatar.com/avatar/"
 REFL1D_PATH = '/usr/bin'
 REFL1D_BURN = 1000
 REFL1D_STEPS = 1000
-REFL1D_JOB_DIR = '/SNS/users'
+REFL1D_JOB_DIR = '/tmp' # Use users directory: '/SNS/users'
 JOB_HANDLING_HOST = 'localhost' # replace with compute host
 JOB_HANDLING_PORT = 22
 JOB_HANDLING_INTERPRETER = '/usr/bin/python'
