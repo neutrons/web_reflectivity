@@ -1,5 +1,5 @@
 [![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg)](https://travis-ci.org/neutrons/web_reflectivity)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.260178.svg)](https://doi.org/10.5281/zenodo.260178)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.596150.svg)](https://doi.org/10.5281/zenodo.596150)
 [![codecov](https://codecov.io/gh/neutrons/web_reflectivity/branch/master/graph/badge.svg)](https://codecov.io/gh/neutrons/web_reflectivity)
 [![readthedocs](https://readthedocs.org/projects/web-reflectivity/badge/?version=latest)](https://web-reflectivity.readthedocs.io/en/latest/?badge=latest)
 
