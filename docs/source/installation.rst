@@ -32,6 +32,14 @@ The application supports both users local to the application or users authentica
 To use LDAP, the authentication settings should be entered in ``web_reflectivity/web_reflectivity/settings.py``.
 For that purpose, ``openssl`` should be installed.
 
+If you do not want to use LDAP and want to avoid unnecessary error messages, remove ``django_auth_ldap.backend.LDAPBackend``
+from the list of authentication backends::
+
+    AUTHENTICATION_BACKENDS = (
+                               'django_auth_ldap.backend.LDAPBackend',
+                               'django.contrib.auth.backends.ModelBackend',
+                               )
+
 Once a user is logged in, the application will submit jobs to your compute resources on the user's behalf, through celery.
 An ssh key should be generated and placed in the apache user's .ssh directory. It should also be copied in the celery user's .ssh directory.
 
