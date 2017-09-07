@@ -1,5 +1,5 @@
 ---
-title: 'Web Interface for reflectivity fitting'
+title: 'Web interface for reflectivity fitting'
 tags:
   - neutron reflectivity analysis
   - data processing
