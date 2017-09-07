@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/neutrons/web_reflectivity/branch/master/graph/badge.svg)](https://codecov.io/gh/neutrons/web_reflectivity)
 [![readthedocs](https://readthedocs.org/projects/web-reflectivity/badge/?version=latest)](https://web-reflectivity.readthedocs.io/en/latest/?badge=latest)
 
-# ORNL Web Reflectivity Interface
+# Web Reflectivity Interface for Reflectivity Fitting
 This application provides a user interface to generate a [REFL1D](https://github.com/reflectometry/refl1d) script and run it on a remote node.
 
 Documentation is available at [https://web-reflectivity.readthedocs.io/](https://web-reflectivity.readthedocs.io/).
