@@ -46,3 +46,27 @@ REFL1D [@Kienzle] is a scripting Python package that also provides minimization 
 The application developed here generates REFL1D scripts, submits them for execution, and manages the results.
 
 # References
+
+# Notice of Copyright
+This manuscript has been authored by UT-Battelle, LLC under Contract 
+No. DE-AC05-00OR22725 with the U.S. Department of Energy. The United 
+States Government retains and the publisher, by accepting the article 
+for publication, acknowledges that the United States Government retains 
+a non-exclusive, paid-up, irrevocable, worldwide license to publish 
+or reproduce the published form of this manuscript, or allow others 
+to do so, for United States Government purposes. The Department of Energy 
+will provide public access to these results of federally sponsored 
+research in accordance with the DOE Public Access Plan 
+(http://energy.gov/downloads/doe-public-access-plan).
+
+# Acknowledgements
+This research was sponsored by the Division of Scientific User Facilities,
+Office of Basic Energy Sciences, US Department of Energy, under Contract no. DE-AC05-
+00OR22725 with UT-Battelle, LLC. A portion of this research used data from the Liquids
+Reflectometer at the Spallation Neutron Source. The REFL1D package used in this work was
+originally developed as part of the DANSE Project under NSF award DMR-0520547. Special thanks
+to Jim Browning and John Ankner for immediately starting to use the interface and giving us
+feedback. MD would like to thank collaborators Jim Browning, Josh Kim, Katie Browning and Gabe
+Veith for allowing us to use the data shown in this article. Finally, MD would also like to thank Paul
+Kienzle for developing and maintaining REFL1D, and for all the discussions on the topic of software
+and minimization.
