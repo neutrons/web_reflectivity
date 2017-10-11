@@ -108,8 +108,7 @@ class FitProblem(models.Model):
         """
             Delete method to clean up related objects
         """
-        logging.error(self.layers.all())
-        logging.error(self.layers.all().delete())
+        self.layers.all().delete()
         self.reflectivity_model.delete()
         if self.remote_job is not None:
             self.remote_job.delete()

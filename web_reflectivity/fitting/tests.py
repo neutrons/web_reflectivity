@@ -154,7 +154,9 @@ class FitSubmitTestCase(TestCase):
                      u'back_roughness_max': [u'5'], u'form-0-sld_min': [u'1.0'], u'form-MAX_NUM_FORMS': [u'1000'],
                      u'front_sld': [u'0'], u'form-0-sld_is_fixed': [u'on'], u'form-0-thickness_min': [u'10.0'],
                      u'form-0-sld_max': [u'4.0'], u'back_roughness': [u'5.0'], u'form-0-roughness_max': [u'10.0'],
-                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0']}
+                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0'],
+                     u'form-0-i_sld_min': [u'0.0'], u'form-0-i_sld_max': [u'2.0'], u'form-0-i_sld': [u'1.0'],
+                     u'form-0-i_sld_is_fixed': [u'on']}
 
         # Submit a model, without fitting or evaluating
         response = self.client.post('/fit/john/1/', form_data)
@@ -186,7 +188,9 @@ class SimultaneousViewsTestCase(TestCase):
                      u'back_roughness_max': [u'5'], u'form-0-sld_min': [u'1.0'], u'form-MAX_NUM_FORMS': [u'1000'],
                      u'front_sld': [u'0'], u'form-0-sld_is_fixed': [u'on'], u'form-0-thickness_min': [u'10.0'],
                      u'form-0-sld_max': [u'4.0'], u'back_roughness': [u'5.0'], u'form-0-roughness_max': [u'10.0'],
-                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0']}
+                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0'],
+                     u'form-0-i_sld_min': [u'0.0'], u'form-0-i_sld_max': [u'2.0'], u'form-0-i_sld': [u'1.0'],
+                     u'form-0-i_sld_is_fixed': [u'on']}
 
         # Submit a model, without fitting or evaluating
         self.client.post('/fit/john/1/', form_data)
@@ -256,7 +260,9 @@ class FitProblemViewsTestCase(TestCase):
                      u'back_roughness_max': [u'5'], u'form-0-sld_min': [u'1.0'], u'form-MAX_NUM_FORMS': [u'1000'],
                      u'front_sld': [u'0'], u'form-0-sld_is_fixed': [u'on'], u'form-0-thickness_min': [u'10.0'],
                      u'form-0-sld_max': [u'4.0'], u'back_roughness': [u'5.0'], u'form-0-roughness_max': [u'10.0'],
-                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0']}
+                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0'],
+                     u'form-0-i_sld_min': [u'0.0'], u'form-0-i_sld_max': [u'2.0'], u'form-0-i_sld': [u'1.0'],
+                     u'form-0-i_sld_is_fixed': [u'on']}
 
         # Submit a model, without fitting or evaluating
         self.client.post('/fit/john/1/', form_data)
@@ -471,7 +477,9 @@ class ParsingTestCase(TestCase):
                      u'back_roughness_max': [u'5'], u'form-0-sld_min': [u'1.0'], u'form-MAX_NUM_FORMS': [u'1000'],
                      u'front_sld': [u'0'], u'form-0-sld_is_fixed': [u'on'], u'form-0-thickness_min': [u'10.0'],
                      u'form-0-sld_max': [u'4.0'], u'back_roughness': [u'5.0'], u'form-0-roughness_max': [u'10.0'],
-                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0']}
+                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0'],
+                     u'form-0-i_sld_min': [u'0.0'], u'form-0-i_sld_max': [u'2.0'], u'form-0-i_sld': [u'1.0'],
+                     u'form-0-i_sld_is_fixed': [u'on']}
 
         # Submit a model, without fitting or evaluating
         self.client.post('/fit/john/1/', form_data)
