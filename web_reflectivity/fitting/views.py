@@ -501,6 +501,8 @@ class ConstraintView(View):
                         variable_names.append((v_name, v_name))
                         v_name = "%s_%s" % (layer['name'], 'sld')
                         variable_names.append((v_name, v_name))
+                        v_name = "%s_%s" % (layer['name'], 'i_sld')
+                        variable_names.append((v_name, v_name))
                         v_name = "%s_%s" % (layer['name'], 'roughness')
                         variable_names.append((v_name, v_name))
         return variable_names

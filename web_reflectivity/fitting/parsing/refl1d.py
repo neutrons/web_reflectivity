@@ -43,6 +43,12 @@ def update_with_results(fit_problem, par_name, value, error):
                 layer.thickness = value
                 layer.thickness_error = error
                 layer.save()
+    elif toks[1] == 'irho':
+        for layer in fit_problem.layers.all():
+            if toks[0] == layer.name:
+                layer.i_sld = value
+                layer.i_sld_error = error
+                layer.save()
     elif toks[1] == 'interface':
         if toks[0] == fit_problem.reflectivity_model.back_name:
             fit_problem.reflectivity_model.back_roughness = value

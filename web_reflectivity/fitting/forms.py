@@ -39,6 +39,7 @@ class ConstraintForm(forms.Form):
     """
     PARAMETER_CHOICES = (("thickness", "thickness"),
                          ("sld", "sld"),
+                         ("i_sld", "i_sld"),
                          ("roughness", "roughness"),
                          )
     definition = forms.CharField(widget=forms.Textarea)
@@ -173,9 +174,10 @@ class LayerModelForm(ModelForm):
     class Meta: #pylint: disable=old-style-class, no-init, too-few-public-methods
         """ Define how we use the model to create a form """
         model = ReflectivityLayer
-        fields = ['name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
+        fields = ['name', 'thickness', 'sld', 'i_sld', 'roughness', 'remove', 'layer_number',
                   'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',
                   'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
+                  'i_sld_is_fixed', 'i_sld_min', 'i_sld_max', 'i_sld_error',
                   'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error',
                   ]
     def clean_name(self):
@@ -197,7 +199,7 @@ class LayerForm(LayerModelForm):
             the fitter will complain.
         """
         return not self.cleaned_data['thickness_is_fixed'] or not self.cleaned_data['sld_is_fixed'] or \
-            not self.cleaned_data['roughness_is_fixed']
+            not self.cleaned_data['roughness_is_fixed'] or not self.cleaned_data['i_sld_is_fixed']
 
     def info_complete(self):
         """ Return True of this layer should be used """
@@ -212,9 +214,10 @@ class LayerForm(LayerModelForm):
             return ''
         layer_name = self.cleaned_data['name']
         layer_name = layer_name.replace(' ', '_')
-        return "%s = SLD(name='%s', rho=%s, irho=0.0)" % (layer_name,
-                                                          layer_name,
-                                                          self.cleaned_data['sld'])
+        return "%s = SLD(name='%s', rho=%s, irho=%s)" % (layer_name,
+                                                         layer_name,
+                                                         self.cleaned_data['sld'],
+                                                         self.cleaned_data['i_sld'])
 
     def get_layer(self):
         """
@@ -246,8 +249,13 @@ class LayerForm(LayerModelForm):
 
         if self.cleaned_data['sld_is_fixed'] is False:
             ranges += "%s['%s'].material.rho.range(%s, %s)\n" % (sample_name, layer_name,
-                                                              self.cleaned_data['sld_min'],
-                                                              self.cleaned_data['sld_max'])
+                                                                 self.cleaned_data['sld_min'],
+                                                                 self.cleaned_data['sld_max'])
+
+        if self.cleaned_data['i_sld_is_fixed'] is False:
+            ranges += "%s['%s'].material.irho.range(%s, %s)\n" % (sample_name, layer_name,
+                                                                  self.cleaned_data['i_sld_min'],
+                                                                  self.cleaned_data['i_sld_max'])
 
         if self.cleaned_data['roughness_is_fixed'] is False:
             ranges += "%s['%s'].interface.range(%s, %s)\n" % (sample_name, layer_name,
@@ -258,7 +266,8 @@ class LayerForm(LayerModelForm):
 def layer_modelformset(extra=0):
     """ Form set for film layers """
     return forms.modelformset_factory(ReflectivityLayer, form=LayerForm, extra=extra,
-                                      fields=('name', 'thickness', 'sld', 'roughness', 'remove', 'layer_number',
+                                      fields=('name', 'thickness', 'sld', 'i_sld', 'roughness', 'remove', 'layer_number',
                                               'thickness_is_fixed', 'thickness_min', 'thickness_max', 'thickness_error',
                                               'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
+                                              'i_sld_is_fixed', 'i_sld_min', 'i_sld_max', 'i_sld_error',
                                               'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error'))

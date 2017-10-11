@@ -99,6 +99,7 @@ def translate_model(refl_model, layers, output_params=None):
                 layer_dict = dict(name=name, layer_number=len(layers)-i-1)
                 layer_dict = update_parameter('thickness', name, 'thickness', layers[i], output_params, **layer_dict)
                 layer_dict = update_parameter('sld', name, 'rho', layers[i], output_params, **layer_dict)
+                layer_dict = update_parameter('i_sld', name, 'irho', layers[i], output_params, **layer_dict)
                 layer_dict = update_parameter('roughness', name, 'interface', layers[i], output_params, **layer_dict)
                 clean_layers.insert(0, layer_dict)
         except:

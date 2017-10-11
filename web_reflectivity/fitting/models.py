@@ -65,6 +65,7 @@ class ReflectivityLayer(models.Model):
     name = models.CharField(max_length=64, blank=True, default='material')
     thickness = models.FloatField(default=50.0)
     sld = models.FloatField(default=2.0)
+    i_sld = models.FloatField(default=0.0)
     roughness = models.FloatField(default=1.0)
     remove = models.BooleanField(blank=True, default=False)
     layer_number = models.IntegerField(default=1000)
@@ -79,6 +80,11 @@ class ReflectivityLayer(models.Model):
     sld_min = models.FloatField(blank=True, default=1.0)
     sld_max = models.FloatField(blank=True, default=4.0)
     sld_error = models.FloatField(null=True, blank=True, default=0)
+
+    i_sld_is_fixed = models.BooleanField(blank=True, default=True)
+    i_sld_min = models.FloatField(blank=True, default=0.0)
+    i_sld_max = models.FloatField(blank=True, default=1.0)
+    i_sld_error = models.FloatField(null=True, blank=True, default=0)
 
     roughness_is_fixed = models.BooleanField(blank=True, default=True)
     roughness_min = models.FloatField(blank=True, default=1.0)
@@ -191,6 +197,7 @@ class Constraint(models.Model):
     """
     LAYER_PARAMETER = {'thickness': 'thickness',
                        'sld': 'material.rho',
+                       'i_sld': 'material.irho',
                        'roughness': 'interface'}
 
     user = models.ForeignKey(User, models.CASCADE)

@@ -4,7 +4,7 @@
 {% block header %}
 <script>
   function remove_entry(remove_id, layer_number_id, name_id, thickness_id, sld_id, roughness_id,
-                        thickness_fixed_id, sld_fixed_id, roughness_fixed_id) {
+                        thickness_fixed_id, sld_fixed_id, roughness_fixed_id, i_sld_id, i_sld_fixed_id) {
       $(remove_id).prop('checked', !$(remove_id).prop('checked'));
       $(remove_id).hide();
       $(remove_id+'_icon').hide();
@@ -12,12 +12,15 @@
       $(name_id).hide();
       $(thickness_id).hide();
       $(sld_id).hide();
+      $(i_sld_id).hide();
       $(roughness_id).hide();
       $(thickness_fixed_id).hide();
       $(sld_fixed_id).hide();
+      $(i_sld_fixed_id).hide();
       $(roughness_fixed_id).hide();
       $(thickness_fixed_id+'_range').hide();
       $(sld_fixed_id+'_range').hide();
+      $(i_sld_fixed_id+'_range').hide();
       $(roughness_fixed_id+'_range').hide();
   }
 
@@ -114,7 +117,7 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
   <table class="property_table">
     <thead>
       <tr><th>Layer number <span title="The layer number indicates the order of the layers. The layers will be re-ordered according to their layer number upon submission." class="ui-icon ui-icon-info"> </span></th><th>Name</th> <th>Thickness (&#8491;)</th>
-      <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th>
+      <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>iSLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th>
       {% if extra > 0 %}
       <th class='icon_input'><span title='You already have an added layer. Click Enter or Evaluate to confirm this layer before adding another one.' class="ui-icon ui-icon-circle-plus"></span></th>
       {% else %}
@@ -127,7 +130,7 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
         <td>Front</td>
         <td {% if data_form.front_name.errors %}class='error_row' title='{{ data_form.front_name.errors|first }}'{% endif %}>{{ data_form.front_name }}</td><td>-</td>
         <td {% if data_form.front_sld.errors %}class='error_row' title='{{ data_form.front_sld.errors|first }}'{% endif %}>{{ data_form.front_sld }}<span onclick="set_fixed('#{{ data_form.front_sld_is_fixed.id_for_label }}')">{{ data_form.front_sld_is_fixed }}</span></td>
-        <td>-</td><td></td><td></td>
+        <td>-</td><td>-</td><td></td><td></td>
       </tr>
     {% for form in layers_form %}
       <tr class="short_input">
@@ -136,6 +139,7 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
         <td {% if form.name.errors %}class='error_row' title='{{ form.name.errors|first }}'{% endif %}>{{ form.name }}</td>
         <td {% if form.thickness.errors %}class='error_row' title='{{ form.thickness.errors|first }}'{% endif %}>{{ form.thickness }}<span onclick="set_fixed('#{{ form.thickness_is_fixed.id_for_label }}')">{{ form.thickness_is_fixed }}</span></td>
         <td {% if form.sld.errors %}class='error_row' title='{{ form.sld.errors|first }}'{% endif %}>{{ form.sld }}<span onclick="set_fixed('#{{ form.sld_is_fixed.id_for_label }}')">{{ form.sld_is_fixed }}</span></td>
+        <td {% if form.i_sld.errors %}class='error_row' title='{{ form.i_sld.errors|first }}'{% endif %}>{{ form.i_sld }}<span onclick="set_fixed('#{{ form.i_sld_is_fixed.id_for_label }}')">{{ form.i_sld_is_fixed }}</span></td>
         <td {% if form.roughness.errors %}class='error_row' title='{{ form.roughness.errors|first }}'{% endif %}>{{ form.roughness }}<span onclick="set_fixed('#{{ form.roughness_is_fixed.id_for_label }}')">{{ form.roughness_is_fixed }}</span></td>
         <td class='icon_input'> <span id='{{ form.remove.id_for_label }}_icon' title='Click to remove this entry' class="ui-icon ui-icon-trash" onclick="remove_entry('#{{ form.remove.id_for_label }}', '#{{ form.layer_number.id_for_label }}', '#{{ form.name.id_for_label }}', '#{{ form.thickness.id_for_label }}', '#{{ form.sld.id_for_label }}', '#{{ form.roughness.id_for_label }}', '#{{ form.thickness_is_fixed.id_for_label }}', '#{{ form.sld_is_fixed.id_for_label }}', '#{{ form.roughness_is_fixed.id_for_label }}')"></span></td>
       </tr>{% endfor %}
@@ -143,6 +147,7 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
         <td>Back</td>
         <td {% if data_form.back_name.errors %}class='error_row' title='{{ data_form.back_name.errors|first }}'{% endif %}>{{ data_form.back_name }}</td><td>-</td>
         <td {% if data_form.back_sld.errors %}class='error_row' title='{{ data_form.back_sld.errors|first }}'{% endif %}>{{ data_form.back_sld }}<span onclick="set_fixed('#{{ data_form.back_sld_is_fixed.id_for_label }}')">{{ data_form.back_sld_is_fixed }}</span></td>
+        <td>-</td>
         <td {% if data_form.back_roughness.errors %}class='error_row' title='{{ data_form.back_roughness.errors|first }}'{% endif %}>{{ data_form.back_roughness }}<span onclick="set_fixed('#{{ data_form.back_roughness_is_fixed.id_for_label }}')">{{ data_form.back_roughness_is_fixed }}</span></td>
         <td></td><td></td>
       </tr>
@@ -203,6 +208,11 @@ Checked parameters will be kept fixed during the fitting procedure. You can also
         <td {% if form.sld_min.errors %}class='error_row' title='{{ form.sld_min.errors|first }}'{% endif %}>{{ form.sld_min }}</td>
         <td {% if form.sld_max.errors %}class='error_row' title='{{ form.sld_max.errors|first }}'{% endif %}>{{ form.sld_max }}</td>
       </tr>
+      <tr id='{{ form.i_sld_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} iSLD</td>
+        <td>{{ form.i_sld.value }}{%if form.i_sld_error.value %} &#177; {{ form.i_sld_error.value }}{% endif %}</td>
+        <td {% if form.i_sld_min.errors %}class='error_row' title='{{ form.i_sld_min.errors|first }}'{% endif %}>{{ form.i_sld_min }}</td>
+        <td {% if form.i_sld_max.errors %}class='error_row' title='{{ form.i_sld_max.errors|first }}'{% endif %}>{{ form.i_sld_max }}</td>
+      </tr>
       <tr id='{{ form.roughness_is_fixed.id_for_label}}_range'><td>{{ form.name.value }} roughness</td>
         <td>{{ form.roughness.value }}{%if form.roughness_error.value %} &#177; {{ form.roughness_error.value }}{% endif %}</td>
         <td {% if form.roughness_min.errors %}class='error_row' title='{{ form.roughness_min.errors|first }}'{% endif %}>{{ form.roughness_min }}</td>
@@ -246,6 +256,7 @@ set_fixed('#{{ data_form.back_roughness_is_fixed.id_for_label }}');
 compute_size('#{{ form.name.id_for_label }}');
 set_fixed('#{{ form.thickness_is_fixed.id_for_label }}');
 set_fixed('#{{ form.sld_is_fixed.id_for_label }}');
+set_fixed('#{{ form.i_sld_is_fixed.id_for_label }}');
 set_fixed('#{{ form.roughness_is_fixed.id_for_label }}');{% endfor %}
 </script>
 

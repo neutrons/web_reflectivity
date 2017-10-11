@@ -144,13 +144,13 @@ def get_model_as_csv(request, instrument, data_id):
         ascii_data += "# SCALE\n"
         ascii_data += "scale = %g\n" % model_dict['scale']
         ascii_data += "background = %g\n\n" % model_dict['background']
-        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'ROUGH')
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'iSLD', 'ROUGH')
         ascii_data += "  %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
                                                        0, model_dict['front_sld'], 0)
         for layer in layer_dicts:
             ascii_data += "  %8s %24s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
-                                                            layer['thickness'], layer['sld'],
-                                                            layer['roughness'])
+                                                           layer['thickness'], layer['sld'],
+                                                           layer['i_sld'], layer['roughness'])
 
         ascii_data += "  %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
                                                        0, model_dict['back_sld'],
