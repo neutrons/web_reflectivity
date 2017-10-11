@@ -198,6 +198,7 @@ class Constraint(models.Model):
                        'sld': 'material.rho',
                        'i_sld': 'material.irho',
                        'roughness': 'interface'}
+    ORDERED_NAMES = ['i_sld', 'sld', 'thickness', 'roughness']
 
     user = models.ForeignKey(User, models.CASCADE)
     fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
@@ -228,18 +229,19 @@ class Constraint(models.Model):
             Apply the constraint to a fit problem
         """
         # Parse the variables and get their values
+        # See comment in get_ranges()
         parameters = {}
         variable_list = self.variables.split(',')
         for variable in variable_list:
             clean_variable = variable.strip()
-            toks = clean_variable.split('_')
-            if len(toks) == 2:
-                layer_name = toks[0].strip()
-                layer_parameter = toks[1].strip()
-                layer_objects = fit_problem.layers.filter(name=layer_name)
-                if len(layer_objects) > 0:
-                    if hasattr(layer_objects[0], layer_parameter):
-                        parameters[clean_variable] = getattr(layer_objects[0], layer_parameter)
+            for layer_parameter in self.ORDERED_NAMES:
+                if layer_parameter in clean_variable:
+                    layer_name = clean_variable.replace('_%s' % layer_parameter, '').strip()
+                    layer_objects = fit_problem.layers.filter(name=layer_name)
+                    if len(layer_objects) > 0:
+                        if hasattr(layer_objects[0], layer_parameter):
+                            parameters[clean_variable] = getattr(layer_objects[0], layer_parameter)
+                    break
         _, constraint_function = self.get_constraint_function(alternate_name='constraint_func')
 
         try:
@@ -261,13 +263,19 @@ class Constraint(models.Model):
         function_name, constraint = self.get_constraint_function()
 
         # Example: sample['aSi'].material.rho = get_sld(sample['aSi'].thickness)
+        # Go over the possible parameters and extract the layer name.
+        # We must be careful because the layer name may include underscores.
+        # We must also check for i_sld first because 'sld' is a substring of 'i_sld'.
         expanded_vars = []
         for item in self.variables.split(','):
-            [layer_name, var_name] = item.split('_')
-            expanded_vars.append("%s['%s'].%s" % (sample_name,
-                                                  layer_name.strip(),
-                                                  self.LAYER_PARAMETER.get(var_name.strip(),
-                                                                           var_name.strip())))
+            for var_name in self.ORDERED_NAMES:
+                if var_name in item:
+                    layer_name = item.replace('_%s' % var_name, '').strip()
+                    expanded_vars.append("%s['%s'].%s" % (sample_name,
+                                                          layer_name.strip(),
+                                                          self.LAYER_PARAMETER.get(var_name.strip(),
+                                                                                   var_name.strip())))
+                    break
         constraint += "\n%s['%s'].%s = %s(%s)\n" % (sample_name, self.layer.name,
                                                     layer_parameter,
                                                     function_name,
