@@ -29,9 +29,9 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
     fit_exists = len(simul_list) > 0
     can_update = False
     if not setup_request and len(simul_list) > 0:
-        remote_job = simul_list[0].remote_job
-        if remote_job is not None:
-            try:
+        try:
+            remote_job = simul_list[0].remote_job
+            if remote_job is not None:
                 can_update = remote_job.status not in [remote_job.STATUS.success,
                                                        remote_job.STATUS.failure]
                 error_list.append("Job status: %s" % remote_job.status)
@@ -44,9 +44,9 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
                         error_list.append("The fit results appear to be incomplete.")
                 else:
                     error_list.append("No results found")
-            except:
-                logging.error("Problem retrieving results: %s", sys.exc_value)
-                error_list.append("Problem retrieving results")
+        except:
+            logging.error("Problem retrieving results: %s", sys.exc_value)
+            error_list.append("Problem retrieving results")
 
     # If we could not find results, use the individual fits as a starting point
     if len(model_list) == 0:

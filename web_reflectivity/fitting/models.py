@@ -475,7 +475,7 @@ class SimultaneousFit(models.Model):
     """
     user = models.ForeignKey(User, models.CASCADE)
     fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
-    remote_job = models.ForeignKey(Job, models.SET_NULL, null=True)
+    remote_job = models.ForeignKey(Job, models.SET_NULL, blank=True, null=True, default=None)
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
     def __unicode__(self):

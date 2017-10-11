@@ -59,14 +59,14 @@ The following are the results of the simultaneous fit.
 Scale = {{ data_form.scale|safe }}, Background = {{ data_form.background|safe }}
 <table>
   <thead>
-    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
+    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th>iSLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th>Roughness (&#8491;)</th></tr>
   </thead>
   <tbody>
     <tr class="short_input">
       <td>Front</td>
       <td>{{ data_form.front_name }}</td><td>-</td>
       <td id="container_id_front_sld_{{ data_form.id }}"><span id="id_front_sld_{{ data_form.id }}" revert="{{ data_form.front_sld }}" tiedparam="{{data_form.data_path}} {{data_form.front_name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.front_sld|safe }}</span></td>
-      <td>-</td>
+      <td>-</td><td>-</td>
     </tr>
   {% for form in layers_form %}
     <tr class="short_input">
@@ -74,12 +74,13 @@ Scale = {{ data_form.scale|safe }}, Background = {{ data_form.background|safe }}
       <td>{{ form.name }}</td>
       <td id="container_id_thickness_{{ form.id }}"><span id="id_thickness_{{ form.id }}" revert="{{ form.thickness }}" tiedparam="{{data_form.data_path}} {{form.name}} thickness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.thickness|safe }}</span></td>
       <td id="container_id_sld_{{ form.id }}"><span id="id_sld_{{ form.id }}" revert="{{ form.sld }}" tiedparam="{{data_form.data_path}} {{form.name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.sld|safe }}</span></td>
+      <td id="container_id_i_sld_{{ form.id }}"><span id="id_i_sld_{{ form.id }}" revert="{{ form.i_sld }}" tiedparam="{{data_form.data_path}} {{form.name}} i_sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.i_sld|safe }}</span></td>
       <td id="container_id_roughness_{{ form.id }}"><span id="id_roughness_{{ form.id }}" revert="{{ form.roughness }}" tiedparam="{{data_form.data_path}} {{form.name}} roughness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ form.roughness|safe }}</span></td>
     </tr>{% endfor %}
     <tr class="short_input">
       <td>Back</td>
       <td>{{ data_form.back_name }}</td><td>-</td>
-      <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld|safe }}</span></td>
+      <td id="container_id_back_sld_{{ data_form.id }}"><span id="id_back_sld_{{ data_form.id }}" revert="{{ data_form.back_sld }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} sld" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_sld|safe }}</span></td><td>-</td>
       <td id="container_id_back_roughness_{{ data_form.id }}"><span id="id_back_roughness_{{ data_form.id }}" revert="{{ data_form.back_roughness }}" tiedparam="{{data_form.data_path}} {{data_form.back_name}} roughness" draggable='{{ draggable }}' ondragstart='drag(event)' ondrop="drop(event)" ondragover='allowDrop(event)'>{{ data_form.back_roughness|safe }}</span></td>
     </tr>
   </tbody>
