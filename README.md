@@ -87,5 +87,5 @@ sudo /sbin/service httpd restart
 Please cite the following when using this software:
 
 - P. A. Kienzle, K. V. O'Donovan, J. F. Ankner, N. F. Berk & C. F. Majkrzak, REFL1D.
-- M. Doucet, R. M. Ferraz Leal, T. C. Hobson, ORNL Reflectivity Fitting Interface (2017). DOI: 10.5281/zenodo.260178
+- M. Doucet, R. M. Ferraz Leal, T. C. Hobson, Web interface for reflectivity fitting (2017) arXiv:1710.06767 [physics.data-an].
 
