@@ -82,6 +82,8 @@ sudo /sbin/service celeryd start
 sudo /sbin/service httpd restart
 ```
 
+## To contribute or report a problem
+To report a problem, please create an issue using the "Issues" tab above. If you would like to suggest changes, please either create an issue or a pull request.
 
 ## Citing this software
 Please cite the following when using this software:
