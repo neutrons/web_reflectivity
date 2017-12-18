@@ -4,7 +4,7 @@ an environment where we added the ``refl1d`` dependency for local computations, 
 
         conda env create -f webrefl_env.yml
 
-        source activate webrefltest
+        source activate webrefl
 
 The application depends on [redis](https://redis.io/), which you may have to install separately.
 
