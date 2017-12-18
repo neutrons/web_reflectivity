@@ -49,7 +49,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 AUTHENTICATION_BACKENDS = (
-                           'django_auth_ldap.backend.LDAPBackend',
+#                           'django_auth_ldap.backend.LDAPBackend',
                            'django.contrib.auth.backends.ModelBackend',
                            )
 
@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_auth_ldap',
+#    'django_auth_ldap',
     'django_remote_submission',
     'django_celery_results',
     'fitting',

@@ -1,10 +1,10 @@
 name: webrefl
 dependencies:
 - python==2.7.11
-- django>=1.9.5
 - numpy>=1.11.0
 - sqlite>=3.13.0
 - pip:
+  - django==1.11.8
   - cython>=0.25.1
   - pandas>=0.19.1
   - plotly>=1.11.0
@@ -12,7 +12,6 @@ dependencies:
   - redis>=2.10.5
   - django-celery-results>=1.0.1
   - django-remote-submission>=1.1.6
-  - django-auth-ldap>=1.2.8
   - scipy>=0.18.1
   - requests==2.10.0
   - periodictable>=1.4.1
