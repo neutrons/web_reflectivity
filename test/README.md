@@ -2,6 +2,8 @@
 You can easily deploy and test this application using Conda environments. The ``webrefl_env.yml`` file describes
 an environment where we added the ``refl1d`` dependency for local computations, and where we use ``sqlite`` as our database.
 
+        cd test/environment
+        
         conda env create -f webrefl_env.yml
 
         source activate webrefl
