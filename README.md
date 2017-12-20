@@ -20,20 +20,21 @@ then gathers the output data.
 
 <img src="docs/media/app_design_400ppi.png" width="600">
 
-## Prerequisite
-Requirements for the application can be found in `requirements.txt`, which can be installed using 
-
-```bash
-make deps
-```
-
-You will also need to install [redis-server](https://redis.io/).
-
 ## Test installation
 The information below describes how one would deploy the application in production. For a simpler test deployment,
-see the instructions to [run a test server](test/README.md).
+see the instructions to [run a test server](test/README.md). Those instructions will walk you through a basic 
+installation process and will give you a list of dependencies you'll need.
 
-## Configuration and installation
+## Production configuration and installation
+
+### Production dependencies
+A basic set of requirements for the application can be found in `requirements.txt`.
+This is only recommended if you are installing more than a test environment and will be deploying your
+own database and adjusting your configuration yourself. It will not be sufficient for testing (see the test
+installation section above). Depending on which database and authentication solution you choose, your
+dependencies may change.
+
+You will also need to install [redis-server](https://redis.io/).
 
 ### Database installation
 The Django application will need a database. It was developed using PostgreSQL, but can be used with any database.
