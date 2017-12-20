@@ -4,7 +4,7 @@ plotly
 celery[redis]
 django==1.11.8
 django-celery-results
-psycopg2
+#psycopg2
 django_remote_submission
 scipy
 requests
