@@ -1,3 +1,9 @@
+# Testing
+The application code includes tests that exercise the majority of the functionality, including error scenarios.
+For example, the tests found in ``web_reflectivity/fitting/tests.py`` use the django framework to create a test server that
+includes an empty database to execute the tests with. Most of the functionality of the application can be tested
+without actually executing the Refl1D jobs.
+
 # Installation
 You can easily deploy and test this application using Conda environments. The ``webrefl_env.yml`` file describes
 an environment where we added the ``refl1d`` dependency for local computations, and where we use ``sqlite`` as our database.
@@ -26,7 +32,7 @@ Create a test user:
         cd /var/www/web_reflectivity/app; python manage.py createsuperuser --username testuser
 
 # [optional] Using Refl1D
-The application creates and submits Refl1D jobs. In a production environment, those jobs are not run
+The application creates and submits Refl1D jobs. In a production environment, those jobs are not running
 locally and Refl1D is not installed on the web server. It is possible to test the functionality of most of
 the application without actually executing the jobs. To execute the jobs locally, you have to set the following
 variables in the Django settings.py file located in ``web_reflectivity/web_reflectivity/settings.py``:
