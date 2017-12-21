@@ -1,4 +1,4 @@
-[![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg)](https://travis-ci.org/neutrons/web_reflectivity)
+[![TRAVISCI](https://travis-ci.org/neutrons/web_reflectivity.svg?branch=master)](https://travis-ci.org/neutrons/web_reflectivity)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.596150.svg)](https://doi.org/10.5281/zenodo.596150)
 [![codecov](https://codecov.io/gh/neutrons/web_reflectivity/branch/master/graph/badge.svg)](https://codecov.io/gh/neutrons/web_reflectivity)
 [![readthedocs](https://readthedocs.org/projects/web-reflectivity/badge/?version=latest)](https://web-reflectivity.readthedocs.io/en/latest/?badge=latest)
@@ -20,20 +20,21 @@ then gathers the output data.
 
 <img src="docs/media/app_design_400ppi.png" width="600">
 
-## Prerequisite
-Requirements for the application can be found in `requirements.txt`, which can be installed using 
-
-```bash
-make deps
-```
-
-You will also need to install [redis-server](https://redis.io/).
-
 ## Test installation
 The information below describes how one would deploy the application in production. For a simpler test deployment,
-see the instructions to [run a test server](test/README.md).
+see the instructions to [run a test server](test/README.md). Those instructions will walk you through a basic 
+installation process and will give you a list of dependencies you'll need.
 
-## Configuration and installation
+## Production configuration and installation
+
+### Production dependencies
+A basic set of requirements for the application can be found in `requirements.txt`.
+This is only recommended if you are installing more than a test environment and will be deploying your
+own database and adjusting your configuration yourself. It will not be sufficient for testing (see the test
+installation section above). Depending on which database and authentication solution you choose, your
+dependencies may change.
+
+You will also need to install [redis-server](https://redis.io/).
 
 ### Database installation
 The Django application will need a database. It was developed using PostgreSQL, but can be used with any database.
@@ -82,10 +83,12 @@ sudo /sbin/service celeryd start
 sudo /sbin/service httpd restart
 ```
 
+## To contribute or report a problem
+To report a problem, please create an issue using the "Issues" tab above. If you would like to suggest changes, please either create an issue or a pull request.
 
 ## Citing this software
 Please cite the following when using this software:
 
 - P. A. Kienzle, K. V. O'Donovan, J. F. Ankner, N. F. Berk & C. F. Majkrzak, REFL1D.
-- M. Doucet, R. M. Ferraz Leal, T. C. Hobson, ORNL Reflectivity Fitting Interface (2017). DOI: 10.5281/zenodo.260178
+- M. Doucet, R. M. Ferraz Leal, T. C. Hobson, Web interface for reflectivity fitting (2017) arXiv:1710.06767 [physics.data-an].
 

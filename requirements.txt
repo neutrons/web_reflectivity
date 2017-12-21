@@ -2,11 +2,10 @@ cython
 pandas
 plotly
 celery[redis]
-django
+django==1.11.8
 django-celery-results
-psycopg2
+#psycopg2
 django_remote_submission
-django_auth_ldap
 scipy
 requests
 periodictable
