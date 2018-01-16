@@ -2,7 +2,7 @@ Test installation
 =================
 
 The information below describes how one would deploy the application in production. For a simpler test deployment,
-see the instructions to [run a test server](test/README.md). Those instructions will walk you through a basic 
+see the instructions to :doc:`run a test server </testing>`. Those instructions will walk you through a basic 
 installation process and will give you a list of dependencies you'll need.
 
 Production configuration and installation
