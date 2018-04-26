@@ -4,7 +4,7 @@ plotly
 celery[redis]
 django==1.11.8
 django-celery-results
-django_remote_submission
+django_remote_submission==1.1.7
 scipy
 requests
 periodictable
