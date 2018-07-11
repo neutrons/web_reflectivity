@@ -1,4 +1,4 @@
-name: webrefl
+name: review_env
 dependencies:
 - python==2.7.11
 - numpy>=1.11.0
