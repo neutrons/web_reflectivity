@@ -1,6 +1,6 @@
 cython
 pandas
-plotly
+plotly==2.7.0
 celery[redis]
 django==1.11.8
 django-celery-results
