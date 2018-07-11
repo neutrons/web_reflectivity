@@ -21,7 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
 from . import view_util
 from .data_server import data_handler
 from .simultaneous import model_handling
@@ -470,6 +470,15 @@ class FitAppend(View):
         """ Add a data set to this fit problem """
         #TODO: When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
+        # If we haven't performed a fit for this particular data set, create a FitProblem
+        # as a placeholder so we can continue.
+        if fit_problem is None:
+            data_path = "%s/%s" % (instrument, data_id)
+            ref_model = ReflectivityModel(data_path=data_path)
+            ref_model.save()
+            fit_problem = FitProblem(user=request.user, reflectivity_model=ref_model)
+            fit_problem.save()
+
         simultaneous_form = SimultaneousModelForm(request.POST)
         if fit_problem is not None and simultaneous_form.is_valid():
             # First, check if we have access to that data
