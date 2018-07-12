@@ -10,3 +10,4 @@ scipy
 requests
 periodictable
 asgi_redis
+refl1d
