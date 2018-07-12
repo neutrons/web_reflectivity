@@ -294,8 +294,9 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     plots, labels, sld_plot, chi2 = get_plot_from_html(html_data, rq4, fit_problem)
     data_list.extend(plots)
     data_names.extend(labels)
-    sld_list.append(sld_plot)
-    sld_names.append("SLD")
+    if sld_plot:
+        sld_list.append(sld_plot)
+        sld_names.append("SLD")
 
     # Extra data
     extra_data = find_overlay_data(fit_problem)
@@ -310,6 +311,9 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
         plots, _, sld_plot, _ = get_plot_from_html(extra_html, rq4, extra_fit)
         data_list.extend(plots)
         data_names.extend(len(plots)*[extra_name])
+        if sld_plot:
+            sld_list.append(sld_plot)
+            sld_names.append(extra_name)
 
     y_title=u"Reflectivity"
     if rq4 is True:
