@@ -8,7 +8,8 @@ before_install:
 install:
   - python -m pip install -U pip
   - python -m easy_install -U setuptools
-  - python -m pip install wheel numpy scipy matplotlib periodictable wxPython bumps  - pip install django-remote-submission==1.1.7
+  - python -m pip install wheel numpy scipy matplotlib periodictable wxPython bumps
+  - pip install django-remote-submission==1.1.7
   - pip install -r requirements.txt
 script:
   - make install
