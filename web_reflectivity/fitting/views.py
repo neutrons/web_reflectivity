@@ -380,6 +380,7 @@ class FitView(View):
                                 'job_id': job_id if can_update else None,
                                 'layers_form': layers_form})
         template_values['run_title'] = run_info.get('title', '')
+        template_values['extra_tags'] = run_info.get('tags', '')
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 

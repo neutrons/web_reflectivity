@@ -74,6 +74,10 @@ def check_permissions(request, run_id, instrument):
     """
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
+        # Retrieve info from uploaded data
+        user_data = UserData.objects.filter(user=request.user, file_id=run_id)
+        if len(user_data) > 0:
+            return True, dict(title=user_data[0].file_name, tags=user_data[0].tags)
         return True, {}
 
     # Get the IPTS from ICAT
