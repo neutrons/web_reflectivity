@@ -368,10 +368,11 @@ class FitView(View):
         layers_form = LayerFormSet(queryset = fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
 
         job_id = request.session.get('job_id', None)
+        html_data, _chi2 = view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4'])
         template_values.update({'data_form': data_form,
-                                'html_data': view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4']),
+                                'html_data': html_data,
                                 'user_alert': error_message,
-                                'chi2': chi2,
+                                'chi2': chi2 if chi2 is not None else _chi2,
                                 'extra': extra,
                                 'simultaneous_form': SimultaneousModelForm(),
                                 'simultaneous_data': SimultaneousModel.objects.filter(fit_problem=fit_problem),
@@ -426,8 +427,8 @@ class FitView(View):
                 task = request.POST.get('button_choice', 'fit')
                 # Check for form submission option
                 output = {}
-                if task in ["evaluate", "fit"]:
-                    if task == "evaluate" or view_util.is_fittable(data_form, layers_form):
+                if task == "fit":
+                    if view_util.is_fittable(data_form, layers_form):
                         output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user, run_info=run_info)
                         if 'job_id' in output:
                             job_id = output['job_id']
@@ -447,15 +448,20 @@ class FitView(View):
             logging.error("Could not fit data: %s", sys.exc_value)
             error_message.append("Could not fit data")
 
-        template_values.update({'data_form': data_form,
-                                'html_data': view_util.assemble_plots(request, instrument, data_id, None, rq4=template_values['rq4']),
-                                'user_alert': error_message,
-                                'instrument': instrument,
-                                'data_id': data_id,
-                                'layers_form': layers_form})
-        template_values['run_title'] = run_info.get('title', '')
-        template_values = users.view_util.fill_template_values(request, **template_values)
-        return render(request, 'fitting/modeling.html', template_values)
+        # If we have errors, compose the response here so that we can display the errors.
+        # If everything is good, just redirect to the corresponding fit page showing the current status.
+        if error_message:
+            template_values.update({'data_form': data_form,
+                                    'html_data': view_util.assemble_plots(request, instrument, data_id, None, rq4=template_values['rq4']),
+                                    'user_alert': error_message,
+                                    'instrument': instrument,
+                                    'data_id': data_id,
+                                    'layers_form': layers_form})
+            template_values['run_title'] = run_info.get('title', '')
+            template_values = users.view_util.fill_template_values(request, **template_values)
+            return render(request, 'fitting/modeling.html', template_values)
+        else:
+            return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @method_decorator(login_required, name='dispatch')
 class FitAppend(View):

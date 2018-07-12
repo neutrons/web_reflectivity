@@ -184,8 +184,6 @@ def get_results(request, fit_problem):
                             #job.delete()
 
                     chi2 = refl1d.update_model(latest.content, fit_problem)
-                    for item in Constraint.objects.filter(fit_problem=fit_problem):
-                        item.apply_constraint(fit_problem)
                     if chi2 is None:
                         errors.append("The fit results appear to be incomplete.")
                         can_update = False
@@ -194,29 +192,52 @@ def get_results(request, fit_problem):
             except:
                 logging.error("Problem retrieving results: %s", sys.exc_value)
                 errors.append("Problem retrieving results")
-        else:
-            errors.append("No result for this model")
+
+        # Regardless of whether we have a fit result, we can still show the model.
+        # We apply the constraints in case one of the models tied to this data
+        # set has changed
+        for item in Constraint.objects.filter(fit_problem=fit_problem):
+            item.apply_constraint(fit_problem)
     else:
         errors.append("No model found for this data set")
 
     return chi2, latest, errors, can_update
 
-def get_plot_from_html(html_data, rq4=False):
+def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     """
         Process html data and return plot data
 
         :param str html_data: stored json for plotted data
         :param bool rq4: if True, the plot will be in R*Q^4
+        :param FitProblem fit_problem: if supplied, a theory curve will be added 
     """
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+    chi2 = None
+    sld_plot = None
+    if fit_problem:
+        _, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
+                                                                     current_data['r'],
+                                                                     current_data['dr'],
+                                                                     current_data['dq'], fit_problem)
+        sld_plot = [z, sld]
+
     if rq4 is True:
         r_values = current_data['r'] * current_data['q']**4
         dr_values = current_data['dr'] * current_data['q']**4
+        if fit_problem:
+            r_model = r_model * current_data['q']**4
     else:
         r_values = current_data['r']
         dr_values = current_data['dr']
-    return [current_data['q'], r_values, dr_values]
+
+    plots = [[current_data['q'], r_values, dr_values]]
+    labels = ["Data"]
+    if fit_problem:
+        plots.append([current_data['q'], r_model])
+        labels.append("Fit")
+
+    return plots, labels, sld_plot, chi2
 
 def get_plot_from_job_report(log_object, rq4=False):
     """
@@ -267,36 +288,28 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     if html_data is None:
         raise Http404
 
-    data_list.append(get_plot_from_html(html_data, rq4))
-    data_names.append("Data")
+    # Refresh the parameters first, because a job might have completed
+    get_results(request, fit_problem)
 
-    # Extract data from log object
-    _, log_object, _, _ = get_results(request, fit_problem)
-    fit_plot, sld_plot = get_plot_from_job_report(log_object, rq4)
-    if fit_plot is not None:
-        data_list.append(fit_plot)
-        data_names.append("Fit")
-    if sld_plot is not None:
-        sld_list.append(sld_plot)
-        sld_names.append("SLD")
+    plots, labels, sld_plot, chi2 = get_plot_from_html(html_data, rq4, fit_problem)
+    data_list.extend(plots)
+    data_names.extend(labels)
+    sld_list.append(sld_plot)
+    sld_names.append("SLD")
 
     # Extra data
     extra_data = find_overlay_data(fit_problem)
     for extra_name, extra_html in extra_data:
-        # Add the data itself
-        data_list.append(get_plot_from_html(extra_html, rq4))
-        data_names.append(extra_name)
-        # Add fit result if it exists
+        # First check whether we have a fit result for this data
         instrument_, data_id_ = parse_data_path(extra_name)
         _, extra_fit = get_fit_problem(request, instrument_, data_id_)
-        _, log_extra, _, _ = get_results(request, extra_fit)
-        fit_plot, sld_plot = get_plot_from_job_report(log_extra, rq4)
-        if fit_plot is not None:
-            data_list.append(fit_plot)
-            data_names.append(extra_name)
-        if sld_plot is not None:
-            sld_list.append(sld_plot)
-            sld_names.append(extra_name)
+        # Update the model according to the latest log, as necessary
+        if extra_fit is not None:
+            get_results(request, extra_fit)
+        # Add the data itself
+        plots, _, sld_plot, _ = get_plot_from_html(extra_html, rq4, extra_fit)
+        data_list.extend(plots)
+        data_names.extend(len(plots)*[extra_name])
 
     y_title=u"Reflectivity"
     if rq4 is True:
@@ -311,7 +324,7 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
                           y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
 
-    return r_plot
+    return r_plot, chi2
 
 def find_overlay_data(fit_problem):
     """
@@ -376,9 +389,6 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         options = obj.get_dict()
 
     template = 'reflectivity_model.py.template'
-    #TODO: bypass fitting but retrieve all the info we need.
-    #if not fit:
-    #    template = 'reflectivity_theory_model.py.template'
     script = job_handling.create_model_file(data_form, layers_form, template=template,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)

@@ -3,10 +3,15 @@
     Abstraction layer for handling fitting jobs
 """
 from __future__ import absolute_import, division, print_function
+import sys
 import string
 import os
-import sys
+import numpy as np
+import refl1d.names as rf
+
 from django.conf import settings
+
+from .models import Constraint
 
 def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp',
                       fit=True, options={}, constraints=[], template='reflectivity_model.py.template',
@@ -120,3 +125,48 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
                                             REFL1D_STEPS=options.get('steps', 1000),
                                             REFL1D_BURN=options.get('burn', 1000))
     return script
+
+def compute_reflectivity(q, r, dr, dq, fit_problem):
+    """
+        Create a refl1d model file from a template
+        :param list q: q values
+        :param list r: reflectivity values
+        :param list dr: error on the reflectivity values
+        :param list dq: q resolution
+        :param FitProblem fit_problem: fit problem object
+    """
+    q = np.asarray(q)
+    dq = np.asarray(dq)
+    zeros = np.zeros(len(q))
+    i_min = min([i for i in range(len(q)) if q[i]>fit_problem.reflectivity_model.q_min])
+    i_max = max([i for i in range(len(q)) if q[i]<fit_problem.reflectivity_model.q_max])+1
+
+    # SNS data is FWHM
+    dq_std = dq/2.35
+    probe = rf.QProbe(q[i_min:i_max], dq_std[i_min:i_max], data=(zeros, zeros))
+
+    sample = rf.Slab(material=rf.SLD(name=fit_problem.reflectivity_model.back_name,
+                                      rho=fit_problem.reflectivity_model.back_sld),
+                     interface=fit_problem.reflectivity_model.back_roughness)
+    for layer in fit_problem.layers.all().order_by('-layer_number'):
+        sample = sample | rf.Slab(material=rf.SLD(name=layer.name,
+                                                  rho=layer.sld,
+                                                  irho=layer.i_sld),
+                                  thickness=layer.thickness,
+                                  interface=layer.roughness)
+
+    sample = sample | rf.Slab(material=rf.SLD(name=fit_problem.reflectivity_model.front_name,
+                                              rho=fit_problem.reflectivity_model.front_sld))
+
+    probe.intensity = rf.Parameter(value=fit_problem.reflectivity_model.scale, name='scale')
+    probe.background = rf.Parameter(value=fit_problem.reflectivity_model.background, name='background')
+    expt = rf.Experiment(probe=probe, sample=sample)
+    q, _r = expt.reflectivity()
+    z, sld, _ = expt.smooth_profile()
+
+    if r is not None and dr is not None:
+        chi2 = np.sum((r[i_min:i_max]-_r)**2/dr[i_min:i_max]**2)/len(_r)
+    else:
+        chi2 = None
+
+    return q, _r, z, sld, chi2
