@@ -3,17 +3,17 @@ python:
   - "2.7"
 env:
   - REFL_INSTALL_DIR=/tmp
-addons:
-  apt:
-    packages:
-      # for wxPython:
-      - python-wxgtk2.8
-      - python-wxtools
-      - wx2.8-doc
-      - wx2.8-examples
-      - wx2.8-headers
-      - wx2.8-i18n
+
 before_install:
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+- sudo apt-get update
+- sudo apt-get install python-pyopencl
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda update --yes conda
+- conda info -a
+- conda install --yes python=$PY $NUMPYSPEC scipy cython pylint wxpython
   - pip install --upgrade codecov
 install:
   - pip install django-remote-submission==1.1.7
