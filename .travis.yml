@@ -3,6 +3,7 @@ python:
   - "2.7"
 env:
   - REFL_INSTALL_DIR=/tmp
+  - PY=2.7
 
 before_install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
