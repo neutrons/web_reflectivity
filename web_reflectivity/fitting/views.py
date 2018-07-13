@@ -20,8 +20,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm, SimultaneousFit
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from . import view_util
 from .data_server import data_handler
 from .simultaneous import model_handling
