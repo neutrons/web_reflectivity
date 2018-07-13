@@ -3,7 +3,6 @@
 """
 import json
 import tempfile
-import requests
 from django.test import TestCase
 from django.test import Client
 from django.contrib.auth.models import User

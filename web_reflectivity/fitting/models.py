@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, wildcard-import
+#pylint: disable=bare-except, wildcard-import, too-few-public-methods
 """
     Data models
 """
@@ -371,11 +371,11 @@ class SimultaneousConstraint(models.Model):
             var_par = search.group(1)
             var_id = int(search.group(2))
             obj, _ = SimultaneousConstraint.objects.get_or_create(user=user,
-                                                         fit_problem=fit_problem,
-                                                         dependent_id=dep_id,
-                                                         dependent_parameter=dep_par,
-                                                         variable_id=var_id,
-                                                         variable_parameter=var_par)
+                                                                  fit_problem=fit_problem,
+                                                                  dependent_id=dep_id,
+                                                                  dependent_parameter=dep_par,
+                                                                  variable_id=var_id,
+                                                                  variable_parameter=var_par)
             return obj
         except:
             logging.error("Could not parse coded parameters: %s %s", par_to, par_from)

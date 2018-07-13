@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, no-self-use, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
+#pylint: disable=bare-except, no-self-use, invalid-name, unused-argument, too-many-branches, too-few-public-methods, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
 """
     Definition of views
 """
@@ -20,12 +20,12 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
+import users.view_util
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from . import view_util
 from .data_server import data_handler
 from .simultaneous import model_handling
-import users.view_util
 
 @method_decorator(login_required, name='dispatch')
 class FitterOptionsUpdate(UpdateView):

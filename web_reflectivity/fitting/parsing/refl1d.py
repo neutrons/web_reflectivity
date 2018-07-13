@@ -224,4 +224,3 @@ def parse_par_file_line(line):
         value_float = float(value)
         value_float = float("%g" % value_float)
     return par_name, value_float
-

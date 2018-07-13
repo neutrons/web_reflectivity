@@ -144,7 +144,7 @@ def compute_reflectivity(q, r, dr, dq, fit_problem):
     probe = rf.QProbe(q[i_min:i_max], dq_std[i_min:i_max], data=(zeros, zeros))
 
     sample = rf.Slab(material=rf.SLD(name=fit_problem.reflectivity_model.back_name,
-                                      rho=fit_problem.reflectivity_model.back_sld),
+                                     rho=fit_problem.reflectivity_model.back_sld),
                      interface=fit_problem.reflectivity_model.back_roughness)
     for layer in fit_problem.layers.all().order_by('-layer_number'):
         sample = sample | rf.Slab(material=rf.SLD(name=layer.name,

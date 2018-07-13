@@ -41,7 +41,7 @@ class ConstraintForm(forms.Form):
                          ("sld", "sld"),
                          ("i_sld", "i_sld"),
                          ("roughness", "roughness"),
-                         )
+                        )
     definition = forms.CharField(widget=forms.Textarea)
     layer = forms.ModelChoiceField(queryset=ReflectivityLayer.objects.all())
     parameter = forms.ChoiceField(choices=PARAMETER_CHOICES)
@@ -62,7 +62,7 @@ class ReflectivityFittingModelForm(ModelForm):
                   'back_sld', 'back_sld_is_fixed', 'back_sld_min', 'back_sld_max', 'back_sld_error',
                   'back_roughness', 'back_roughness_is_fixed', 'back_roughness_min', 'back_roughness_max', 'back_roughness_error',
                   'front_name', 'back_name',
-                  ]
+                 ]
         widgets = {
             'data_path': forms.TextInput(attrs={'class' : 'font_resize'}),
         }
@@ -179,7 +179,7 @@ class LayerModelForm(ModelForm):
                   'sld_is_fixed', 'sld_min', 'sld_max', 'sld_error',
                   'i_sld_is_fixed', 'i_sld_min', 'i_sld_max', 'i_sld_error',
                   'roughness_is_fixed', 'roughness_min', 'roughness_max', 'roughness_error',
-                  ]
+                 ]
     def clean_name(self):
         """
             Refl1D doesn't like layer names that look like equations.

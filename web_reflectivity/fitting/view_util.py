@@ -14,6 +14,9 @@ import hashlib
 import pandas
 
 import numpy as np
+import plotly.offline as py
+import plotly.graph_objs as go
+
 from django.conf import settings
 from django.utils import dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
@@ -21,8 +24,7 @@ from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
 from django.http import Http404
 
-import plotly.offline as py
-import plotly.graph_objs as go
+import users.view_util
 
 from .parsing import refl1d
 from . import job_handling
@@ -30,7 +32,6 @@ from .data_server import data_handler
 from . import icat_server_communication as icat
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
-import users.view_util
 
 def extract_ascii_from_div(html_data):
     """
@@ -152,8 +153,8 @@ def get_model_as_csv(request, instrument, data_id):
                                                        0, model_dict['front_sld'], 0)
         for layer in layer_dicts:
             ascii_data += "# %8s %24s %12s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
-                                                           layer['thickness'], layer['sld'],
-                                                           layer['i_sld'], layer['roughness'])
+                                                                layer['thickness'], layer['sld'],
+                                                                layer['i_sld'], layer['roughness'])
 
         ascii_data += "# %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
                                                        0, model_dict['back_sld'],

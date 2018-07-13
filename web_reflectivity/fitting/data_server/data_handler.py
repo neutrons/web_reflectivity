@@ -26,12 +26,11 @@ def generate_key(instrument, run_id):
     if not hasattr(settings, "LIVE_PLOT_SECRET_KEY"):
         return None
     secret_key = settings.LIVE_PLOT_SECRET_KEY
-    if len(secret_key) == 0:
-        return None
-    else:
-        h = hashlib.sha1()
-        h.update("%s%s%s" % (instrument.upper(), secret_key, run_id))
-        return h.hexdigest()
+    if secret_key:
+        _sha = hashlib.sha1()
+        _sha.update("%s%s%s" % (instrument.upper(), secret_key, run_id))
+        return _sha.hexdigest()
+    return None
 
 def append_key(input_url, instrument, run_id):
     """
