@@ -145,20 +145,32 @@ def get_model_as_csv(request, instrument, data_id):
         ascii_data += "# Created on %s\n" % fit_problem.timestamp
         ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.5281/zenodo.260178]\n"
         ascii_data += "# Data File: %s\n\n" % fit_problem.reflectivity_model.data_path
-        ascii_data += "# SCALE\n"
-        ascii_data += "scale = %g\n" % model_dict['scale']
-        ascii_data += "background = %g\n\n" % model_dict['background']
+        ascii_data += "# scale = %g\n" % model_dict['scale']
+        ascii_data += "# background = %g\n\n" % model_dict['background']
         ascii_data += "# %8s %24s %12s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'iSLD', 'ROUGH')
-        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
                                                        0, model_dict['front_sld'], 0)
         for layer in layer_dicts:
-            ascii_data += "  %8s %24s %12s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
+            ascii_data += "# %8s %24s %12s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
                                                            layer['thickness'], layer['sld'],
                                                            layer['i_sld'], layer['roughness'])
 
-        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
                                                        0, model_dict['back_sld'],
                                                        model_dict['back_roughness'])
+
+    # If we have the data, compute the theory curve and return it
+    html_data = data_handler.get_plot_data_from_server(instrument, data_id)
+    if html_data is not None:
+        current_str = io.StringIO(extract_ascii_from_div(html_data))
+        current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+        _, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
+                                                                current_data['r'],
+                                                                current_data['dr'],
+                                                                current_data['dq'], fit_problem)
+        ascii_data += "%12s %12s\n" % ("Q", "R")
+        for i, r_value in enumerate(r_model):
+            ascii_data += "%12.6f %12.6f\n" % (current_data['q'][i], r_value)
 
     return ascii_data
 
@@ -213,7 +225,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
 
         :param str html_data: stored json for plotted data
         :param bool rq4: if True, the plot will be in R*Q^4
-        :param FitProblem fit_problem: if supplied, a theory curve will be added 
+        :param FitProblem fit_problem: if supplied, a theory curve will be added
     """
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
