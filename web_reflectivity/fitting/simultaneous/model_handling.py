@@ -1,4 +1,4 @@
-#pylint: disable=line-too-long, bare-except, consider-using-enumerate, invalid-name
+#pylint: disable=line-too-long, bare-except, consider-using-enumerate, invalid-name, too-many-locals
 """
     Handle multiple FitProblem objects for simultaneous fitting.
 """
@@ -97,7 +97,8 @@ def assemble_plots(request, fit_problem):
             if len(job_logs) > 0:
                 latest = job_logs.latest('time')
                 for data_path, data_log in refl1d.extract_multi_data_from_log(latest.content):
-                    raw_data = pandas.read_csv(io.StringIO(data_log), delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
+                    raw_data = pandas.read_csv(io.StringIO(data_log), delim_whitespace=True,
+                                               comment='#', names=['q', 'dq', 'r', 'dr', 'theory', 'fresnel'])
                     data_list.extend([[raw_data['q'], _process_rq4(request, raw_data, 'r'), _process_rq4(request, raw_data, 'dr')],
                                       [raw_data['q'], _process_rq4(request, raw_data, 'theory')]])
                     data_names.extend([data_path, data_path])
@@ -105,7 +106,8 @@ def assemble_plots(request, fit_problem):
                 # Extract SLD
                 sld_block_list = refl1d.extract_multi_sld_from_log(latest.content)
                 for data_path, data_log in sld_block_list:
-                    raw_data = pandas.read_csv(io.StringIO(data_log), delim_whitespace=True, comment='#', names=['z','rho','irho'])
+                    raw_data = pandas.read_csv(io.StringIO(data_log), delim_whitespace=True,
+                                               comment='#', names=['z', 'rho', 'irho'])
                     sld_list.append([raw_data['z'], raw_data['rho']])
                     sld_names.append(data_path)
         except:
@@ -121,7 +123,7 @@ def assemble_plots(request, fit_problem):
     if len(data_list) == 4:
         asym_data = compute_asymmetry(data_list[0], data_list[2])
         asym_theory = compute_asymmetry(data_list[1], data_list[3])
-        chi2_asym = np.sum(np.sqrt( (asym_data[1]-asym_theory[1])**2/asym_data[2]**2 ))/len(asym_data[0])
+        chi2_asym = np.sum(np.sqrt((asym_data[1]-asym_theory[1])**2/asym_data[2]**2))/len(asym_data[0])
         extra_plot = view_util.plot1d([asym_data, asym_theory],
                                       x_log=True, y_log=False,
                                       data_names=[u'(r1 - r2) / r1', u'Fit [\u03a7\u00b2 = %2.2g]' % chi2_asym],
@@ -130,8 +132,8 @@ def assemble_plots(request, fit_problem):
 
     if len(sld_list) > 0:
         extra_plot = view_util.plot1d(sld_list, x_log=False, y_log=False,
-                                    data_names=sld_names, x_title=u"Z (\u212b)",
-                                    y_title=u'SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+                                      data_names=sld_names, x_title=u"Z (\u212b)",
+                                      y_title=u'SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, extra_plot)
 
     return r_plot
@@ -149,8 +151,8 @@ def compute_asymmetry(data_1, data_2):
 
     q1, r1 = data_1[0], data_1[1]
     q2, r2 = data_2[0], data_2[1]
-    dr1 = data_1[2] if len(data_1)==3 else None
-    dr2 = data_2[2] if len(data_2)==3 else None
+    dr1 = data_1[2] if len(data_1) == 3 else None
+    dr2 = data_2[2] if len(data_2) == 3 else None
 
     for i in range(len(q1)):
         for j in range(len(q2)):

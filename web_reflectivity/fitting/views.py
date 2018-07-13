@@ -140,7 +140,7 @@ class UpdateUserDataView(View):
         """ Return template dict """
         breadcrumbs = "<a href='/'>home</a> &rsaquo; <a href='%s'>data files</a>" % reverse('fitting:show_files')
         template_values = dict(breadcrumbs="%s &rsaquo; %s" % (breadcrumbs, data_id),
-                               user_data = user_data)
+                               user_data=user_data)
         template_values = users.view_util.fill_template_values(request, **template_values)
         return template_values
 
@@ -365,7 +365,7 @@ class FitView(View):
             data_form = ReflectivityFittingForm(initial={'data_path': data_path})
 
         LayerFormSet = layer_modelformset(extra=extra)
-        layers_form = LayerFormSet(queryset = fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
+        layers_form = LayerFormSet(queryset=fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
 
         job_id = request.session.get('job_id', None)
         html_data, _chi2 = view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4'])
@@ -574,7 +574,7 @@ class ConstraintView(View):
             const_init['definition'] = constraint.definition
             const_init['layer'] = constraint.layer
             const_init['parameter'] = constraint.parameter
-            const_init['variables'] = [ v.strip() for v in constraint.variables.split(',')]
+            const_init['variables'] = [v.strip() for v in constraint.variables.split(',')]
 
         constraint_form = ConstraintForm(initial=const_init)
         if fit_problem is not None:
@@ -609,14 +609,14 @@ class ConstraintView(View):
                     constraint = get_object_or_404(Constraint, pk=const_id)
                 else:
                     constraint = Constraint(user=request.user, fit_problem=fit_problem)
-                constraint.layer=constraint_form.cleaned_data['layer']
-                constraint.definition=constraint_form.cleaned_data['definition']
-                constraint.parameter=constraint_form.cleaned_data['parameter']
-                constraint.variables=','.join(constraint_form.cleaned_data['variables'])
+                constraint.layer = constraint_form.cleaned_data['layer']
+                constraint.definition = constraint_form.cleaned_data['definition']
+                constraint.parameter = constraint_form.cleaned_data['parameter']
+                constraint.variables = ','.join(constraint_form.cleaned_data['variables'])
                 constraint.save()
                 return redirect(reverse('fitting:constraints', args=(instrument, data_id)))
         else:
-            alerts =  ["There were errors in the form, likely due to an old model: refresh your page"]
+            alerts = ["There were errors in the form, likely due to an old model: refresh your page"]
             form_errors = constraint_form.errors
 
         template_values['error_list'] = form_errors
@@ -695,7 +695,7 @@ class SimultaneousView(View):
             raise Http404
 
         # Find the extra data sets to fit together
-        setup_request = request.GET.get('setup', '0')=='1'
+        setup_request = request.GET.get('setup', '0') == '1'
         model_list, error_list, chi2, results_ready, can_update = model_handling.get_simultaneous_models(request, fit_problem, setup_request)
 
         # List of existing constraints

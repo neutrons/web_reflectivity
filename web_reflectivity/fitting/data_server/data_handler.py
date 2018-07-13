@@ -1,3 +1,4 @@
+#pylint: disable=bare-except
 """
     Abstraction of the data handler. For test purposes, we can store data locally.
     With a production system, we are likely to set the data to a remote server.
@@ -6,10 +7,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import sys
 import logging
 import json
-import requests
 import httplib
 import hashlib
 import string
+import requests
 from django.conf import settings
 from django.utils import dateparse, timezone
 

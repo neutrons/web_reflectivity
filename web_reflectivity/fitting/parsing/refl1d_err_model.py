@@ -40,7 +40,7 @@ def find_error(layer_name, par_name, layer_dict, output_params):
                 diff = math.fabs(float(val))
             else:
                 diff = math.fabs((float(val)-_value)/_value)
-            if diff<0.001:
+            if diff < 0.001:
                 value = val
                 error = err
     return value, error
@@ -218,7 +218,7 @@ def parse_single_param(line):
 
         # Error string does not have a .
         err_digits = len(error)
-        val_digits = len(mean_value.replace('.',''))
+        val_digits = len(mean_value.replace('.', ''))
         err_value = ''
         i_digit = 0
 

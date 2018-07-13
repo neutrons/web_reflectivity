@@ -104,9 +104,9 @@ def update_model(content, fit_problem):
         if line.startswith('[chi'):
             try:
                 result = re.search(r'chisq=([\d.]*)', line)
-                chi2=result.group(1)
+                chi2 = result.group(1)
             except:
-                chi2="unknown"
+                chi2 = "unknown"
 
         if line.startswith('MODEL_PARAMS_START'):
             start_err_file = True

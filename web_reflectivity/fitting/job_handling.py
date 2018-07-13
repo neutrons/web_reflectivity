@@ -11,8 +11,6 @@ import refl1d.names as rf
 
 from django.conf import settings
 
-from .models import Constraint
-
 def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", output_dir='/tmp',
                       fit=True, options={}, constraints=[], template='reflectivity_model.py.template',
                       sample_name='sample', probe_name='probe', expt_name='expt'):
