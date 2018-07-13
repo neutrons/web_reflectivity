@@ -20,7 +20,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
-from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
+from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm, SimultaneousFit
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
 from . import view_util
 from .data_server import data_handler
@@ -475,7 +475,6 @@ class FitAppend(View):
 
     def post(self, request, instrument, data_id, *args, **kwargs):
         """ Add a data set to this fit problem """
-        #TODO: When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
         # If we haven't performed a fit for this particular data set, create a FitProblem
         # as a placeholder so we can continue.
@@ -496,6 +495,11 @@ class FitAppend(View):
 
             SimultaneousModel.objects.create(fit_problem=fit_problem,
                                              dependent_data=simultaneous_form.cleaned_data['dependent_data'])
+
+        # When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
+        for item in SimultaneousFit.objects.filter(fit_problem=fit_problem, user=request.user):
+            item.delete()
+
         return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @method_decorator(login_required, name='dispatch')
@@ -663,15 +667,21 @@ class SaveModelDelete(DeleteView):
 @login_required
 def remove_simultaneous_model(request, pk):
     """
-        Remove a constraint
+        Remove a data set/model from a simultaneous fit
         :param request: request object
-        :param instrument: instrument name
-        :param data_id: data set identifier
-        :param const_id: pk of the constraint object to delete
+        :param pk: SimultaneousModel object id
     """
     success_url = request.GET.get('success', reverse('fitting:show_files'))
-    const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
-    const_obj.delete()
+    sim_model_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
+
+    # Remove the simultaneous constraints related to this fit
+    for item in SimultaneousConstraint.objects.filter(fit_problem=sim_model_obj.fit_problem, user=request.user):
+        item.delete()
+    # Remove the related SimultaneousFit object
+    for item in SimultaneousFit.objects.filter(fit_problem=sim_model_obj.fit_problem, user=request.user):
+        item.delete()
+
+    sim_model_obj.delete()
     return redirect(success_url)
 
 @method_decorator(login_required, name='dispatch')
