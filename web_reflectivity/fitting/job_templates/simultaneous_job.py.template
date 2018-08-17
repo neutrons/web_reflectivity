@@ -27,7 +27,7 @@ problem = FitProblem(${EXPT_LIST})
     with open(model_path, 'w') as fd:
         fd.write(model_file)
 
-    cmd = "rm -f %s/*; PATH='${REFL1D_PATH}:$$PATH'; refl1d_cli.py --fit=${ENGINE} --steps=${REFL1D_STEPS} --burn=${REFL1D_BURN} --store=%s %s --batch --parallel" % (output_dir, output_dir, model_path)
+    cmd = "rm -f %s/*; PATH='${REFL1D_PATH}:$$PATH'; refl1d_cli.py --fit=${ENGINE} --steps=${REFL1D_STEPS} --burn=${REFL1D_BURN} --store=%s %s --batch" % (output_dir, output_dir, model_path)
     output_log = os.path.join(data_dir, 'fit.log')
     fd = open(output_log, 'w')
     fd.write("Starting fit: %s\n" % time.ctime())
