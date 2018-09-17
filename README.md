@@ -90,5 +90,5 @@ To report a problem, please create an issue using the "Issues" tab above. If you
 Please cite the following when using this software:
 
 - P. A. Kienzle, K. V. O'Donovan, J. F. Ankner, N. F. Berk & C. F. Majkrzak, REFL1D.
-- M. Doucet, R. M. Ferraz Leal, T. C. Hobson, Web interface for reflectivity fitting (2017) arXiv:1710.06767 [physics.data-an].
+- [M. Doucet, R. M. Ferraz Leal, T. C. Hobson, Web interface for reflectivity fitting, SoftwareX 7 (2018) 287-293](https://doi.org/10.1016/j.softx.2018.09.001).
 
