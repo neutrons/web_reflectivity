@@ -23,7 +23,7 @@ then gathers the output data.
 .. image:: ../media/app_design_400ppi.png
 
 A description of reflectivity, an overview of the main features, and a real-life example of the use of the application are
-described in this :download:`article <../reflectivity_fitting_paper.pdf>`.
+described in this article: M. Doucet et al. SoftwareX 7 (2018) 287-293 `https://doi.org/10.1016/j.softx.2018.09.001 <https://doi.org/10.1016/j.softx.2018.09.001>`_.
 
 
 Developer Documentation

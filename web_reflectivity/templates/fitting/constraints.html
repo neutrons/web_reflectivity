@@ -15,14 +15,14 @@
 
 <table class="property_table">
   <thead>
-    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th></tr>
+    <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th><th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th>iSLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th><th>Roughness (&#8491;)</th></tr>
   </thead>
   <tbody>
     <tr class="short_input">
       <td>Front</td>
       <td>{{ data_form.front_name.value }}</td><td>-</td>
       <td>{{ data_form.front_sld.value }}</td>
-      <td>-</td><td></td>
+      <td>-</td><td>-</td><td></td>
     </tr>
   {% for form in layers_form %}
     <tr class="short_input">
@@ -31,12 +31,13 @@
       <td>{{ form.name.value }}</td>
       <td>{{ form.thickness.value }}</td>
       <td>{{ form.sld.value }}</td>
+      <td>{{ form.i_sld.value }}</td>
       <td>{{ form.roughness.value }}</td>
     </tr>{% endfor %}
     <tr class="short_input">
       <td>Back</td>
       <td>{{ data_form.back_name.value }}</td><td>-</td>
-      <td>{{ data_form.back_sld.value }}</td>
+      <td>{{ data_form.back_sld.value }}</td><td>-</td>
       <td>{{ data_form.back_roughness.value }}</td>
       <td></td>
     </tr>

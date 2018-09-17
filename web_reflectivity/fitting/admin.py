@@ -15,7 +15,7 @@ class ReflectivityModelAdmin(admin.ModelAdmin):
     list_filter = ('data_path',)
 
 class ReflectivityLayerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'thickness', 'sld', 'roughness', 'layer_number')
+    list_display = ('id', 'name', 'thickness', 'sld', 'i_sld', 'roughness', 'layer_number')
     list_filter = ('name',)
 
 class FitterOptionsAdmin(admin.ModelAdmin):

@@ -43,6 +43,12 @@ def update_with_results(fit_problem, par_name, value, error):
                 layer.thickness = value
                 layer.thickness_error = error
                 layer.save()
+    elif toks[1] == 'irho':
+        for layer in fit_problem.layers.all():
+            if toks[0] == layer.name:
+                layer.i_sld = value
+                layer.i_sld_error = error
+                layer.save()
     elif toks[1] == 'interface':
         if toks[0] == fit_problem.reflectivity_model.back_name:
             fit_problem.reflectivity_model.back_roughness = value
@@ -98,9 +104,9 @@ def update_model(content, fit_problem):
         if line.startswith('[chi'):
             try:
                 result = re.search(r'chisq=([\d.]*)', line)
-                chi2=result.group(1)
+                chi2 = result.group(1)
             except:
-                chi2="unknown"
+                chi2 = "unknown"
 
         if line.startswith('MODEL_PARAMS_START'):
             start_err_file = True
@@ -218,4 +224,3 @@ def parse_par_file_line(line):
         value_float = float(value)
         value_float = float("%g" % value_float)
     return par_name, value_float
-

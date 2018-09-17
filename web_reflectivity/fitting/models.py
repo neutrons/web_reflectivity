@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, wildcard-import
+#pylint: disable=bare-except, wildcard-import, too-few-public-methods
 """
     Data models
 """
@@ -65,6 +65,7 @@ class ReflectivityLayer(models.Model):
     name = models.CharField(max_length=64, blank=True, default='material')
     thickness = models.FloatField(default=50.0)
     sld = models.FloatField(default=2.0)
+    i_sld = models.FloatField(default=0.0)
     roughness = models.FloatField(default=1.0)
     remove = models.BooleanField(blank=True, default=False)
     layer_number = models.IntegerField(default=1000)
@@ -79,6 +80,11 @@ class ReflectivityLayer(models.Model):
     sld_min = models.FloatField(blank=True, default=1.0)
     sld_max = models.FloatField(blank=True, default=4.0)
     sld_error = models.FloatField(null=True, blank=True, default=0)
+
+    i_sld_is_fixed = models.BooleanField(blank=True, default=True)
+    i_sld_min = models.FloatField(blank=True, default=0.0)
+    i_sld_max = models.FloatField(blank=True, default=1.0)
+    i_sld_error = models.FloatField(null=True, blank=True, default=0)
 
     roughness_is_fixed = models.BooleanField(blank=True, default=True)
     roughness_min = models.FloatField(blank=True, default=1.0)
@@ -102,8 +108,7 @@ class FitProblem(models.Model):
         """
             Delete method to clean up related objects
         """
-        logging.error(self.layers.all())
-        logging.error(self.layers.all().delete())
+        self.layers.all().delete()
         self.reflectivity_model.delete()
         if self.remote_job is not None:
             self.remote_job.delete()
@@ -191,7 +196,9 @@ class Constraint(models.Model):
     """
     LAYER_PARAMETER = {'thickness': 'thickness',
                        'sld': 'material.rho',
+                       'i_sld': 'material.irho',
                        'roughness': 'interface'}
+    ORDERED_NAMES = ['i_sld', 'sld', 'thickness', 'roughness']
 
     user = models.ForeignKey(User, models.CASCADE)
     fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
@@ -222,18 +229,19 @@ class Constraint(models.Model):
             Apply the constraint to a fit problem
         """
         # Parse the variables and get their values
+        # See comment in get_ranges()
         parameters = {}
         variable_list = self.variables.split(',')
         for variable in variable_list:
             clean_variable = variable.strip()
-            toks = clean_variable.split('_')
-            if len(toks) == 2:
-                layer_name = toks[0].strip()
-                layer_parameter = toks[1].strip()
-                layer_objects = fit_problem.layers.filter(name=layer_name)
-                if len(layer_objects) > 0:
-                    if hasattr(layer_objects[0], layer_parameter):
-                        parameters[clean_variable] = getattr(layer_objects[0], layer_parameter)
+            for layer_parameter in self.ORDERED_NAMES:
+                if layer_parameter in clean_variable:
+                    layer_name = clean_variable.replace('_%s' % layer_parameter, '').strip()
+                    layer_objects = fit_problem.layers.filter(name=layer_name)
+                    if len(layer_objects) > 0:
+                        if hasattr(layer_objects[0], layer_parameter):
+                            parameters[clean_variable] = getattr(layer_objects[0], layer_parameter)
+                    break
         _, constraint_function = self.get_constraint_function(alternate_name='constraint_func')
 
         try:
@@ -255,13 +263,19 @@ class Constraint(models.Model):
         function_name, constraint = self.get_constraint_function()
 
         # Example: sample['aSi'].material.rho = get_sld(sample['aSi'].thickness)
+        # Go over the possible parameters and extract the layer name.
+        # We must be careful because the layer name may include underscores.
+        # We must also check for i_sld first because 'sld' is a substring of 'i_sld'.
         expanded_vars = []
         for item in self.variables.split(','):
-            [layer_name, var_name] = item.split('_')
-            expanded_vars.append("%s['%s'].%s" % (sample_name,
-                                                  layer_name.strip(),
-                                                  self.LAYER_PARAMETER.get(var_name.strip(),
-                                                                           var_name.strip())))
+            for var_name in self.ORDERED_NAMES:
+                if var_name in item:
+                    layer_name = item.replace('_%s' % var_name, '').strip()
+                    expanded_vars.append("%s['%s'].%s" % (sample_name,
+                                                          layer_name.strip(),
+                                                          self.LAYER_PARAMETER.get(var_name.strip(),
+                                                                                   var_name.strip())))
+                    break
         constraint += "\n%s['%s'].%s = %s(%s)\n" % (sample_name, self.layer.name,
                                                     layer_parameter,
                                                     function_name,
@@ -357,11 +371,11 @@ class SimultaneousConstraint(models.Model):
             var_par = search.group(1)
             var_id = int(search.group(2))
             obj, _ = SimultaneousConstraint.objects.get_or_create(user=user,
-                                                         fit_problem=fit_problem,
-                                                         dependent_id=dep_id,
-                                                         dependent_parameter=dep_par,
-                                                         variable_id=var_id,
-                                                         variable_parameter=var_par)
+                                                                  fit_problem=fit_problem,
+                                                                  dependent_id=dep_id,
+                                                                  dependent_parameter=dep_par,
+                                                                  variable_id=var_id,
+                                                                  variable_parameter=var_par)
             return obj
         except:
             logging.error("Could not parse coded parameters: %s %s", par_to, par_from)
@@ -461,7 +475,7 @@ class SimultaneousFit(models.Model):
     """
     user = models.ForeignKey(User, models.CASCADE)
     fit_problem = models.ForeignKey(FitProblem, models.CASCADE)
-    remote_job = models.ForeignKey(Job, models.SET_NULL, null=True)
+    remote_job = models.ForeignKey(Job, models.SET_NULL, blank=True, null=True, default=None)
     timestamp = models.DateTimeField('timestamp', auto_now_add=True)
 
     def __unicode__(self):

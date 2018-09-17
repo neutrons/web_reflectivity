@@ -14,6 +14,9 @@ import hashlib
 import pandas
 
 import numpy as np
+import plotly.offline as py
+import plotly.graph_objs as go
+
 from django.conf import settings
 from django.utils import dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
@@ -21,8 +24,7 @@ from django_remote_submission.tasks import submit_job_to_server, LogPolicy
 from django.core.urlresolvers import reverse
 from django.http import Http404
 
-import plotly.offline as py
-import plotly.graph_objs as go
+import users.view_util
 
 from .parsing import refl1d
 from . import job_handling
@@ -30,7 +32,6 @@ from .data_server import data_handler
 from . import icat_server_communication as icat
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
-import users.view_util
 
 def extract_ascii_from_div(html_data):
     """
@@ -74,6 +75,10 @@ def check_permissions(request, run_id, instrument):
     """
     # When the user is accessing their own data, the instrument is set to the username
     if instrument == str(request.user):
+        # Retrieve info from uploaded data
+        user_data = UserData.objects.filter(user=request.user, file_id=run_id)
+        if len(user_data) > 0:
+            return True, dict(title=user_data[0].file_name, tags=user_data[0].tags)
         return True, {}
 
     # Get the IPTS from ICAT
@@ -141,20 +146,32 @@ def get_model_as_csv(request, instrument, data_id):
         ascii_data += "# Created on %s\n" % fit_problem.timestamp
         ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.5281/zenodo.260178]\n"
         ascii_data += "# Data File: %s\n\n" % fit_problem.reflectivity_model.data_path
-        ascii_data += "# SCALE\n"
-        ascii_data += "scale = %g\n" % model_dict['scale']
-        ascii_data += "background = %g\n\n" % model_dict['background']
-        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'ROUGH')
-        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
+        ascii_data += "# scale = %g\n" % model_dict['scale']
+        ascii_data += "# background = %g\n\n" % model_dict['background']
+        ascii_data += "# %8s %24s %12s %12s %12s %12s\n" % ('LAYER', 'NAME', 'THICK', 'SLD', 'iSLD', 'ROUGH')
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('FRONT', model_dict['front_name'],
                                                        0, model_dict['front_sld'], 0)
         for layer in layer_dicts:
-            ascii_data += "  %8s %24s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
-                                                            layer['thickness'], layer['sld'],
-                                                            layer['roughness'])
+            ascii_data += "# %8s %24s %12s %12s %12s %12s\n" % (layer['layer_number'], layer['name'],
+                                                                layer['thickness'], layer['sld'],
+                                                                layer['i_sld'], layer['roughness'])
 
-        ascii_data += "  %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
+        ascii_data += "# %8s %24s %12s %12s %12s\n" % ('BACK', model_dict['back_name'],
                                                        0, model_dict['back_sld'],
                                                        model_dict['back_roughness'])
+
+    # If we have the data, compute the theory curve and return it
+    html_data = data_handler.get_plot_data_from_server(instrument, data_id)
+    if html_data is not None:
+        current_str = io.StringIO(extract_ascii_from_div(html_data))
+        current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+        _, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
+                                                                current_data['r'],
+                                                                current_data['dr'],
+                                                                current_data['dq'], fit_problem)
+        ascii_data += "%12s %12s\n" % ("Q", "R")
+        for i, r_value in enumerate(r_model):
+            ascii_data += "%12.6f %12.6f\n" % (current_data['q'][i], r_value)
 
     return ascii_data
 
@@ -184,8 +201,6 @@ def get_results(request, fit_problem):
                             #job.delete()
 
                     chi2 = refl1d.update_model(latest.content, fit_problem)
-                    for item in Constraint.objects.filter(fit_problem=fit_problem):
-                        item.apply_constraint(fit_problem)
                     if chi2 is None:
                         errors.append("The fit results appear to be incomplete.")
                         can_update = False
@@ -194,29 +209,52 @@ def get_results(request, fit_problem):
             except:
                 logging.error("Problem retrieving results: %s", sys.exc_value)
                 errors.append("Problem retrieving results")
-        else:
-            errors.append("No result for this model")
+
+        # Regardless of whether we have a fit result, we can still show the model.
+        # We apply the constraints in case one of the models tied to this data
+        # set has changed
+        for item in Constraint.objects.filter(fit_problem=fit_problem):
+            item.apply_constraint(fit_problem)
     else:
         errors.append("No model found for this data set")
 
     return chi2, latest, errors, can_update
 
-def get_plot_from_html(html_data, rq4=False):
+def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     """
         Process html data and return plot data
 
         :param str html_data: stored json for plotted data
         :param bool rq4: if True, the plot will be in R*Q^4
+        :param FitProblem fit_problem: if supplied, a theory curve will be added
     """
     current_str = io.StringIO(extract_ascii_from_div(html_data))
     current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
+    chi2 = None
+    sld_plot = None
+    if fit_problem:
+        _, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
+                                                                     current_data['r'],
+                                                                     current_data['dr'],
+                                                                     current_data['dq'], fit_problem)
+        sld_plot = [z, sld]
+
     if rq4 is True:
         r_values = current_data['r'] * current_data['q']**4
         dr_values = current_data['dr'] * current_data['q']**4
+        if fit_problem:
+            r_model = r_model * current_data['q']**4
     else:
         r_values = current_data['r']
         dr_values = current_data['dr']
-    return [current_data['q'], r_values, dr_values]
+
+    plots = [[current_data['q'], r_values, dr_values]]
+    labels = ["Data"]
+    if fit_problem:
+        plots.append([current_data['q'], r_model])
+        labels.append("Fit")
+
+    return plots, labels, sld_plot, chi2
 
 def get_plot_from_job_report(log_object, rq4=False):
     """
@@ -267,34 +305,30 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     if html_data is None:
         raise Http404
 
-    data_list.append(get_plot_from_html(html_data, rq4))
-    data_names.append("Data")
+    # Refresh the parameters first, because a job might have completed
+    get_results(request, fit_problem)
 
-    # Extract data from log object
-    _, log_object, _, _ = get_results(request, fit_problem)
-    fit_plot, sld_plot = get_plot_from_job_report(log_object, rq4)
-    if fit_plot is not None:
-        data_list.append(fit_plot)
-        data_names.append("Fit")
-    if sld_plot is not None:
+    plots, labels, sld_plot, chi2 = get_plot_from_html(html_data, rq4, fit_problem)
+    data_list.extend(plots)
+    data_names.extend(labels)
+    if sld_plot:
         sld_list.append(sld_plot)
         sld_names.append("SLD")
 
     # Extra data
     extra_data = find_overlay_data(fit_problem)
     for extra_name, extra_html in extra_data:
-        # Add the data itself
-        data_list.append(get_plot_from_html(extra_html, rq4))
-        data_names.append(extra_name)
-        # Add fit result if it exists
+        # First check whether we have a fit result for this data
         instrument_, data_id_ = parse_data_path(extra_name)
         _, extra_fit = get_fit_problem(request, instrument_, data_id_)
-        _, log_extra, _, _ = get_results(request, extra_fit)
-        fit_plot, sld_plot = get_plot_from_job_report(log_extra, rq4)
-        if fit_plot is not None:
-            data_list.append(fit_plot)
-            data_names.append(extra_name)
-        if sld_plot is not None:
+        # Update the model according to the latest log, as necessary
+        if extra_fit is not None:
+            get_results(request, extra_fit)
+        # Add the data itself
+        plots, _, sld_plot, _ = get_plot_from_html(extra_html, rq4, extra_fit)
+        data_list.extend(plots)
+        data_names.extend(len(plots)*[extra_name])
+        if sld_plot:
             sld_list.append(sld_plot)
             sld_names.append(extra_name)
 
@@ -311,7 +345,7 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
                           y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
 
-    return r_plot
+    return r_plot, chi2
 
 def find_overlay_data(fit_problem):
     """
@@ -376,9 +410,6 @@ def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_
         options = obj.get_dict()
 
     template = 'reflectivity_model.py.template'
-    #TODO: bypass fitting but retrieve all the info we need.
-    #if not fit:
-    #    template = 'reflectivity_theory_model.py.template'
     script = job_handling.create_model_file(data_form, layers_form, template=template,
                                             data_file=os.path.join(work_dir, '__data.txt'), ascii_data=ascii_data,
                                             output_dir=output_dir, fit=fit, options=options, constraints=constraint_list)

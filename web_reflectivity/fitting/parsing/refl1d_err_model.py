@@ -40,7 +40,7 @@ def find_error(layer_name, par_name, layer_dict, output_params):
                 diff = math.fabs(float(val))
             else:
                 diff = math.fabs((float(val)-_value)/_value)
-            if diff<0.001:
+            if diff < 0.001:
                 value = val
                 error = err
     return value, error
@@ -99,6 +99,7 @@ def translate_model(refl_model, layers, output_params=None):
                 layer_dict = dict(name=name, layer_number=len(layers)-i-1)
                 layer_dict = update_parameter('thickness', name, 'thickness', layers[i], output_params, **layer_dict)
                 layer_dict = update_parameter('sld', name, 'rho', layers[i], output_params, **layer_dict)
+                layer_dict = update_parameter('i_sld', name, 'irho', layers[i], output_params, **layer_dict)
                 layer_dict = update_parameter('roughness', name, 'interface', layers[i], output_params, **layer_dict)
                 clean_layers.insert(0, layer_dict)
         except:
@@ -217,7 +218,7 @@ def parse_single_param(line):
 
         # Error string does not have a .
         err_digits = len(error)
-        val_digits = len(mean_value.replace('.',''))
+        val_digits = len(mean_value.replace('.', ''))
         err_value = ''
         i_digit = 0
 

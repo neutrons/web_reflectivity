@@ -1,3 +1,4 @@
+#pylint: disable=bare-except
 """
     Abstraction of the data handler. For test purposes, we can store data locally.
     With a production system, we are likely to set the data to a remote server.
@@ -6,10 +7,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import sys
 import logging
 import json
-import requests
 import httplib
 import hashlib
 import string
+import requests
 from django.conf import settings
 from django.utils import dateparse, timezone
 
@@ -25,12 +26,11 @@ def generate_key(instrument, run_id):
     if not hasattr(settings, "LIVE_PLOT_SECRET_KEY"):
         return None
     secret_key = settings.LIVE_PLOT_SECRET_KEY
-    if len(secret_key) == 0:
-        return None
-    else:
-        h = hashlib.sha1()
-        h.update("%s%s%s" % (instrument.upper(), secret_key, run_id))
-        return h.hexdigest()
+    if secret_key:
+        _sha = hashlib.sha1()
+        _sha.update("%s%s%s" % (instrument.upper(), secret_key, run_id))
+        return _sha.hexdigest()
+    return None
 
 def append_key(input_url, instrument, run_id):
     """

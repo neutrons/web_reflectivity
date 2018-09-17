@@ -1,4 +1,4 @@
-#pylint: disable=bare-except, no-self-use, invalid-name, unused-argument, too-many-branches, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
+#pylint: disable=bare-except, no-self-use, invalid-name, unused-argument, too-many-branches, too-few-public-methods, too-many-nested-blocks, line-too-long, too-many-locals, too-many-ancestors
 """
     Definition of views
 """
@@ -20,12 +20,12 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from django_remote_submission.models import Job
+import users.view_util
 from .forms import ReflectivityFittingForm, LayerForm, UploadFileForm, ConstraintForm, layer_modelformset, UserDataUpdateForm, SimultaneousModelForm
-from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint
+from .models import FitProblem, FitterOptions, Constraint, ReflectivityModel, ReflectivityLayer, SavedModelInfo, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from . import view_util
 from .data_server import data_handler
 from .simultaneous import model_handling
-import users.view_util
 
 @method_decorator(login_required, name='dispatch')
 class FitterOptionsUpdate(UpdateView):
@@ -140,7 +140,7 @@ class UpdateUserDataView(View):
         """ Return template dict """
         breadcrumbs = "<a href='/'>home</a> &rsaquo; <a href='%s'>data files</a>" % reverse('fitting:show_files')
         template_values = dict(breadcrumbs="%s &rsaquo; %s" % (breadcrumbs, data_id),
-                               user_data = user_data)
+                               user_data=user_data)
         template_values = users.view_util.fill_template_values(request, **template_values)
         return template_values
 
@@ -365,13 +365,14 @@ class FitView(View):
             data_form = ReflectivityFittingForm(initial={'data_path': data_path})
 
         LayerFormSet = layer_modelformset(extra=extra)
-        layers_form = LayerFormSet(queryset = fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
+        layers_form = LayerFormSet(queryset=fit_problem.layers.all().order_by('layer_number') if fit_problem is not None else ReflectivityLayer.objects.none())
 
         job_id = request.session.get('job_id', None)
+        html_data, _chi2 = view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4'])
         template_values.update({'data_form': data_form,
-                                'html_data': view_util.assemble_plots(request, instrument, data_id, fit_problem, rq4=template_values['rq4']),
+                                'html_data': html_data,
                                 'user_alert': error_message,
-                                'chi2': chi2,
+                                'chi2': chi2 if chi2 is not None else _chi2,
                                 'extra': extra,
                                 'simultaneous_form': SimultaneousModelForm(),
                                 'simultaneous_data': SimultaneousModel.objects.filter(fit_problem=fit_problem),
@@ -379,6 +380,7 @@ class FitView(View):
                                 'job_id': job_id if can_update else None,
                                 'layers_form': layers_form})
         template_values['run_title'] = run_info.get('title', '')
+        template_values['extra_tags'] = run_info.get('tags', '')
         template_values = users.view_util.fill_template_values(request, **template_values)
         return render(request, 'fitting/modeling.html', template_values)
 
@@ -426,8 +428,8 @@ class FitView(View):
                 task = request.POST.get('button_choice', 'fit')
                 # Check for form submission option
                 output = {}
-                if task in ["evaluate", "fit"]:
-                    if task == "evaluate" or view_util.is_fittable(data_form, layers_form):
+                if task == "fit":
+                    if view_util.is_fittable(data_form, layers_form):
                         output = view_util.evaluate_model(data_form, layers_form, html_data, fit=task == "fit", user=request.user, run_info=run_info)
                         if 'job_id' in output:
                             job_id = output['job_id']
@@ -447,15 +449,20 @@ class FitView(View):
             logging.error("Could not fit data: %s", sys.exc_value)
             error_message.append("Could not fit data")
 
-        template_values.update({'data_form': data_form,
-                                'html_data': view_util.assemble_plots(request, instrument, data_id, None, rq4=template_values['rq4']),
-                                'user_alert': error_message,
-                                'instrument': instrument,
-                                'data_id': data_id,
-                                'layers_form': layers_form})
-        template_values['run_title'] = run_info.get('title', '')
-        template_values = users.view_util.fill_template_values(request, **template_values)
-        return render(request, 'fitting/modeling.html', template_values)
+        # If we have errors, compose the response here so that we can display the errors.
+        # If everything is good, just redirect to the corresponding fit page showing the current status.
+        if error_message:
+            template_values.update({'data_form': data_form,
+                                    'html_data': view_util.assemble_plots(request, instrument, data_id, None, rq4=template_values['rq4']),
+                                    'user_alert': error_message,
+                                    'instrument': instrument,
+                                    'data_id': data_id,
+                                    'layers_form': layers_form})
+            template_values['run_title'] = run_info.get('title', '')
+            template_values = users.view_util.fill_template_values(request, **template_values)
+            return render(request, 'fitting/modeling.html', template_values)
+        else:
+            return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @method_decorator(login_required, name='dispatch')
 class FitAppend(View):
@@ -468,7 +475,6 @@ class FitAppend(View):
 
     def post(self, request, instrument, data_id, *args, **kwargs):
         """ Add a data set to this fit problem """
-        #TODO: When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
         _, fit_problem = view_util.get_fit_problem(request, instrument, data_id)
         # If we haven't performed a fit for this particular data set, create a FitProblem
         # as a placeholder so we can continue.
@@ -489,6 +495,11 @@ class FitAppend(View):
 
             SimultaneousModel.objects.create(fit_problem=fit_problem,
                                              dependent_data=simultaneous_form.cleaned_data['dependent_data'])
+
+        # When changing the list of data sets, remove the existing SimultaneousFit object to avoid confusion
+        for item in SimultaneousFit.objects.filter(fit_problem=fit_problem, user=request.user):
+            item.delete()
+
         return redirect(reverse('fitting:fit', args=(instrument, data_id)))
 
 @method_decorator(login_required, name='dispatch')
@@ -509,6 +520,8 @@ class ConstraintView(View):
                         v_name = "%s_%s" % (layer['name'], 'thickness')
                         variable_names.append((v_name, v_name))
                         v_name = "%s_%s" % (layer['name'], 'sld')
+                        variable_names.append((v_name, v_name))
+                        v_name = "%s_%s" % (layer['name'], 'i_sld')
                         variable_names.append((v_name, v_name))
                         v_name = "%s_%s" % (layer['name'], 'roughness')
                         variable_names.append((v_name, v_name))
@@ -561,7 +574,7 @@ class ConstraintView(View):
             const_init['definition'] = constraint.definition
             const_init['layer'] = constraint.layer
             const_init['parameter'] = constraint.parameter
-            const_init['variables'] = [ v.strip() for v in constraint.variables.split(',')]
+            const_init['variables'] = [v.strip() for v in constraint.variables.split(',')]
 
         constraint_form = ConstraintForm(initial=const_init)
         if fit_problem is not None:
@@ -596,14 +609,14 @@ class ConstraintView(View):
                     constraint = get_object_or_404(Constraint, pk=const_id)
                 else:
                     constraint = Constraint(user=request.user, fit_problem=fit_problem)
-                constraint.layer=constraint_form.cleaned_data['layer']
-                constraint.definition=constraint_form.cleaned_data['definition']
-                constraint.parameter=constraint_form.cleaned_data['parameter']
-                constraint.variables=','.join(constraint_form.cleaned_data['variables'])
+                constraint.layer = constraint_form.cleaned_data['layer']
+                constraint.definition = constraint_form.cleaned_data['definition']
+                constraint.parameter = constraint_form.cleaned_data['parameter']
+                constraint.variables = ','.join(constraint_form.cleaned_data['variables'])
                 constraint.save()
                 return redirect(reverse('fitting:constraints', args=(instrument, data_id)))
         else:
-            alerts =  ["There were errors in the form, likely due to an old model: refresh your page"]
+            alerts = ["There were errors in the form, likely due to an old model: refresh your page"]
             form_errors = constraint_form.errors
 
         template_values['error_list'] = form_errors
@@ -654,15 +667,21 @@ class SaveModelDelete(DeleteView):
 @login_required
 def remove_simultaneous_model(request, pk):
     """
-        Remove a constraint
+        Remove a data set/model from a simultaneous fit
         :param request: request object
-        :param instrument: instrument name
-        :param data_id: data set identifier
-        :param const_id: pk of the constraint object to delete
+        :param pk: SimultaneousModel object id
     """
     success_url = request.GET.get('success', reverse('fitting:show_files'))
-    const_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
-    const_obj.delete()
+    sim_model_obj = get_object_or_404(SimultaneousModel, id=pk, fit_problem__user=request.user)
+
+    # Remove the simultaneous constraints related to this fit
+    for item in SimultaneousConstraint.objects.filter(fit_problem=sim_model_obj.fit_problem, user=request.user):
+        item.delete()
+    # Remove the related SimultaneousFit object
+    for item in SimultaneousFit.objects.filter(fit_problem=sim_model_obj.fit_problem, user=request.user):
+        item.delete()
+
+    sim_model_obj.delete()
     return redirect(success_url)
 
 @method_decorator(login_required, name='dispatch')
@@ -676,7 +695,7 @@ class SimultaneousView(View):
             raise Http404
 
         # Find the extra data sets to fit together
-        setup_request = request.GET.get('setup', '0')=='1'
+        setup_request = request.GET.get('setup', '0') == '1'
         model_list, error_list, chi2, results_ready, can_update = model_handling.get_simultaneous_models(request, fit_problem, setup_request)
 
         # List of existing constraints

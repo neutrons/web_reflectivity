@@ -5,13 +5,13 @@
 
 <table class="property_table">
     <thead>
-      <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th> <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th>
+      <tr><th>Layer number</th><th>Name</th> <th>Thickness (&#8491;)</th> <th>SLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>iSLD (10<sup>-6</sup>/&#8491;<sup>2</sup>)</th> <th>Roughness (&#8491;)</th>
     </thead>
     <tbody>
       <tr class="short_input">
         <td>Front</td>
         <td>{{ object.fit_problem.reflectivity_model.front_name }}</td><td>-</td><td>{{ object.fit_problem.reflectivity_model.front_sld }}</td>
-        <td>-</td><td></td><td></td>
+        <td>-</td><td>-</td><td></td><td></td>
       </tr>
     {% for layer in object.fit_problem.layers.all %}
       <tr class="short_input">
@@ -19,12 +19,13 @@
         <td>{{ layer.name }}</td>
         <td>{{ layer.thickness }}</td>
         <td>{{ layer.sld }}</td>
+        <td>{{ layer.i_sld }}</td>
         <td>{{ layer.roughness }}</td>
       </tr>{% endfor %}
       <tr class="short_input">
         <td>Back</td>
         <td>{{ object.fit_problem.reflectivity_model.back_name }}</td><td>-</td>
-        <td>{{ object.fit_problem.reflectivity_model.back_sld }}</td>
+        <td>{{ object.fit_problem.reflectivity_model.back_sld }}</td><td>-</td>
         <td>{{ object.fit_problem.reflectivity_model.back_roughness }}</td>
         <td></td><td></td>
       </tr>
