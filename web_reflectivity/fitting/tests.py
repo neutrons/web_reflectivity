@@ -571,16 +571,6 @@ SLD_START
 SLD_END
 Done: 2.40629 sec
 """
-    def test_sld_parse(self):
-        """ Test log parser for SLD profile """
-        data = refl1d.extract_sld_from_log(self.log)
-        self.assertTrue("1.80000000   2.02515965   0.00000000" in data)
-
-    def test_refl_parse(self):
-        """ Test log parser for reflectivity curve """
-        data = refl1d.extract_data_from_log(self.log)
-        self.assertTrue("# intensity: 1.00030009" in data)
-
     def test_update_model(self):
         """ Update model from log """
         fit_problem = FitProblem.objects.get(user=self.user)

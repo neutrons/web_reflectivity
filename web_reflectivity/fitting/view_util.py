@@ -26,7 +26,7 @@ from django.http import Http404
 
 import users.view_util
 
-from .parsing import refl1d
+from . import parsing
 from . import job_handling
 from .data_server import data_handler
 
@@ -120,22 +120,6 @@ def get_fit_problem(request, instrument, data_id):
         return data_path, fit_problem
     return data_path, None
 
-def get_fit_data(request, instrument, data_id):
-    """
-        Get the latest ascii data from
-
-        :param str data_id: run identifier (usually a number)
-        :param str instrument: instrument name, or user name
-    """
-    ascii_data = None
-    _, fit_problem = get_fit_problem(request, instrument, data_id)
-    if fit_problem is not None:
-        job_logs = Log.objects.filter(job=fit_problem.remote_job)
-        if len(job_logs) > 0:
-            latest = job_logs.latest('time')
-            ascii_data = refl1d.extract_data_from_log(latest.content)
-    return ascii_data
-
 def get_model_as_csv(request, instrument, data_id):
     """
         Return an ASCII block with model information to be loaded
@@ -150,7 +134,7 @@ def get_model_as_csv(request, instrument, data_id):
         model_dict, layer_dicts = fit_problem.model_to_dicts()
         ascii_data = "# Reflectivity model\n"
         ascii_data += "# Created on %s\n" % fit_problem.timestamp
-        ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.5281/zenodo.260178]\n"
+        ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.1016/j.softx.2018.09.001]\n"
         ascii_data += "# Data File: %s\n\n" % fit_problem.reflectivity_model.data_path
         ascii_data += "# scale = %g\n" % model_dict['scale']
         ascii_data += "# background = %g\n\n" % model_dict['background']
@@ -206,7 +190,7 @@ def get_results(request, fit_problem):
                             logging.error("Logs for job %s needs cleaning up", job.id)
                             #job.delete()
 
-                    chi2 = refl1d.update_model(latest.content, fit_problem)
+                    chi2 = parsing.refl1d.update_model(latest.content, fit_problem)
                     if chi2 is None:
                         errors.append("The fit results appear to be incomplete.")
                         can_update = False
@@ -261,34 +245,6 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
         labels.append("Fit")
 
     return plots, labels, sld_plot, chi2
-
-def get_plot_from_job_report(log_object, rq4=False):
-    """
-        Obtain job log and extract plot data
-
-        :param Log log_object: Log object for a given remote job
-        :param bool rq4: if True, the plot will be in R*Q^4
-    """
-    refl_plot = None
-    sld_plot = None
-    if log_object is not None:
-        # Extract reflectivity
-        data_log = refl1d.extract_data_from_log(log_object.content)
-        if data_log is not None:
-            data_str = io.StringIO(data_log)
-            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
-            if rq4 is True:
-                fit_values = raw_data['theory'] * raw_data['q']**4
-            else:
-                fit_values = raw_data['theory']
-            refl_plot = [raw_data['q'], fit_values]
-        # Extract SLD
-        data_log = refl1d.extract_sld_from_log(log_object.content)
-        if data_log is not None:
-            data_str = io.StringIO(data_log)
-            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['z','rho','irho'])
-            sld_plot = [raw_data['z'], raw_data['rho']]
-    return refl_plot, sld_plot
 
 def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     """

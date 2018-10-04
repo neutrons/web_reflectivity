@@ -188,27 +188,6 @@ def download_reduced_data(request, instrument, data_id):
     return response
 
 @login_required
-def download_fit_data(request, instrument, data_id, include_model=False):
-    """
-        Download reduced data and fit data from latest fit
-        :param request: http request object
-        :param instrument: instrument name
-        :param run_id: run number
-    """
-    #TODO: Downloading data with the extra fit column is not really useful if you can loading in
-    # another fit application. Eventually let the user choose whether they want the fit data.
-    if not include_model:
-        return download_reduced_data(request, instrument, data_id)
-
-    ascii_data = view_util.get_fit_data(request, instrument, data_id)
-    if ascii_data is None:
-        return download_reduced_data(request, instrument, data_id)
-
-    response = HttpResponse(ascii_data, content_type="text/plain")
-    response['Content-Disposition'] = 'attachment; filename=%s_%s.txt' % (instrument.upper(), data_id)
-    return response
-
-@login_required
 def download_model(request, instrument, data_id):
     """
         Download reduced data and fit data from latest fit

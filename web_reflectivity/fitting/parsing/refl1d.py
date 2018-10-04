@@ -173,17 +173,6 @@ def update_model(content, fit_problem):
         update_model_from_json(content, fit_problem)
     return chi2
 
-def extract_data_from_log(log_content):
-    """
-        Extract data from log.
-
-        :param log_content: string buffer of the job log
-    """
-    data_block_list = extract_multi_data_from_log(log_content)
-    if data_block_list is not None and len(data_block_list) > 0:
-        return data_block_list[0][1]
-    return None
-
 def extract_multi_data_from_log(log_content):
     """
         Extract data block from a log. For simultaneous fits, an EXPT_START tag
@@ -195,17 +184,6 @@ def extract_multi_data_from_log(log_content):
         :param str log_content: string buffer of the job log
     """
     return _extract_multi_block_from_log(log_content, "REFL")
-
-def extract_sld_from_log(log_content):
-    """
-        Extract a single SLD profile from a REFL1D log.
-
-        :param str log_content: string buffer of the job log
-    """
-    data_block_list = extract_multi_sld_from_log(log_content)
-    if data_block_list is not None and len(data_block_list) > 0:
-        return data_block_list[0][1]
-    return None
 
 def extract_multi_sld_from_log(log_content):
     """

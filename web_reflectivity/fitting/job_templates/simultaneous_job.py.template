@@ -38,10 +38,10 @@ problem = FitProblem(${EXPT_LIST})
     print('SIMULTANEOUS ${EXPT_IDS}')
     try:
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
-            model_params = out_params.read()
-            fd.write(model_params)
             print("MODEL_PARAMS_START")
-            print(model_params)
+            for line in out_params.readlines():
+                if not line.strip().startswith('.'):
+                    print(line.replace('\n',''))
             print("MODEL_PARAMS_END")
     except:
         fd.write("Error: could not process fit results\n")
