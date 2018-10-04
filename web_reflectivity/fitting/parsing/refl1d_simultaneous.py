@@ -77,34 +77,23 @@ def check_compatibility(content):
     """
     return content.find('REFL1D_VERSION') >= 0
 
-def json_to_fit_problem_dicts(json_data, model_name, error_output):
+def json_to_fit_problem(json_data, model_name, error_output, pretty_print=False):
     """
         Turn a json representation of a model into a dictionary compatible with
         our forms.
-        @param dict json_data: dict extracted from the json section of the log
-        @param str model_name: name of the model
-        @param list error_output: list of parameters and values taken from the DREAM output
+        :param dict json_data: dict extracted from the json section of the log
+        :param str model_name: name of the model
+        :param list error_output: list of parameters and values taken from the DREAM output
+        :param bool pretty_print: if True, the value will be turned into a value +- error string
     """
     problem = DummyProblem(json_data, model_name)
-    update_model_from_dict(problem, json_data, error_output)
-    return problem.model_to_dicts()
-
-def json_to_fit_problem(json_data, model_name, error_output):
-    """
-        Turn a json representation of a model into a dictionary compatible with
-        our forms.
-        @param dict json_data: dict extracted from the json section of the log
-        @param str model_name: name of the model
-        @param list error_output: list of parameters and values taken from the DREAM output
-    """
-    problem = DummyProblem(json_data, model_name)
-    update_model_from_dict(problem, json_data, error_output)
+    update_model_from_dict(problem, json_data, error_output, pretty_print=pretty_print)
     return problem
 
 def parse_models_from_log(content):
     """
         Parse the content of a simultaneous refl1d log file.
-        @param str content: block of log text to parse
+        :param str content: block of log text to parse
     """
     chi2 = 0
     chi2_per_model = []
@@ -146,10 +135,9 @@ def parse_models_from_log(content):
     clean_model_list = []
     problem_list = []
     for i, [_name, _json_model] in enumerate(model_list):
-        _problem = json_to_fit_problem(_json_model, _name, error_params)
-        problem_list.append(_problem)
+        problem_list.append(json_to_fit_problem(_json_model, _name, error_params))
+        _problem = json_to_fit_problem(_json_model, _name, error_params, pretty_print=True)
         refl_dict, layer_dict = _problem.model_to_dicts()
-        #refl_dict, layer_dict = json_to_fit_problem_dicts(_json_model, _name, error_params)
         refl_dict['chi2'] = chi2_per_model[i]
         clean_model_list.append([refl_dict, layer_dict])
     return clean_model_list, chi2, problem_list

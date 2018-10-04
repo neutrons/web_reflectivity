@@ -67,7 +67,7 @@ problem = FitProblem(${EXPT_NAME})
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
             print("MODEL_PARAMS_START")
             for line in out_params.readlines():
-                if not line.strip().startswith('.'):
+                if not line.strip().startswith('.') and len(line.strip()) > 5:
                     print(line.replace('\n',''))
             print("MODEL_PARAMS_END")
     except:

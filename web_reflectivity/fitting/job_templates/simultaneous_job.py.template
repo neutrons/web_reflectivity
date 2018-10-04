@@ -40,7 +40,7 @@ problem = FitProblem(${EXPT_LIST})
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
             print("MODEL_PARAMS_START")
             for line in out_params.readlines():
-                if not line.strip().startswith('.'):
+                if not line.strip().startswith('.') and len(line.strip()) > 5:
                     print(line.replace('\n',''))
             print("MODEL_PARAMS_END")
     except:
@@ -49,28 +49,6 @@ problem = FitProblem(${EXPT_LIST})
 
     for i in range(len(${EXPT_IDS})):
         print("EXPT_START %s" % i)
-        try:
-            with open(os.path.join(output_dir, '__model-%d-refl.dat' % (i+1)), 'r') as out_refl:
-                print("REFL_START")
-                print(out_refl.read())
-                print("REFL_END")
-        except:
-            fd.write("Error: could not read reflectivity output\n")
-            print(sys.exc_value)
-
-        try:
-            with open(os.path.join(output_dir, '__model-%d-profile.dat' % (i+1)), 'r') as out_sld:
-                print("SLD_START")
-                i_count = 0
-                for line in out_sld.readlines():
-                    i_count += 1
-                    if i_count % 10 == 0:
-                        print(line.replace('\n',''))
-                print("SLD_END")
-        except:
-            fd.write("Error: could not process SLD profile\n")
-            print(sys.exc_value)
-
         try:
             with open(os.path.join(output_dir, '__model-%d-expt.json' % (i+1)), 'r') as json_refl:
                 print("MODEL_JSON_START")

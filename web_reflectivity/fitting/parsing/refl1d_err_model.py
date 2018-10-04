@@ -1,6 +1,7 @@
 #pylint: disable=consider-using-enumerate, too-many-branches, invalid-name, bare-except, too-many-arguments, line-too-long, too-many-locals, too-many-statements
 """
     Model parser for the strange model representation refl1d uses in its .err file.
+    This is used for old logs with refl1d version lower than 0.8.6.
 """
 import sys
 import json

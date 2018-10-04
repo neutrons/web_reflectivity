@@ -67,11 +67,9 @@ def update_with_results(fit_problem, par_name, value, error):
                     layer.save()
     fit_problem.save()
 
-def find_error(layer_name, par_name, value, error_output, pretty_print=True):
+def find_error(value, error_output, pretty_print=False):
     """
         Find the error of a parameter in the list of output parameters.
-        @param layer_name: name of the layer
-        @param par_name: name of the parameter
         @param value: output value, so we can recognize the entry
         @param error_output: list of fit output parameters from the DREAM output
 
@@ -87,6 +85,7 @@ def find_error(layer_name, par_name, value, error_output, pretty_print=True):
         return value, 0.0
 
     # Find the parameter in the list of output parameters
+    _value = value
     _error = 0
     for _, val, err in error_output:
         if value == 0:
@@ -99,23 +98,25 @@ def find_error(layer_name, par_name, value, error_output, pretty_print=True):
         _value = "%.4g &#177; %.4g" % (value, _error) if _error > 0 else value
     return _value, _error
 
-def update_model_from_dict(fit_problem, experiment, error_output=None):
+def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_print=False):
     """
         Parse a json representation of the experiment
+        :param FitProblem fit_problem: FitProblem-like ojbect
+        :param dict experiment: dictionary representation of the fit problem read from the json output
+        :param list error_output: list of DREAM output parameters, with errors.
+        :param bool pretty_print: if True, the value will be turned into a value +- error string
     """
     for layer in experiment['sample']['layers']:
         for par_name in ['thickness', 'rho', 'irho', 'interface']:
             # Because we can have complex constraints, we don't limit the update to varying parameters
-            _value, _error = find_error(layer['name'], par_name, layer[par_name]['value'], error_output)
+            _value, _error = find_error(layer[par_name]['value'], error_output, pretty_print=pretty_print)
             update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
-    if experiment['probe']['intensity']['fixed'] is False:
-        _value, _error = find_error('', 'intensity', experiment['probe']['intensity']['value'], error_output)
-        update_with_results(fit_problem, 'intensity', _value, error=_error)
+    _value, _error = find_error(experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
+    update_with_results(fit_problem, 'intensity', _value, error=_error)
 
-    if experiment['probe']['background']['fixed'] is False:
-        _value, _error = find_error('', 'background', experiment['probe']['background']['value'], error_output)
-        update_with_results(fit_problem, 'background', _value, error=_error)
+    _value, _error = find_error(experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
+    update_with_results(fit_problem, 'background', _value, error=_error)
 
 def update_model_from_json(content, fit_problem):
     """
