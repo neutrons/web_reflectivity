@@ -8,6 +8,8 @@ import re
 import math
 import logging
 
+from .refl1d import parse_single_param
+
 def find_error(layer_name, par_name, layer_dict, output_params):
     """
         Find the error of a parameter in the list of output parameters.
@@ -197,41 +199,3 @@ def parse_slabs(content):
     for r_model, l_model in model_list:
         clean_model_list.append(translate_model(r_model, l_model, output_params))
     return clean_model_list, chi2
-
-def parse_single_param(line):
-    """
-        Parse a line of the refl1d DREAM output log
-        1            intensity  1.084(31)  1.0991  1.1000 [  1.062   1.100] [  1.000   1.100]
-        2              air rho 0.91(91)e-3 0.00062 0.00006 [ 0.0001  0.0017] [ 0.0000  0.0031]
-
-    """
-    result = re.search(r'^\d+ (.*) ([\d.-]+)\((\d+)\)(e?[\d-]*)\s* [\d.-]+\s* ([\d.-]+)(e?[\d-]*) ', line.strip())
-    value_float = None
-    error_float = None
-    par_name = None
-    if result is not None:
-        par_name = result.group(1).strip()
-        exponent = result.group(4)
-        mean_value = "%s%s" % (result.group(2), exponent)
-        error = "%s%s" % (result.group(3), exponent)
-        best_value = "%s%s" % (result.group(5), result.group(6))
-
-        # Error string does not have a .
-        err_digits = len(error)
-        val_digits = len(mean_value.replace('.', ''))
-        err_value = ''
-        i_digit = 0
-
-        for c in mean_value: #pylint: disable=invalid-name
-            if c == '.':
-                err_value += '.'
-            else:
-                if i_digit < val_digits - err_digits:
-                    err_value += '0'
-                else:
-                    err_value += error[i_digit - val_digits + err_digits]
-                i_digit += 1
-
-        error_float = float(err_value)
-        value_float = float(best_value)
-    return par_name, value_float, error_float

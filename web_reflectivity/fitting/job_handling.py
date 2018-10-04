@@ -7,6 +7,7 @@ import sys
 import string
 import os
 import numpy as np
+import refl1d
 import refl1d.names as rf
 
 from django.conf import settings
@@ -70,6 +71,7 @@ def create_model_file(data_form, layer_forms, data_file=None, ascii_data="", out
             refl1d_path = os.path.split(sys.executable)[0]
 
         script = model_template.substitute(REDUCED_FILE=data_file,
+                                           REFL1D_VERSION=refl1d.__version__,
                                            Q_MIN=data_form.cleaned_data['q_min'],
                                            Q_MAX=data_form.cleaned_data['q_max'],
                                            MATERIALS=materials,
@@ -113,6 +115,7 @@ def assemble_job(model_script, data_script, expt_names, data_ids, options, work_
         if settings.JOB_HANDLING_HOST == 'localhost':
             refl1d_path = os.path.split(sys.executable)[0]
         script += model_template.substitute(PROCESS_DATA=data_script,
+                                            REFL1D_VERSION=refl1d.__version__,
                                             MODELS=model_script,
                                             WORK_DIR=work_dir,
                                             EXPT_LIST='[%s]' % ','.join(expt_names),
@@ -130,7 +133,7 @@ def compute_reflectivity(q, r, dr, dq, fit_problem):
         :param list q: q values
         :param list r: reflectivity values
         :param list dr: error on the reflectivity values
-        :param list dq: q resolution
+        :param list dq: q resolution as FWHM
         :param FitProblem fit_problem: fit problem object
     """
     q = np.asarray(q)

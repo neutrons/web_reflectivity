@@ -29,7 +29,12 @@ import users.view_util
 from .parsing import refl1d
 from . import job_handling
 from .data_server import data_handler
-from . import icat_server_communication as icat
+
+# Import catalog
+from . import catalog
+if not catalog.HAVE_ONCAT:
+    from . import icat_server_communication as catalog
+
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
 
@@ -83,7 +88,8 @@ def check_permissions(request, run_id, instrument):
 
     # Get the IPTS from ICAT
     try:
-        run_info = icat.get_run_info(instrument, run_id)
+        #run_info = icat.get_run_info(instrument, run_id)
+        run_info = catalog.get_run_info(instrument, run_id)
         if 'proposal' in run_info:
             return users.view_util.is_experiment_member(request, instrument, run_info['proposal']), run_info
         else:

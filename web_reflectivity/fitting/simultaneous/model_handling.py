@@ -9,8 +9,8 @@ import pandas
 import numpy as np
 from django_remote_submission.models import Log
 from ..models import SimultaneousModel, SimultaneousFit
-from ..parsing import refl1d_err_model, refl1d
-from .. import view_util
+from ..parsing import refl1d_err_model, refl1d, refl1d_simultaneous
+from .. import view_util, job_handling
 
 def get_simultaneous_models(request, fit_problem, setup_request=False):
     """
@@ -22,6 +22,7 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
     """
     error_list = []
     model_list = []
+    fitproblem_list = []
     chi2 = None
 
     # Find the latest fit
@@ -38,8 +39,12 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
                 job_logs = Log.objects.filter(job=remote_job)
                 if len(job_logs) > 0:
                     latest = job_logs.latest('time')
-                    model_list, chi2 = refl1d_err_model.parse_slabs(latest.content)
-                    #TODO: do we need to apply constraints?
+                    # Check whether we need to deal with a legacy log
+                    if refl1d_simultaneous.check_compatibility:
+                        model_list, chi2, fitproblem_list = refl1d_simultaneous.parse_models_from_log(latest.content)
+                    else:
+                        logging.error("Found a legacy log")
+                        model_list, chi2 = refl1d_err_model.parse_slabs(latest.content)
                     if chi2 is None:
                         error_list.append("The fit results appear to be incomplete.")
                 else:
@@ -47,6 +52,7 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
         except:
             logging.error("Problem retrieving results: %s", sys.exc_value)
             error_list.append("Problem retrieving results")
+            raise
 
     # If we could not find results, use the individual fits as a starting point
     if len(model_list) == 0:
@@ -64,7 +70,7 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
         for item in data_list:
             model_list.append(item.model_to_dicts())
 
-    return model_list, error_list, chi2, fit_exists, can_update
+    return model_list, error_list, chi2, fit_exists, can_update, fitproblem_list
 
 def _process_rq4(request, data, tag):
     """
@@ -75,7 +81,7 @@ def _process_rq4(request, data, tag):
         return data[tag] * data['q']**4
     return data[tag]
 
-def assemble_plots(request, fit_problem):
+def assemble_plots(request, fit_problem, result_fitproblems=None):
     """
         Find all that needs to be plotted for this fit problem.
 
@@ -96,12 +102,26 @@ def assemble_plots(request, fit_problem):
             job_logs = Log.objects.filter(job=remote_job)
             if len(job_logs) > 0:
                 latest = job_logs.latest('time')
+                i_problem = -1
                 for data_path, data_log in refl1d.extract_multi_data_from_log(latest.content):
+                    i_problem += 1
                     raw_data = pandas.read_csv(io.StringIO(data_log), delim_whitespace=True,
                                                comment='#', names=['q', 'dq', 'r', 'dr', 'theory', 'fresnel'])
                     data_list.extend([[raw_data['q'], _process_rq4(request, raw_data, 'r'), _process_rq4(request, raw_data, 'dr')],
                                       [raw_data['q'], _process_rq4(request, raw_data, 'theory')]])
                     data_names.extend([data_path, data_path])
+
+                    #TODO: Checkpoint. Working on calculating the reflectivity rather than reading it from a long log.
+                    if False and result_fitproblems is not None and len(result_fitproblems) > 0:
+                        _q, _r, _z, _sld, _ = job_handling.compute_reflectivity(raw_data['q'],
+                                                                                raw_data['r'],
+                                                                                raw_data['dr'],
+                                                                                raw_data['dq']*2.35,
+                                                                                result_fitproblems[i_problem])
+                        if request.session.get('rq4', False):
+                            _r = _r * _q**4
+                        data_list.append([raw_data['q'], _r])
+                        data_names.append(data_path+'_calc')
 
                 # Extract SLD
                 sld_block_list = refl1d.extract_multi_sld_from_log(latest.content)
