@@ -16,5 +16,5 @@ dependencies:
   - requests==2.10.0
   - periodictable>=1.4.1
   - asgi_redis
-  - refl1d==0.7.8
+  - refl1d>=0.8.6
   - matplotlib
