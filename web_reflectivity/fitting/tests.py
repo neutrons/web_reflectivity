@@ -843,6 +843,7 @@ class ToolsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['capacity'], ' 0.786')
 
+
 class JsonParsingTestCase(TestCase):
     """ Test JSON parsing """
     def setUp(self):
@@ -897,3 +898,16 @@ Done: 0.981189 sec
             session = {}
         r_plot = model_handling.assemble_plots(Req(), None, problem_list)
         self.assertTrue(len(r_plot) > 0)
+
+
+class CatalogTestCase(TestCase):
+    def test_oncat(self):
+        from . import catalog
+        self.assertTrue(catalog.decode_time('2018-10-12T00:00:00-06:39') is not None)
+        self.assertEqual(catalog.get_run_info('john', 1), {})
+
+
+class ICATTestCase(TestCase):
+    def test_icat(self):
+        from . import icat_server_communication
+        self.assertEqual(icat_server_communication.get_run_info('john', 1), {})
