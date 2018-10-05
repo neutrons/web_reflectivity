@@ -887,6 +887,13 @@ Done: 0.981189 sec
 """
 
     def test_log_parsing(self):
+        """ Test new log parsing """
         _, _, problem_list = refl1d_simultaneous.parse_models_from_log(self.log)
         _, data_names, _, _ = model_handling.create_plots_from_fit_problem(problem_list)
         self.assertEqual(len(data_names), 2)
+
+        # Test plot assembly
+        class Req(object):
+            session = {}
+        r_plot = model_handling.assemble_plots(Req(), None, problem_list)
+        self.assertTrue(len(r_plot) > 0)
