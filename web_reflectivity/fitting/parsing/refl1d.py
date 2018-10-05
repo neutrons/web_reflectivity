@@ -9,6 +9,13 @@ import numbers
 import numpy as np
 
 
+def round_(value):
+    """ Rounding function to make sure things look good on the web page """
+    try:
+        return float("%.4g" % value)
+    except:
+        return value
+
 def update_with_results(fit_problem, par_name, value, error):
     """
         Update a mode with a parameter value.
@@ -20,8 +27,8 @@ def update_with_results(fit_problem, par_name, value, error):
     """
     # Round the number to something legible. Avoid strings.
     if isinstance(value, numbers.Number):
-        value = np.around(value, 3)
-        error = np.around(error, 3)
+        value = round_(value)
+        error = round_(error)
     toks = par_name.split(' ')
     # The first token is the layer name or top-level parameter name
     if toks[0] == 'intensity':
