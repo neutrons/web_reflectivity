@@ -139,8 +139,15 @@ def compute_reflectivity(q, r, dr, dq, fit_problem):
     q = np.asarray(q)
     dq = np.asarray(dq)
     zeros = np.zeros(len(q))
-    i_min = min([i for i in range(len(q)) if q[i]>fit_problem.reflectivity_model.q_min])
-    i_max = max([i for i in range(len(q)) if q[i]<fit_problem.reflectivity_model.q_max])+1
+
+    q_min = fit_problem.reflectivity_model.q_min
+    q_max = fit_problem.reflectivity_model.q_max
+    i_min = 0
+    i_max = len(q)
+
+    if q_min < q_max:
+        i_min = min([i for i in range(len(q)) if q[i]>q_min])
+        i_max = max([i for i in range(len(q)) if q[i]<q_max])+1
 
     # SNS data is FWHM
     dq_std = dq/2.35
@@ -162,7 +169,7 @@ def compute_reflectivity(q, r, dr, dq, fit_problem):
     probe.intensity = rf.Parameter(value=fit_problem.reflectivity_model.scale, name='scale')
     probe.background = rf.Parameter(value=fit_problem.reflectivity_model.background, name='background')
     expt = rf.Experiment(probe=probe, sample=sample)
-    q, _r = expt.reflectivity()
+    _q, _r = expt.reflectivity()
     z, sld, _ = expt.smooth_profile()
 
     if r is not None and dr is not None:
@@ -170,4 +177,4 @@ def compute_reflectivity(q, r, dr, dq, fit_problem):
     else:
         chi2 = None
 
-    return q, _r, z, sld, chi2
+    return _q, _r, z, sld, chi2

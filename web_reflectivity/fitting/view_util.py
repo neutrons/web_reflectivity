@@ -155,13 +155,13 @@ def get_model_as_csv(request, instrument, data_id):
     if html_data is not None:
         current_str = io.StringIO(extract_ascii_from_div(html_data))
         current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
-        _, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
+        _q, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
                                                                 current_data['r'],
                                                                 current_data['dr'],
                                                                 current_data['dq'], fit_problem)
         ascii_data += "%12s %12s\n" % ("Q", "R")
         for i, r_value in enumerate(r_model):
-            ascii_data += "%12.6f %12.6f\n" % (current_data['q'][i], r_value)
+            ascii_data += "%12.6f %12.6f\n" % (_q[i], r_value)
 
     return ascii_data
 
@@ -223,7 +223,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     chi2 = None
     sld_plot = None
     if fit_problem:
-        _, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
+        _q, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
                                                                      current_data['r'],
                                                                      current_data['dr'],
                                                                      current_data['dq'], fit_problem)
@@ -233,7 +233,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
         r_values = current_data['r'] * current_data['q']**4
         dr_values = current_data['dr'] * current_data['q']**4
         if fit_problem:
-            r_model = r_model * current_data['q']**4
+            r_model = r_model * _q**4
     else:
         r_values = current_data['r']
         dr_values = current_data['dr']
@@ -241,7 +241,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     plots = [[current_data['q'], r_values, dr_values]]
     labels = ["Data"]
     if fit_problem:
-        plots.append([current_data['q'], r_model])
+        plots.append([_q, r_model])
         labels.append("Fit")
 
     return plots, labels, sld_plot, chi2
@@ -296,15 +296,15 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
 
     y_title=u"Reflectivity"
     if rq4 is True:
-        y_title += u" x Q<sup>4</sup> (1/\u212b<sup>4</sup>)"
+        y_title += u" x Q<sup>4</sup> (1/A<sup>4</sup>)"
 
     if len(data_list) > 0:
-        r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
+        r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/A)", y_title=y_title)
 
     if len(sld_list) > 0:
         sld_plot = plot1d(sld_list, x_log=False, y_log=False,
-                          data_names=sld_names, x_title=u"Z (\u212b)",
-                          y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+                          data_names=sld_names, x_title=u"Z (A)",
+                          y_title='SLD (10<sup>-6</sup>/A<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
 
     return r_plot, chi2
@@ -745,7 +745,7 @@ def parse_ascii_file(request, file_name, raw_content):
                 current_data['dq'][i] = current_data['q'][i] * 0.03
 
         # Package the data in a plot
-        plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
+        plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/A)", y_title="Reflectivity")
 
         # Upload plot to live data server
         return data_handler.store_user_data(request, file_name, plot)

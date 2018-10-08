@@ -89,10 +89,10 @@ def assemble_plots(request, fit_problem, result_fitproblems=None):
     else:
         data_list, data_names, sld_list, sld_names = create_plots_from_legacy_log(request, fit_problem)
 
-    y_title = u"Reflectivity x Q<sup>4</sup> (1/\u212b<sup>4</sup>)" if rq4 else u"Reflectivity"
+    y_title = u"Reflectivity x Q<sup>4</sup> (1/A<sup>4</sup>)" if rq4 else u"Reflectivity"
 
     if len(data_list) > 0:
-        r_plot = view_util.plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
+        r_plot = view_util.plot1d(data_list, data_names=data_names, x_title=u"Q (1/A)", y_title=y_title)
 
     # Compute asymmetry
     if len(data_list) == 4:
@@ -102,13 +102,13 @@ def assemble_plots(request, fit_problem, result_fitproblems=None):
         extra_plot = view_util.plot1d([asym_data, asym_theory],
                                       x_log=True, y_log=False,
                                       data_names=[u'(r1 - r2) / r1', u'Fit [\u03a7\u00b2 = %2.2g]' % chi2_asym],
-                                      x_title=u"Q (1/\u212b)", y_title=u'Asymmetry')
+                                      x_title=u"Q (1/A)", y_title=u'Asymmetry')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, extra_plot)
 
     if len(sld_list) > 0:
         extra_plot = view_util.plot1d(sld_list, x_log=False, y_log=False,
-                                      data_names=sld_names, x_title=u"Z (\u212b)",
-                                      y_title=u'SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+                                      data_names=sld_names, x_title=u"Z (A)",
+                                      y_title=u'SLD (10<sup>-6</sup>/A<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, extra_plot)
 
     return r_plot
