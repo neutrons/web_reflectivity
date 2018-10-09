@@ -104,7 +104,7 @@ def find_error(layer_name, par_name, value, error_output, pretty_print=False):
                 diff = np.abs(float(val))
             else:
                 diff = np.abs((float(val)-value)/value)
-            if diff < 0.0001:
+            if diff < 0.001:
                 _error = err
     if pretty_print:
         _value = "%.4g &#177; %.4g" % (value, _error) if _error > 0 else value
