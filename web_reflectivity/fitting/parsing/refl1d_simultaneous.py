@@ -43,9 +43,9 @@ class DummyProblem(object):
         # in the list is actually the backing medium.
         for i, layer in enumerate(json_data['sample']['layers']):
             if i == 0:
-                self.reflectivity_model.front_name = layer['name']
-            elif i == len(json_data['sample']['layers']) - 1:
                 self.reflectivity_model.back_name = layer['name']
+            elif i == len(json_data['sample']['layers']) - 1:
+                self.reflectivity_model.front_name = layer['name']
             else:
                 self.layers.append(DummyLayer(name=layer['name'],layer_number=i))
 
