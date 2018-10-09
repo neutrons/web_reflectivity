@@ -58,7 +58,7 @@ class DummyProblem(object):
             i += 1
             layer_dict = model_to_dict(layer)
             # Start the ordering number at 1.
-            layer_dict['layer_number'] = -i
+            layer_dict['layer_number'] = len(self.layers)-i
             model_layers.insert(0, layer_dict)
         return [refl_model_dict, model_layers]
 
