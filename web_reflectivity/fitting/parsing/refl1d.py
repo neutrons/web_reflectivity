@@ -104,7 +104,7 @@ def find_error(layer_name, par_name, value, error_output, pretty_print=False):
                 diff = np.abs(float(val))
             else:
                 diff = np.abs((float(val)-value)/value)
-            if diff < 0.001:
+            if diff < 0.0001:
                 _error = err
     if pretty_print:
         _value = "%.4g &#177; %.4g" % (value, _error) if _error > 0 else value
@@ -124,10 +124,10 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
             _value, _error = find_error(layer['name'], par_name, layer[par_name]['value'], error_output, pretty_print=pretty_print)
             update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
-    _value, _error = find_error(layer['name'], par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
+    _value, _error = find_error('', par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
     update_with_results(fit_problem, 'intensity', _value, error=_error)
 
-    _value, _error = find_error(layer['name'], par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
+    _value, _error = find_error('', par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
     update_with_results(fit_problem, 'background', _value, error=_error)
 
 def update_model_from_json(content, fit_problem):
