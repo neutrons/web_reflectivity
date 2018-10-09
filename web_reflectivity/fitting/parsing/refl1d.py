@@ -74,9 +74,11 @@ def update_with_results(fit_problem, par_name, value, error):
                     layer.save()
     fit_problem.save()
 
-def find_error(value, error_output, pretty_print=False):
+def find_error(layer_name, par_name, value, error_output, pretty_print=False):
     """
         Find the error of a parameter in the list of output parameters.
+        @param layer_name: name of the layer
+        @param par_name: name of the parameter
         @param value: output value, so we can recognize the entry
         @param error_output: list of fit output parameters from the DREAM output
 
@@ -92,15 +94,18 @@ def find_error(value, error_output, pretty_print=False):
         return value, 0.0
 
     # Find the parameter in the list of output parameters
+    long_name = "%s %s" % (layer_name, par_name)
+    long_name = long_name.strip()
     _value = value
     _error = 0
-    for _, val, err in error_output:
-        if value == 0:
-            diff = np.abs(float(val))
-        else:
-            diff = np.abs((float(val)-value)/value)
-        if diff < 0.001:
-            _error = err
+    for par, val, err in error_output:
+        if par == long_name:
+            if value == 0:
+                diff = np.abs(float(val))
+            else:
+                diff = np.abs((float(val)-value)/value)
+            if diff < 0.001:
+                _error = err
     if pretty_print:
         _value = "%.4g &#177; %.4g" % (value, _error) if _error > 0 else value
     return _value, _error
@@ -116,13 +121,13 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
     for layer in experiment['sample']['layers']:
         for par_name in ['thickness', 'rho', 'irho', 'interface']:
             # Because we can have complex constraints, we don't limit the update to varying parameters
-            _value, _error = find_error(layer[par_name]['value'], error_output, pretty_print=pretty_print)
+            _value, _error = find_error(layer['name'], par_name, layer[par_name]['value'], error_output, pretty_print=pretty_print)
             update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
-    _value, _error = find_error(experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
+    _value, _error = find_error(layer['name'], par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
     update_with_results(fit_problem, 'intensity', _value, error=_error)
 
-    _value, _error = find_error(experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
+    _value, _error = find_error(layer['name'], par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
     update_with_results(fit_problem, 'background', _value, error=_error)
 
 def update_model_from_json(content, fit_problem):
