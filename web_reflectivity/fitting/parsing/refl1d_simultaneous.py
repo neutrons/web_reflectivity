@@ -43,12 +43,11 @@ class DummyProblem(object):
         # in the list is actually the backing medium.
         for i, layer in enumerate(json_data['sample']['layers']):
             if i == 0:
-                self.reflectivity_model.back_name = layer['name']
-            elif i == len(json_data['sample']['layers']) - 1:
                 self.reflectivity_model.front_name = layer['name']
+            elif i == len(json_data['sample']['layers']) - 1:
+                self.reflectivity_model.back_name = layer['name']
             else:
-                self.layers.insert(0, (DummyLayer(name=layer['name'],
-                                                  layer_number=-i)))
+                self.layers.append(DummyLayer(name=layer['name'],layer_number=i))
 
     def model_to_dicts(self):
         """ Return a dict with all the data values """
@@ -59,8 +58,8 @@ class DummyProblem(object):
             i += 1
             layer_dict = model_to_dict(layer)
             # Start the ordering number at 1.
-            layer_dict['layer_number'] = i
-            model_layers.append(layer_dict)
+            layer_dict['layer_number'] = -i
+            model_layers.insert(0, layer_dict)
         return [refl_model_dict, model_layers]
 
     def save(self, *args, **kwargs):
