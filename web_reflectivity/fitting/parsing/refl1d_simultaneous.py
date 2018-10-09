@@ -48,7 +48,7 @@ class DummyProblem(object):
                 self.reflectivity_model.front_name = layer['name']
             else:
                 self.layers.append(DummyLayer(name=layer['name'],
-                                              layer_number=i))
+                                              layer_number=len(json_data['sample']['layers']) - i))
 
     def model_to_dicts(self):
         """ Return a dict with all the data values """
