@@ -120,17 +120,25 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
     """
     for layer in experiment['sample']['layers']:
         for par_name in ['thickness', 'rho', 'irho', 'interface']:
+            _value = layer[par_name]['value']
+            _error = 0
             if layer[par_name]['fixed'] is False:
                 _value, _error = find_error(layer['name'], par_name, layer[par_name]['value'], error_output, pretty_print=pretty_print)
-                update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
+            update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
+    _value = experiment['probe']['intensity']['value']
+    _error = 0
     if experiment['probe']['intensity']['fixed'] is False:
-        _value, _error = find_error('', par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print, tolerance=0.01)
-        update_with_results(fit_problem, 'intensity', _value, error=_error)
+        _value, _error = find_error('', 'intensity', experiment['probe']['intensity']['value'], error_output,
+                                    pretty_print=pretty_print, tolerance=0.01)
+    update_with_results(fit_problem, 'intensity', _value, error=_error)
 
+    _value = experiment['probe']['background']['value']
+    _error = 0
     if experiment['probe']['background']['fixed'] is False:
-        _value, _error = find_error('', par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print, tolerance=0.01)
-        update_with_results(fit_problem, 'background', _value, error=_error)
+        _value, _error = find_error('', 'background', experiment['probe']['background']['value'], error_output,
+                                    pretty_print=pretty_print, tolerance=0.01)
+    update_with_results(fit_problem, 'background', _value, error=_error)
 
 def update_model_from_json(content, fit_problem):
     """
