@@ -120,7 +120,7 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
     """
     for layer in experiment['sample']['layers']:
         for par_name in ['thickness', 'rho', 'irho', 'interface']:
-            if layer['name']['fixed'] is False:
+            if layer[par_name]['fixed'] is False:
                 _value, _error = find_error(layer['name'], par_name, layer[par_name]['value'], error_output, pretty_print=pretty_print)
                 update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
