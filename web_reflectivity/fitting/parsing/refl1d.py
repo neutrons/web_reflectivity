@@ -125,12 +125,12 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
                 update_with_results(fit_problem, '%s %s' % (layer['name'], par_name), _value, error=_error)
 
     if experiment['probe']['intensity']['fixed'] is False:
-        _value, _error = find_error('', par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print)
-        update_with_results(fit_problem, 'intensity', _value, error=_error, tolerance=0.01)
+        _value, _error = find_error('', par_name, experiment['probe']['intensity']['value'], error_output, pretty_print=pretty_print, tolerance=0.01)
+        update_with_results(fit_problem, 'intensity', _value, error=_error)
 
     if experiment['probe']['background']['fixed'] is False:
-        _value, _error = find_error('', par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print)
-        update_with_results(fit_problem, 'background', _value, error=_error, tolerance=0.01)
+        _value, _error = find_error('', par_name, experiment['probe']['background']['value'], error_output, pretty_print=pretty_print, tolerance=0.01)
+        update_with_results(fit_problem, 'background', _value, error=_error)
 
 def update_model_from_json(content, fit_problem):
     """
