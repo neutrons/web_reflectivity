@@ -24,7 +24,7 @@ class ChargeRateForm(forms.Form):
 
             The charge packing refers, for instance, to the maximum x in Li_x:Si.
 
-            To test: Li_15 Si_4 -> 3579 mAh
+            To test: Li_15 Si_4 -> 3579 mAh/g
 
             :param electrode: electrode composition [string]
             :param radius: electrode radius [cm]
