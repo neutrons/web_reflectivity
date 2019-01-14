@@ -101,7 +101,7 @@ def assemble_plots(request, fit_problem, result_fitproblems=None):
         chi2_asym = np.sum(np.sqrt((asym_data[1]-asym_theory[1])**2/asym_data[2]**2))/len(asym_data[0])
         extra_plot = view_util.plot1d([asym_data, asym_theory],
                                       x_log=True, y_log=False,
-                                      data_names=[u'(r1 - r2) / r1', u'Fit [\u03a7\u00b2 = %2.2g]' % chi2_asym],
+                                      data_names=[u'(r1 - r2) / r1', u'Fit [chi^2 = %2.2g]' % chi2_asym],
                                       x_title=u"Q (1/A)", y_title=u'Asymmetry')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, extra_plot)
 
