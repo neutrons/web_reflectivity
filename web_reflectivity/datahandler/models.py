@@ -23,7 +23,7 @@ class DataRun(models.Model):
     # Optional free-form run identifier
     run_id = models.TextField()
 
-    instrument = models.ForeignKey(Instrument)
+    instrument = models.ForeignKey(Instrument, models.CASCADE)
     created_on = models.DateTimeField('Timestamp', auto_now_add=True)
 
     def __unicode__(self):
@@ -35,7 +35,7 @@ class PlotData(models.Model):
         Table of plot data. This data can either be json or html
     """
     ## DataRun this run status belongs to
-    data_run = models.ForeignKey(DataRun)
+    data_run = models.ForeignKey(DataRun, models.CASCADE)
 
     ## JSON/HTML data
     data = models.TextField()

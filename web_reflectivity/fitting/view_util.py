@@ -2,7 +2,6 @@
 """
     Utilities for modeling application
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import os
 import re
@@ -21,7 +20,7 @@ from django.conf import settings
 from django.utils import dateformat, timezone
 from django_remote_submission.models import Server, Job, Log, Interpreter
 from django_remote_submission.tasks import submit_job_to_server, LogPolicy
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import Http404
 
 import users.view_util
@@ -68,7 +67,7 @@ def extract_ascii_from_div(html_data):
                 return ascii_data
     except:
         # Unable to extract data from <div>
-        logging.debug("Unable to extract data from <div>: %s", sys.exc_value)
+        logging.debug("Unable to extract data from <div>: %s", sys.exc_info()[1])
     return None
 
 def check_permissions(request, run_id, instrument):
@@ -197,7 +196,7 @@ def get_results(request, fit_problem):
                 else:
                     errors.append("No results found")
             except:
-                logging.error("Problem retrieving results: %s", sys.exc_value)
+                logging.error("Problem retrieving results: %s", sys.exc_info()[1])
                 errors.append("Problem retrieving results")
 
         # Regardless of whether we have a fit result, we can still show the model.
@@ -342,8 +341,8 @@ def evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_i
         return _evaluate_model(data_form, layers_form, html_data, fit=fit, user=user, run_info=run_info)
     except:
         traceback.print_exc()
-        logging.error("Problem evaluating model: %s", sys.exc_value)
-        return {'error': "Problem evaluating model: %s" % sys.exc_value}
+        logging.error("Problem evaluating model: %s", sys.exc_info()[1])
+        return {'error': "Problem evaluating model: %s" % sys.exc_info()[1]}
 
 def _evaluate_model(data_form, layers_form, html_data, fit=True, user=None, run_info=None):
     """
@@ -737,7 +736,7 @@ def parse_ascii_file(request, file_name, raw_content):
     """
     try:
         # If we don't have a fourth column, add 3% Q resolution
-        current_str = io.StringIO(unicode(raw_content))
+        current_str = io.StringIO(raw_content.decode("utf-8"))
         current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
         data_set = [current_data['q'], current_data['r'], current_data['dr'], current_data['dq']]
         for i in range(len(current_data['dq'])):
@@ -750,7 +749,9 @@ def parse_ascii_file(request, file_name, raw_content):
         # Upload plot to live data server
         return data_handler.store_user_data(request, file_name, plot)
     except:
-        logging.error("Could not parse file %s: %s", file_name, sys.exc_value)
+        err_info = sys.exc_info()
+        logging.error("Could not parse file %s: %s", file_name, err_info[1])
+        logging.error('\n'.join(traceback.format_tb(err_info[2])))
         return False, "Could not parse data file %s" % file_name
 
 def get_user_files(request):

@@ -5,7 +5,6 @@ else
 endif
 
 app_dir := web_reflectivity
-DJANGO_COMPATIBLE:=$(shell python -c "import django;t=0 if django.VERSION[1]<9 else 1; print t")
 DJANGO_VERSION:=$(shell python -c "import django;print django.__version__")
 
 ifndef PYTHON
@@ -23,12 +22,7 @@ check:
 	@python -c "import pandas" || echo "\nWARNING: pandas is not installed\n"
 	@python -c "import plotly" || echo "\nWARNING: plotly is not installed\n"
 	@python -c "import plotly.offline" || echo "\nWARNING: plotly.offline is not installed\n"
-
-ifeq ($(DJANGO_COMPATIBLE),1)
 	@echo "Detected Django $(DJANGO_VERSION)"
-else
-	$(error Detected Django $(DJANGO_VERSION) < 1.9. The web monitor requires at least Django 1.9)
-endif
 
 deps:
 	$(PYTHON) -m pip install -r requirements.txt

@@ -3,11 +3,10 @@
     Abstraction of the data handler. For test purposes, we can store data locally.
     With a production system, we are likely to set the data to a remote server.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import logging
 import json
-import httplib
+import http.client as httplib
 import hashlib
 import string
 import requests
@@ -192,7 +191,7 @@ def _remote_fetch(instrument, run_id, data_type='html'):
         else:
             logging.error("Return code %s for %s:", data_request.status, live_data_url)
     except:
-        logging.error("Could not pull data from live data server:\n%s", sys.exc_value)
+        logging.error("Could not pull data from live data server:\n%s", sys.exc_info()[1])
     return json_data
 
 def get_user_files_from_server(request, filter_file_name=None):
@@ -225,4 +224,4 @@ def get_user_files_from_server(request, filter_file_name=None):
                 user_data.timestamp = dateparse.parse_datetime(item['timestamp'])
                 user_data.save()
     except:
-        logging.error("Could not retrieve user files: %s", sys.exc_value)
+        logging.error("Could not retrieve user files: %s", sys.exc_info()[1])

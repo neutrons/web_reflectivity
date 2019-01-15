@@ -107,7 +107,7 @@ def translate_model(refl_model, layers, output_params=None):
                 clean_layers.insert(0, layer_dict)
         except:
             logging.error("Could not process %s", str(layers))
-            logging.error(sys.exc_value)
+            logging.error(sys.exc_info()[1])
     return [refl_model, clean_layers]
 
 def parse_slabs(content):
