@@ -26,10 +26,15 @@ from django.http import Http404
 
 import users.view_util
 
-from .parsing import refl1d
+from . import parsing
 from . import job_handling
 from .data_server import data_handler
-from . import icat_server_communication as icat
+
+# Import catalog
+from . import catalog
+if not catalog.HAVE_ONCAT:
+    from . import icat_server_communication as catalog
+
 from .models import FitProblem, FitterOptions, Constraint, ReflectivityLayer, UserData, SimultaneousModel, SimultaneousConstraint, SimultaneousFit
 from .forms import ReflectivityFittingForm, LayerForm
 
@@ -83,7 +88,8 @@ def check_permissions(request, run_id, instrument):
 
     # Get the IPTS from ICAT
     try:
-        run_info = icat.get_run_info(instrument, run_id)
+        #run_info = icat.get_run_info(instrument, run_id)
+        run_info = catalog.get_run_info(instrument, run_id)
         if 'proposal' in run_info:
             return users.view_util.is_experiment_member(request, instrument, run_info['proposal']), run_info
         else:
@@ -114,22 +120,6 @@ def get_fit_problem(request, instrument, data_id):
         return data_path, fit_problem
     return data_path, None
 
-def get_fit_data(request, instrument, data_id):
-    """
-        Get the latest ascii data from
-
-        :param str data_id: run identifier (usually a number)
-        :param str instrument: instrument name, or user name
-    """
-    ascii_data = None
-    _, fit_problem = get_fit_problem(request, instrument, data_id)
-    if fit_problem is not None:
-        job_logs = Log.objects.filter(job=fit_problem.remote_job)
-        if len(job_logs) > 0:
-            latest = job_logs.latest('time')
-            ascii_data = refl1d.extract_data_from_log(latest.content)
-    return ascii_data
-
 def get_model_as_csv(request, instrument, data_id):
     """
         Return an ASCII block with model information to be loaded
@@ -144,7 +134,7 @@ def get_model_as_csv(request, instrument, data_id):
         model_dict, layer_dicts = fit_problem.model_to_dicts()
         ascii_data = "# Reflectivity model\n"
         ascii_data += "# Created on %s\n" % fit_problem.timestamp
-        ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.5281/zenodo.260178]\n"
+        ascii_data += "# Created by the ORNL Reflectivity Fitting Interface [DOI: 10.1016/j.softx.2018.09.001]\n"
         ascii_data += "# Data File: %s\n\n" % fit_problem.reflectivity_model.data_path
         ascii_data += "# scale = %g\n" % model_dict['scale']
         ascii_data += "# background = %g\n\n" % model_dict['background']
@@ -165,13 +155,13 @@ def get_model_as_csv(request, instrument, data_id):
     if html_data is not None:
         current_str = io.StringIO(extract_ascii_from_div(html_data))
         current_data = pandas.read_csv(current_str, delim_whitespace=True, comment='#', names=['q','r','dr','dq'])
-        _, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
+        _q, r_model, _, _, _ = job_handling.compute_reflectivity(current_data['q'],
                                                                 current_data['r'],
                                                                 current_data['dr'],
                                                                 current_data['dq'], fit_problem)
         ascii_data += "%12s %12s\n" % ("Q", "R")
         for i, r_value in enumerate(r_model):
-            ascii_data += "%12.6f %12.6f\n" % (current_data['q'][i], r_value)
+            ascii_data += "%12.6f %12.6f\n" % (_q[i], r_value)
 
     return ascii_data
 
@@ -200,7 +190,7 @@ def get_results(request, fit_problem):
                             logging.error("Logs for job %s needs cleaning up", job.id)
                             #job.delete()
 
-                    chi2 = refl1d.update_model(latest.content, fit_problem)
+                    chi2 = parsing.refl1d.update_model(latest.content, fit_problem)
                     if chi2 is None:
                         errors.append("The fit results appear to be incomplete.")
                         can_update = False
@@ -233,7 +223,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     chi2 = None
     sld_plot = None
     if fit_problem:
-        _, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
+        _q, r_model, z, sld, chi2 = job_handling.compute_reflectivity(current_data['q'],
                                                                      current_data['r'],
                                                                      current_data['dr'],
                                                                      current_data['dq'], fit_problem)
@@ -243,7 +233,7 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
         r_values = current_data['r'] * current_data['q']**4
         dr_values = current_data['dr'] * current_data['q']**4
         if fit_problem:
-            r_model = r_model * current_data['q']**4
+            r_model = r_model * _q**4
     else:
         r_values = current_data['r']
         dr_values = current_data['dr']
@@ -251,38 +241,10 @@ def get_plot_from_html(html_data, rq4=False, fit_problem=None):
     plots = [[current_data['q'], r_values, dr_values]]
     labels = ["Data"]
     if fit_problem:
-        plots.append([current_data['q'], r_model])
+        plots.append([_q, r_model])
         labels.append("Fit")
 
     return plots, labels, sld_plot, chi2
-
-def get_plot_from_job_report(log_object, rq4=False):
-    """
-        Obtain job log and extract plot data
-
-        :param Log log_object: Log object for a given remote job
-        :param bool rq4: if True, the plot will be in R*Q^4
-    """
-    refl_plot = None
-    sld_plot = None
-    if log_object is not None:
-        # Extract reflectivity
-        data_log = refl1d.extract_data_from_log(log_object.content)
-        if data_log is not None:
-            data_str = io.StringIO(data_log)
-            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['q','dq','r','dr','theory','fresnel'])
-            if rq4 is True:
-                fit_values = raw_data['theory'] * raw_data['q']**4
-            else:
-                fit_values = raw_data['theory']
-            refl_plot = [raw_data['q'], fit_values]
-        # Extract SLD
-        data_log = refl1d.extract_sld_from_log(log_object.content)
-        if data_log is not None:
-            data_str = io.StringIO(data_log)
-            raw_data = pandas.read_csv(data_str, delim_whitespace=True, comment='#', names=['z','rho','irho'])
-            sld_plot = [raw_data['z'], raw_data['rho']]
-    return refl_plot, sld_plot
 
 def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
     """
@@ -334,15 +296,15 @@ def assemble_plots(request, instrument, data_id, fit_problem, rq4=False):
 
     y_title=u"Reflectivity"
     if rq4 is True:
-        y_title += u" x Q<sup>4</sup> (1/\u212b<sup>4</sup>)"
+        y_title += u" x Q<sup>4</sup> (1/A<sup>4</sup>)"
 
     if len(data_list) > 0:
-        r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/\u212b)", y_title=y_title)
+        r_plot = plot1d(data_list, data_names=data_names, x_title=u"Q (1/A)", y_title=y_title)
 
     if len(sld_list) > 0:
         sld_plot = plot1d(sld_list, x_log=False, y_log=False,
-                          data_names=sld_names, x_title=u"Z (\u212b)",
-                          y_title='SLD (10<sup>-6</sup>/\u212b<sup>2</sup>)')
+                          data_names=sld_names, x_title=u"Z (A)",
+                          y_title='SLD (10<sup>-6</sup>/A<sup>2</sup>)')
         r_plot = "<div>%s</div><div>%s</div>" % (r_plot, sld_plot)
 
     return r_plot, chi2
@@ -783,7 +745,7 @@ def parse_ascii_file(request, file_name, raw_content):
                 current_data['dq'][i] = current_data['q'][i] * 0.03
 
         # Package the data in a plot
-        plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/\u212b)", y_title="Reflectivity")
+        plot = plot1d([data_set], data_names=file_name, x_title=u"Q (1/A)", y_title="Reflectivity")
 
         # Upload plot to live data server
         return data_handler.store_user_data(request, file_name, plot)

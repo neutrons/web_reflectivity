@@ -13,7 +13,7 @@ from .data_server import data_handler as dh
 from . import view_util
 from . import forms
 from . import job_handling
-from .parsing import refl1d, refl1d_err_model
+from .parsing import refl1d, refl1d_err_model, refl1d_simultaneous
 from .simultaneous import model_handling
 
 class UserTestCase(TestCase):
@@ -571,16 +571,6 @@ SLD_START
 SLD_END
 Done: 2.40629 sec
 """
-    def test_sld_parse(self):
-        """ Test log parser for SLD profile """
-        data = refl1d.extract_sld_from_log(self.log)
-        self.assertTrue("1.80000000   2.02515965   0.00000000" in data)
-
-    def test_refl_parse(self):
-        """ Test log parser for reflectivity curve """
-        data = refl1d.extract_data_from_log(self.log)
-        self.assertTrue("# intensity: 1.00030009" in data)
-
     def test_update_model(self):
         """ Update model from log """
         fit_problem = FitProblem.objects.get(user=self.user)
@@ -852,3 +842,72 @@ class ToolsTestCase(TestCase):
                                                          u'valence_change':1, u'electrode_density':''})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['capacity'], ' 0.786')
+
+
+class JsonParsingTestCase(TestCase):
+    """ Test JSON parsing """
+    def setUp(self):
+        # Every test needs a client.
+        self.client = Client()
+        self.user = User.objects.create_user('john', 'john@test.com', 'johnpassword')
+        self.user.save()
+        self.client.login(username='john', password='johnpassword')
+        # Upload data
+        with open('test_data.txt') as fp:
+            self.client.post('/fit/files/', {'name': 'test_data.txt', 'file': fp})
+        # Create a fit model
+        form_data = {u'form-0-roughness_is_fixed': [u'on'], u'front_name': [u'air'], u'back_name': [u'Si'],
+                     u'back_roughness_is_fixed': [u'on'], u'scale_max': [u'1.1'], u'data_path': [u'john/1'],
+                     u'background_is_fixed': [u'on'], u'front_sld_max': [u'1'], u'form-0-thickness_max': [u'100.0'],
+                     u'form-0-id': [u''], u'button_choice': [u'skip'], u'back_sld_min': [u'2.0'], u'scale': [u'1'],
+                     u'background_min': [u'0'], u'back_sld_max': [u'2.1'], u'front_sld_min': [u'0'],
+                     u'form-0-layer_number': [u'1000'], u'form-MIN_NUM_FORMS': [u'0'], u'background_max': [u'1e-06'],
+                     u'back_sld': [u'2.07'], u'form-0-name': [u'material'], u'form-0-sld': [u'2.0'], u'back_roughness_min': [u'1'],
+                     u'scale_is_fixed': [u'on'], u'form-TOTAL_FORMS': [u'1'], u'back_sld_is_fixed': [u'on'], u'q_max': [u'1'],
+                     u'form-0-thickness_is_fixed': [u'on'], u'background': [u'0'], u'form-INITIAL_FORMS': [u'0'],
+                     u'form-0-roughness': [u'1.0'], u'front_sld_is_fixed': [u'on'], u'scale_min': [u'0.9'],
+                     u'back_roughness_max': [u'5'], u'form-0-sld_min': [u'1.0'], u'form-MAX_NUM_FORMS': [u'1000'],
+                     u'front_sld': [u'0'], u'form-0-sld_is_fixed': [u'on'], u'form-0-thickness_min': [u'10.0'],
+                     u'form-0-sld_max': [u'4.0'], u'back_roughness': [u'5.0'], u'form-0-roughness_max': [u'10.0'],
+                     u'form-0-roughness_min': [u'1.0'], u'form-0-thickness': [u'50.0'], u'q_min': [u'0'],
+                     u'form-0-i_sld_min': [u'0.0'], u'form-0-i_sld_max': [u'2.0'], u'form-0-i_sld': [u'1.0'],
+                     u'form-0-i_sld_is_fixed': [u'on']}
+
+        # Submit a model, without fitting or evaluating
+        self.client.post('/fit/john/1/', form_data)
+
+        self.log = """REFL1D_VERSION 0.8.6
+SIMULTANEOUS ["john/1"]
+MODEL_PARAMS_START
+[chisq=72.4369(32), nllf=11408.8]
+MODEL_PARAMS_END
+MODEL_JSON_START
+{"sample": {"layers": [{"name": "Si", "thickness": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 0, "name": "Si thickness"}, "irho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "Si irho"}, "rho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 2.07, "name": "Si rho"}, "interface": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 5.0, "name": "Si interface"}, "type": "Slab"}, {"name": "SiOx", "thickness": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 15.0, "name": "SiOx thickness"}, "irho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "SiOx irho"}, "rho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 3.2, "name": "SiOx rho"}, "interface": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 1.0, "name": "SiOx interface"}, "type": "Slab"}, {"name": "PS", "thickness": {"fixed": false, "type": "Parameter", "bounds": {"type": "Bounded", "limits": [1800.0, 3000.0]}, "value": 2896.0047607421875, "name": "PS thickness"}, "irho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "PS irho"}, "rho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 2.055, "name": "PS rho"}, "interface": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 1.0, "name": "PS interface"}, "type": "Slab"}, {"name": "air", "thickness": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 0, "name": "air thickness"}, "irho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "air irho"}, "rho": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "air rho"}, "interface": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, Infinity]}, "value": 0, "name": "air interface"}, "type": "Slab"}], "type": "Stack"}, "type": "Experiment", "probe": {"back_absorption": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [0, 1]}, "value": 1, "name": "back_absorption"}, "intensity": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 1.0, "name": "normalization"}, "type": "QProbe", "theta_offset": {"fixed": true, "type": "Constant", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0, "name": "theta_offset"}, "background": {"fixed": true, "type": "Parameter", "bounds": {"type": "Unbounded", "limits": [-Infinity, Infinity]}, "value": 0.0, "name": "background"}}, "refl1d": "0.8.6"}
+MODEL_JSON_END
+Done: 0.981189 sec
+"""
+
+    def test_log_parsing(self):
+        """ Test new log parsing """
+        _, _, problem_list = refl1d_simultaneous.parse_models_from_log(self.log)
+        _, data_names, _, _ = model_handling.create_plots_from_fit_problem(problem_list)
+        self.assertEqual(len(data_names), 2)
+
+        # Test plot assembly
+        class Req(object):
+            session = {}
+        r_plot = model_handling.assemble_plots(Req(), None, problem_list)
+        self.assertTrue(len(r_plot) > 0)
+
+
+class CatalogTestCase(TestCase):
+    def test_oncat(self):
+        from . import catalog
+        self.assertTrue(catalog.decode_time('2018-10-12T00:00:00-06:39') is not None)
+        self.assertEqual(catalog.get_run_info('john', 1), {})
+
+
+class ICATTestCase(TestCase):
+    def test_icat(self):
+        from . import icat_server_communication
+        self.assertEqual(icat_server_communication.get_run_info('john', 1), {})

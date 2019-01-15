@@ -34,25 +34,15 @@ problem = FitProblem(${EXPT_LIST})
     output_code = subprocess.call(cmd, stdout=fd, stderr=fd, shell=True)
     fd.write("Fit complete: %s\n" % time.ctime())
 
+    print('REFL1D_VERSION ${REFL1D_VERSION}')
     print('SIMULTANEOUS ${EXPT_IDS}')
     try:
         with open(os.path.join(output_dir, '__model.err'), 'r') as out_params:
-            model_params = out_params.read()
-            fd.write(model_params)
             print("MODEL_PARAMS_START")
-            print(model_params)
+            for line in out_params.readlines():
+                if not line.strip().startswith('.') and len(line.strip()) > 5:
+                    print(line.replace('\n',''))
             print("MODEL_PARAMS_END")
-    except:
-        fd.write("Error: could not process fit results\n")
-        print(sys.exc_value)
-
-    try:
-        with open(os.path.join(output_dir, '__model.par'), 'r') as out_params:
-            model_params = out_params.read()
-            fd.write(model_params)
-            print("MODEL_BEST_VALUES_START")
-            print(model_params)
-            print("MODEL_BEST_VALUES_END")
     except:
         fd.write("Error: could not process fit results\n")
         print(sys.exc_value)
@@ -60,26 +50,14 @@ problem = FitProblem(${EXPT_LIST})
     for i in range(len(${EXPT_IDS})):
         print("EXPT_START %s" % i)
         try:
-            with open(os.path.join(output_dir, '__model-%d-refl.dat' % (i+1)), 'r') as out_refl:
-                print("REFL_START")
-                print(out_refl.read())
-                print("REFL_END")
+            with open(os.path.join(output_dir, '__model-%d-expt.json' % (i+1)), 'r') as json_refl:
+                print("MODEL_JSON_START")
+                print(json_refl.read())
+                print("MODEL_JSON_END")
         except:
-            fd.write("Error: could not read reflectivity output\n")
+            fd.write("Error: could not read json output\n")
             print(sys.exc_value)
 
-        try:
-            with open(os.path.join(output_dir, '__model-%d-profile.dat' % (i+1)), 'r') as out_sld:
-                print("SLD_START")
-                i_count = 0
-                for line in out_sld.readlines():
-                    i_count += 1
-                    if i_count % 10 == 0:
-                        print(line.replace('\n',''))
-                print("SLD_END")
-        except:
-            fd.write("Error: could not process SLD profile\n")
-            print(sys.exc_value)
         print("EXPT_END %s" % i)
     fd.close()
 
