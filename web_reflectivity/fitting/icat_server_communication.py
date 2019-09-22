@@ -7,7 +7,7 @@
     @copyright: 2015 Oak Ridge National Laboratory
 """
 import sys
-import httplib
+import http.client as httplib
 import xml.dom.minidom
 import logging
 from fitting.models import CatalogCache
@@ -17,7 +17,7 @@ try:
     ICAT_DOMAIN = settings.ICAT_DOMAIN
     ICAT_PORT = settings.ICAT_PORT
 except:
-    logging.warning("Could not find ICAT config: %s", sys.exc_value)
+    logging.warning("Could not find ICAT config: %s", sys.exc_info()[1])
     ICAT_DOMAIN = 'icat.sns.gov'
     ICAT_PORT = 2080
 
@@ -66,6 +66,6 @@ def get_run_info(instrument, run_number):
                                                title=run_info['title'],
                                                proposal=run_info['proposal'])
     except:
-        logging.error("Communication with ICAT server failed (%s): %s",url, sys.exc_value)
+        logging.error("Communication with ICAT server failed (%s): %s",url, sys.exc_info()[1])
 
     return run_info

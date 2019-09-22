@@ -74,15 +74,13 @@ INSTALLED_APPS = [
     'datahandler',
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    #'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'web_reflectivity.urls'
@@ -239,6 +237,6 @@ ICAT_PORT = 2080
 # Import local settings if available
 try:
     from local_settings import *
-except ImportError, e:
+except:
     LOCAL_SETTINGS = False
 

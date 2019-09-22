@@ -3,7 +3,6 @@
     Data models
 """
 #TODO: move the script generation from the forms to the models
-from __future__ import unicode_literals
 import sys
 import logging
 import re
@@ -248,12 +247,12 @@ class Constraint(models.Model):
             def constraint_func():
                 """ Dummy function to avoid pylint error """
                 return 1
-            exec constraint_function #pylint: disable=exec-used
+            exec(constraint_function) #pylint: disable=exec-used
             setattr(self.layer, self.parameter, constraint_func(**parameters))
             self.layer.save()
             fit_problem.save()
         except:
-            logging.error("Could not evaluate constraint: %s", sys.exc_value)
+            logging.error("Could not evaluate constraint: %s", sys.exc_info()[1])
 
     def get_ranges(self, sample_name='sample', probe_name='probe'):
         """
@@ -313,9 +312,9 @@ class Constraint(models.Model):
                 return 1
 
             compile(constraint_function, 'constraint.py', 'exec')
-            exec constraint_function #pylint: disable=exec-used
+            exec(constraint_function) #pylint: disable=exec-used
         except:
-            comments.append("Syntax error:\n%s" % sys.exc_value)
+            comments.append("Syntax error:\n%s" % sys.exc_info()[1])
             is_valid = False
 
         try:
@@ -332,7 +331,7 @@ class Constraint(models.Model):
                 is_valid = False
         except:
             comments.append("Invalid parameters. Check your function.")
-            comments.append("Syntax error:\n%s" % sys.exc_value)
+            comments.append("Syntax error:\n%s" % sys.exc_info()[1])
             is_valid = False
         return is_valid, comments
 
@@ -445,7 +444,7 @@ class SimultaneousConstraint(models.Model):
                 problem_id = fit_problem.id
                 dependent_name = layer.name
             except:
-                logging.error(sys.exc_value)
+                logging.error(sys.exc_info()[1])
                 logging.error("Could not retrieve layer id=%s", obj_id)
         return dependent_name, parameter_name, problem_id
 

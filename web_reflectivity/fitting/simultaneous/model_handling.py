@@ -50,7 +50,7 @@ def get_simultaneous_models(request, fit_problem, setup_request=False):
                 else:
                     error_list.append("No results found")
         except:
-            logging.error("Problem retrieving results: %s", sys.exc_value)
+            logging.error("Problem retrieving results: %s", sys.exc_info()[1])
             error_list.append("Problem retrieving results")
             raise
 
@@ -194,7 +194,7 @@ def create_plots_from_legacy_log(request, fit_problem):
                     sld_names.append(data_path)
         except:
             logging.error("Could not extract data from log for %s", fit_problem.reflectivity_model.data_path)
-            logging.error(sys.exc_value)
+            logging.error(sys.exc_info()[1])
     return data_list, data_names, sld_list, sld_names
 # --------------------------------------------------------------------------------------
 

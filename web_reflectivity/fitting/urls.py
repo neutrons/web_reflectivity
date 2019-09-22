@@ -6,6 +6,7 @@ from django.conf.urls import url
 
 from . import views
 
+app_name = 'fitting'
 urlpatterns = [
     url(r'^$',                                                    views.FileView.as_view(),       name='modeling'),
     url(r'^(?P<job_id>\d+)/$',                                    views.is_completed,             name='is_completed'),

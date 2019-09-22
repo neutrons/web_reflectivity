@@ -1,0 +1,19 @@
+name: webrefl_py3
+dependencies:
+- python==3.5
+- numpy
+- sqlite
+- pip:
+  - django
+  - celery
+  - django-celery-results
+  - django-remote-submission
+  - cython
+  - pandas
+  - plotly
+  - scipy
+  - requests
+  - periodictable
+  - refl1d
+  - matplotlib
+  

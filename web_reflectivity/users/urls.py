@@ -2,10 +2,11 @@
 """
     Define url structure
 """
-from django.conf.urls import url
+from django.urls import include, path
 from . import views
 
+app_name = 'users'
 urlpatterns = [
-    url(r'^login$', views.perform_login, name='perform_login'),
-    url(r'^logout$', views.perform_logout, name='perform_logout'),
+    path('login/', views.perform_login, name='perform_login'),
+    path('logout/', views.perform_logout, name='perform_logout'),
 ]

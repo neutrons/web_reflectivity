@@ -2,7 +2,7 @@
     User management
 """
 from django.shortcuts import render, redirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth import login, logout, authenticate
 from django_remote_submission.tasks import copy_key_to_server
 
@@ -38,7 +38,7 @@ def perform_login(request):
         else:
             login_failure = ["Invalid username or password"]
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         # If we came from a given page and just needed
         # authentication, go back to that page.
         if "next" in request.GET:

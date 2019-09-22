@@ -2,7 +2,7 @@
 """
     View utility functions for user management
 """
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 
 # import code for encoding urls and generating md5 hashes
@@ -18,7 +18,7 @@ def fill_template_values(request, **template_args):
         Only the arguments common to all pages will be filled.
     """
     template_args['user'] = request.user
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         if hasattr(settings, 'GRAVATAR_URL'):
             if isinstance(settings.ALLOWED_HOSTS, (tuple,list)) and len(settings.ALLOWED_HOSTS)>0:
                 domain = settings.ALLOWED_HOSTS[0]
@@ -27,6 +27,7 @@ def fill_template_values(request, **template_args):
             if domain.startswith('.'):
                 domain = domain[1:]
             guess_email = "%s@%s" % (request.user.username, domain)
+            guess_email = guess_email.encode('utf-8')
             gravatar_url = settings.GRAVATAR_URL+hashlib.md5(guess_email).hexdigest()+'?d=identicon'
             template_args['gravatar_url'] = gravatar_url
     else:

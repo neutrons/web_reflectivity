@@ -2,13 +2,12 @@
 """
     Definition of views
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 import logging
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms.formsets import formset_factory
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseNotFound, Http404
@@ -117,6 +116,9 @@ class FileView(View):
         if form.is_valid():
             file_name = request.FILES['file'].name
             if request.FILES['file'].size < 1024 * 1024:
+                #raw_content = ''
+                #for chunk in request.FILES['file'].chunks():
+                #    logging.error("TYPE: %s", type(chunk))
                 raw_content = request.FILES['file'].read()
                 success, error_msg = view_util.parse_ascii_file(request, file_name, raw_content)
                 if success is True:
@@ -425,7 +427,7 @@ class FitView(View):
             else:
                 error_message.append("Invalid parameters were found!")
         except:
-            logging.error("Could not fit data: %s", sys.exc_value)
+            logging.error("Could not fit data: %s", sys.exc_info()[1])
             error_message.append("Could not fit data")
 
         # If we have errors, compose the response here so that we can display the errors.
@@ -708,7 +710,7 @@ class SimultaneousView(View):
             if 'job_id' in output:
                 request.session['job_id'] = output['job_id']
         except:
-            error_list = ["There was a problem performing your fit:<br>refresh your page.", str(sys.exc_value)]
+            error_list = ["There was a problem performing your fit:<br>refresh your page.", str(sys.exc_info()[1])]
         if len(error_list) > 0:
             breadcrumbs = "<a href='/'>home</a> &rsaquo; simultaneous &rsaquo; %s &rsaquo; %s" % (instrument, data_id)
             template_values = dict(breadcrumbs=breadcrumbs, instrument=instrument,

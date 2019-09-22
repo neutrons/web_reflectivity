@@ -39,8 +39,8 @@ class ChargeRateView(View):
                 else:
                     template_values.update(electrode_info)
             except:
-                logging.error(sys.exc_value)
-                template_values['user_alert']= ["Could not process request.", "Check your density value.", sys.exc_value]
+                logging.error(sys.exc_info()[1])
+                template_values['user_alert']= ["Could not process request.", "Check your density value.", sys.exc_info()[1]]
         else:
             template_values['user_alert']= ["The form contains invalid data"]
 
