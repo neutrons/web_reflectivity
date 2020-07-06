@@ -45,8 +45,16 @@ def extract_ascii_from_div(html_data):
 
         :param str html_data: <div> string
     """
-    try:
+    # The plotly API has changed. This first search is for the newer API
+    html_data = html_data.replace('\n','')
+    html_data = html_data.replace("'",'"')
+    result = re.search(r"newPlot\((.*)\)(\s*)};(\s*)</script>", html_data)
+
+    # Trying the old API if we failed
+    if not result:
         result = re.search(r"newPlot\((.*)\)</script>", html_data)
+
+    try:
         jsondata_str = "[%s]" % result.group(1)
         data_list = json.loads(jsondata_str)
         ascii_data = ""
