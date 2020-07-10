@@ -118,6 +118,45 @@ def update_model_from_dict(fit_problem, experiment, error_output=None, pretty_pr
         :param list error_output: list of DREAM output parameters, with errors.
         :param bool pretty_print: if True, the value will be turned into a value +- error string
     """
+    def _process_par(par_name, par_dict, layer_name):
+        """ Parse the value of a fit parameter """
+        _value = par_dict['value']
+        _error = 0
+        if par_dict['fixed'] is False:
+            _value, _error = find_error(layer_name, par_name, par_dict['value'], error_output, pretty_print=pretty_print)
+        update_with_results(fit_problem, '%s %s' % (layer_name, par_name), _value, error=_error)
+
+    for layer in experiment['sample']['layers']:
+        for par_name in ['thickness', 'interface']:
+            _process_par(par_name, layer[par_name], layer['name'])
+
+        # SLD information is one level deeper, under 'material'
+        for par_name in ['rho', 'irho']:
+            _process_par(par_name, layer['material'][par_name], layer['name'])
+
+    _value = experiment['probe']['intensity']['value']
+    _error = 0
+    if experiment['probe']['intensity']['fixed'] is False:
+        _value, _error = find_error('', 'intensity', experiment['probe']['intensity']['value'], error_output,
+                                    pretty_print=pretty_print, tolerance=0.01)
+    update_with_results(fit_problem, 'intensity', _value, error=_error)
+
+    _value = experiment['probe']['background']['value']
+    _error = 0
+    if experiment['probe']['background']['fixed'] is False:
+        _value, _error = find_error('', 'background', experiment['probe']['background']['value'], error_output,
+                                    pretty_print=pretty_print, tolerance=0.01)
+    update_with_results(fit_problem, 'background', _value, error=_error)
+
+def update_model_from_dict_legacy(fit_problem, experiment, error_output=None, pretty_print=False):
+    """
+        Parse a json representation of the experiment
+        Works for results saved by refl1d version < 0.8.11.
+        :param FitProblem fit_problem: FitProblem-like ojbect
+        :param dict experiment: dictionary representation of the fit problem read from the json output
+        :param list error_output: list of DREAM output parameters, with errors.
+        :param bool pretty_print: if True, the value will be turned into a value +- error string
+    """
     for layer in experiment['sample']['layers']:
         for par_name in ['thickness', 'rho', 'irho', 'interface']:
             _value = layer[par_name]['value']
@@ -155,6 +194,16 @@ def update_model_from_json(content, fit_problem):
     if _index_start >= 0 and _index_end > 0:
         _json = content[_index_start+len(key_start):_index_end]
         _expt = json.loads(_json)
+        # Determine version
+        # We are only compatible with version 0.8.x and above
+        if 'refl1d' in _expt:
+            version_string = _expt['refl1d']
+            toks = version_string.split('.')
+            # Call legacy reader for version < 0.8.11
+            if toks[0] == '0' and toks[1] == '8' and int(toks[2]) < 11:
+                update_model_from_dict_legacy(fit_problem, _expt)
+            
+        # Call most recent reader
         update_model_from_dict(fit_problem, _expt)
 
 def update_model(content, fit_problem):
@@ -191,7 +240,7 @@ def update_model(content, fit_problem):
         if line.startswith('MODEL_PARAMS_END'):
             start_err_file = False
 
-    # If we didn't use the DREAM algorithm, we won't found the errors and need to parse the full json data
+    # If we didn't use the DREAM algorithm, we won't find the errors and need to parse the full json data
     if not found_errors:
         update_model_from_json(content, fit_problem)
     return chi2

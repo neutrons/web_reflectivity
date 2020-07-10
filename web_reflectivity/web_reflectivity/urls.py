@@ -16,9 +16,14 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.views.generic.base import RedirectView
+from django.contrib.auth.decorators import login_required
+
+
+admin.autodiscover()
+admin.site.login = login_required(admin.site.login)
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+    url(r'^database/', include(admin.site.urls)),
     url(r'^$', RedirectView.as_view(url='/fit/')),
     url(r'^fit/', include('fitting.urls', namespace="fitting")),
     url(r'^tools/', include('tools.urls', namespace="tools")),
